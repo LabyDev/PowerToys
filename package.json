@@ -1,0 +1,55 @@
+{
+  "name": "powertoys",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,ts,json,css,html}": [
+      "eslint",
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "@mantine/core": "^7.17.0",
+    "@mantine/dropzone": "^7.17.0",
+    "@mantine/hooks": "^7.17.0",
+    "@mantine/modals": "^7.17.0",
+    "@mantine/notifications": "^7.17.0",
+    "@mantine/nprogress": "^7.17.0",
+    "@mantine/spotlight": "^7.17.0",
+    "@phosphor-icons/react": "^2.1.7",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router": "^7.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-react": "^7.37.4",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "postcss": "^8.5.3",
+    "postcss-preset-mantine": "^1.17.0",
+    "postcss-simple-vars": "^7.0.1",
+    "prettier": "3.5.2",
+    "typescript": "~5.6.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.0.3"
+  }
+}

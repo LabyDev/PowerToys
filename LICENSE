@@ -1,0 +1,123 @@
+Laby’s Source-Available Passion License (LSAPL)
+Version 1.0 – 2026
+
+Copyright (c) 2026 Laby
+
+All rights reserved.
+
+This software is source-available under the terms below.
+This license is NOT an Open Source license as defined by the Open Source Initiative (OSI).
+
+────────────────────────────────────────────────────────────
+LICENSE GRANT
+────────────────────────────────────────────────────────────
+
+Permission is granted to any person obtaining a copy of this
+software ("the Software") to:
+
+- Use the Software for personal, non-commercial purposes
+- Study and modify the source code for personal use
+- Compile the Software for personal use
+- Redistribute unmodified binary builds, including binaries
+  compiled from unmodified source code
+
+“Personal, non-commercial purposes” means use by a natural
+person outside of any revenue-generating, organizational,
+professional, or business activity.
+
+────────────────────────────────────────────────────────────
+RESTRICTIONS
+────────────────────────────────────────────────────────────
+
+1. No Source Redistribution
+   Redistribution of the Software’s source code, in whole or
+   in part, whether modified or unmodified, is strictly prohibited.
+
+2. No Distribution of Derivative Works
+   You may not publish, distribute, sublicense, or otherwise
+   make available modified versions of the Software, including
+   forks or derivative works, in source or binary form.
+
+   Private modification and use is permitted, provided it is
+   not distributed to others.
+
+3. Commercial Use
+   Any use of the Software for profit or by a business,
+   organization, or revenue-generating activity requires a
+   separate commercial license from the author.
+
+   Exemptions:
+   Non-profit organizations, educational institutions, and
+   healthcare providers may use the Software internally for
+   non-commercial purposes. Any incidental revenue must be
+   strictly minimal and not for profit.
+
+4. SaaS / Cloud Use
+   Hosting or providing access over a network is permitted only
+   for personal, non-commercial use. Commercial SaaS or cloud
+   deployment requires a separate commercial license.
+
+5. No Misrepresentation
+   You may not claim authorship or present the Software as your own.
+
+6. No Trademark or Branding Rights
+   This license does not grant rights to use the project name,
+   logos, or branding, except for accurate attribution.
+
+7. No Patent Rights
+   No patent rights are granted; all patents are reserved by the author.
+
+8. Attribution
+   Any redistribution of binaries must include this license and
+   credit the original author.
+
+────────────────────────────────────────────────────────────
+CONTRIBUTIONS
+────────────────────────────────────────────────────────────
+
+Any contributions submitted to the project (pull requests,
+patches, suggestions) grant the author a perpetual,
+irrevocable, royalty-free right to use, modify, relicense,
+and distribute them as part of the Software.
+
+Contributors do not receive rights to distribute modified versions
+of the Software.
+
+────────────────────────────────────────────────────────────
+TERMINATION
+────────────────────────────────────────────────────────────
+
+Violation of this license may result in termination of all rights.
+
+The author may provide notice of a violation. Licensees have
+30 days to cure the violation. Failure to cure or repeated
+violations will terminate the license automatically.
+
+Upon termination, all use and distribution must cease immediately.
+
+────────────────────────────────────────────────────────────
+CONTACT
+────────────────────────────────────────────────────────────
+
+For commercial licensing or permissions, contact the author
+via the official GitHub repository associated with the Software.
+
+────────────────────────────────────────────────────────────
+GOVERNING LAW
+────────────────────────────────────────────────────────────
+
+This license is governed by the laws of the Netherlands,
+excluding conflict of law principles.
+
+────────────────────────────────────────────────────────────
+DISCLAIMER
+────────────────────────────────────────────────────────────
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
