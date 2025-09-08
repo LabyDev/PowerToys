@@ -12,7 +12,7 @@ function App() {
           <Button
             fullWidth
             component={NavLink}
-            to="/randomizer"
+            to="/FileRandomiser"
             leftSection={<Shuffle />}
           >
             File Randomiser
