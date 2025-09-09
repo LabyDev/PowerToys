@@ -1,36 +1,45 @@
 .header {
-  height: 56px;
-  background-color: var(--mantine-color-body);
-  border-bottom: 1px solid
-    light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  /* Use a consistent background and border for the header */
+  background-color: #f8f9fa; /* Light gray background */
+  border-bottom: 1px solid #dee2e6; /* Subtle bottom border */
+  padding: 1rem 0; /* Vertical padding */
 }
 
 .inner {
-  height: 56px;
+  /* Flexbox is used to align items and distribute space */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-direction: column;
 }
 
 .link {
+  /* Base styles for the navigation links */
   display: block;
   line-height: 1;
-  padding: 8px 12px;
-  border-radius: var(--mantine-radius-sm);
-  text-decoration: none;
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
-  font-size: var(--mantine-font-size-sm);
+  padding: 0.5rem 0.75rem;
   font-weight: 500;
+  text-decoration: none;
+  color: #495057; /* Dark gray text */
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  width: auto;
+}
 
-  @mixin hover {
-    background-color: light-dark(
-      var(--mantine-color-gray-0),
-      var(--mantine-color-dark-6)
-    );
-  }
+.link:hover {
+  /* Hover effect for the links */
+  background-color: #e9ecef; /* Lighter gray background on hover */
+}
 
-  [data-mantine-color-scheme] &[data-active] {
-    background-color: var(--mantine-color-blue-filled);
-    color: var(--mantine-color-white);
-  }
+.link.active {
+  /* Special style for the active link */
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.no-wrap-group {
+  flex-wrap: nowrap !important;
+  width: 100%;
 }
