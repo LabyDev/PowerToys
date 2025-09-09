@@ -1,12 +1,10 @@
 .header {
-  /* Use a consistent background and border for the header */
-  background-color: #f8f9fa; /* Light gray background */
-  border-bottom: 1px solid #dee2e6; /* Subtle bottom border */
-  padding: 1rem 0; /* Vertical padding */
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 1rem 0;
 }
 
 .inner {
-  /* Flexbox is used to align items and distribute space */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -14,13 +12,12 @@
 }
 
 .link {
-  /* Base styles for the navigation links */
   display: block;
   line-height: 1;
   padding: 0.5rem 0.75rem;
   font-weight: 500;
   text-decoration: none;
-  color: #495057; /* Dark gray text */
+  color: #495057;
   border-radius: 4px;
   transition:
     background-color 0.2s,
@@ -29,12 +26,10 @@
 }
 
 .link:hover {
-  /* Hover effect for the links */
   background-color: #e9ecef; /* Lighter gray background on hover */
 }
 
 .link.active {
-  /* Special style for the active link */
   background-color: #e9ecef;
   color: #333;
 }
