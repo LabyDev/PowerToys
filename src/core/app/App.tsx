@@ -1,6 +1,6 @@
 import { NavBar } from "./NavBar";
-import FileRandomiser from "./file-randomiser/fileRandomiser";
-import MainPage from "./mainpage/MainPage";
+import FileRandomiser from "../../file-randomiser/fileRandomiser";
+import MainPage from "../mainpage/MainPage";
 import { Routes, Route, useLocation } from "react-router";
 
 export function App() {
