@@ -2,12 +2,14 @@ import {
   Button,
   Checkbox,
   TextInput,
-  Flex,
   Grid,
   Stack,
   Title,
   Text,
   Box,
+  Group,
+  Divider,
+  Paper,
 } from "@mantine/core";
 
 // You would replace this with actual data from your application's state management
@@ -27,116 +29,138 @@ const mockData = {
 
 const FileRandomiser = () => {
   return (
-    <Box p="md">
-      {/* Top section: Buttons and Checkboxes */}
-      <Flex
-        direction="row"
-        align="center"
-        justify="space-evenly"
-        wrap="wrap"
-        style={{ height: 100 }}
-        mb="lg"
-      >
-        <Button onClick={() => console.log("Add path")}>
-          Click to add path!
-        </Button>
-        <Button onClick={() => console.log("Crawl files")}>
-          Click to crawl files!
-        </Button>
-        <Button onClick={() => console.log("Get file")}>
-          Click to get file!
-        </Button>
+    <Box p="lg">
+      <Paper shadow="sm" p="lg" radius="md" withBorder>
+        {/* Top section: Controls */}
+        <Group justify="space-between" mb="lg">
+          <Group>
+            <Button variant="filled" onClick={() => console.log("Add path")}>
+              Add Path
+            </Button>
+            <Button variant="filled" onClick={() => console.log("Crawl files")}>
+              Crawl Files
+            </Button>
+            <Button variant="filled" onClick={() => console.log("Get file")}>
+              Get Random File
+            </Button>
+          </Group>
+          <Group gap="md">
+            <Checkbox label="Shuffle" defaultChecked />
+            <Checkbox label="Tracking" defaultChecked />
+          </Group>
+        </Group>
 
-        <Flex direction="row" align="center" gap="xs">
-          <Checkbox label="Shuffle" />
-        </Flex>
+        <Divider mb="lg" />
 
-        <Flex direction="row" align="center" gap="xs">
-          <Checkbox label="Tracking" />
-        </Flex>
-
+        {/* Search input without icon */}
         <TextInput
-          placeholder="Search items..."
+          placeholder="Search for files or paths..."
+          mb="lg"
           onChange={(event) =>
             console.log("Search:", event.currentTarget.value)
           }
         />
-      </Flex>
 
-      {/* Bottom section: Lists */}
-      <Grid gutter="md">
-        {/* Paths List */}
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <Stack>
-            <Box bg="gray.2" p="sm">
-              <Title order={5}>Paths</Title>
-            </Box>
-            {mockData.paths.map((item) => (
-              <Box
-                key={item.id}
-                p="xs"
-                style={{ borderBottom: "1px solid #eee" }}
-              >
-                <Text fw={700}>{item.name}</Text>
-                <Text size="sm" c="dimmed">
-                  {item.path}
-                </Text>
-                {/* Context menu for delete is more complex in Mantine, but this shows the basic structure. */}
-                <Button
-                  variant="subtle"
-                  size="xs"
-                  color="red"
-                  onClick={() => console.log("Delete path", item.id)}
-                >
-                  Delete
-                </Button>
-              </Box>
-            ))}
-          </Stack>
-        </Grid.Col>
+        {/* Bottom section: Lists in a Grid */}
+        <Grid gutter="xl">
+          {/* Paths List */}
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+            <Stack>
+              <Title order={4}>Paths</Title>
+              <Divider />
+              <Stack gap="xs">
+                {mockData.paths.map((item) => (
+                  <Box
+                    key={item.id}
+                    py="xs"
+                    px="sm"
+                    style={{
+                      border: "1px solid var(--mantine-color-gray-3)",
+                      borderRadius: "8px",
+                      backgroundColor: "var(--mantine-color-gray-0)",
+                    }}
+                  >
+                    <Group justify="space-between" align="center">
+                      <Stack gap={2}>
+                        <Text fw={700}>{item.name}</Text>
+                        <Text size="sm" c="dimmed">
+                          {item.path}
+                        </Text>
+                      </Stack>
+                      <Button
+                        variant="subtle"
+                        size="xs"
+                        color="red"
+                        onClick={() => console.log("Delete path", item.id)}
+                      >
+                        Delete
+                      </Button>
+                    </Group>
+                  </Box>
+                ))}
+              </Stack>
+            </Stack>
+          </Grid.Col>
 
-        {/* Files List */}
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <Stack>
-            <Box bg="gray.2" p="sm">
-              <Title order={5}>Files</Title>
-            </Box>
-            {mockData.files.map((item) => (
-              <Box
-                key={item.id}
-                p="xs"
-                style={{ borderBottom: "1px solid #eee" }}
-              >
-                <Text>{item.name}</Text>
-                <Text size="sm" c="dimmed">
-                  {item.path}
-                </Text>
-              </Box>
-            ))}
-          </Stack>
-        </Grid.Col>
+          {/* Files List */}
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+            <Stack>
+              <Title order={4}>Files</Title>
+              <Divider />
+              <Stack gap="xs">
+                {mockData.files.map((item) => (
+                  <Box
+                    key={item.id}
+                    py="xs"
+                    px="sm"
+                    style={{
+                      border: "1px solid var(--mantine-color-gray-3)",
+                      borderRadius: "8px",
+                      backgroundColor: "var(--mantine-color-gray-0)",
+                    }}
+                  >
+                    <Stack gap={2}>
+                      <Text fw={500}>{item.name}</Text>
+                      <Text size="sm" c="dimmed">
+                        {item.path}
+                      </Text>
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </Stack>
+          </Grid.Col>
 
-        {/* History List */}
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <Stack>
-            <Box bg="gray.2" p="sm">
-              <Title order={5}>History</Title>
-            </Box>
-            {mockData.history.map((item) => (
-              <Box
-                key={item.id}
-                p="xs"
-                style={{ borderBottom: "1px solid #eee" }}
-              >
-                <Text>{item.name}</Text>
-                <Text size="sm" c="dimmed">
-                  {item.path}
-                </Text>
-              </Box>
-            ))}
-          </Stack>
-        </Grid.Col>
-      </Grid>
+          {/* History List */}
+          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+            <Stack>
+              <Title order={4}>History</Title>
+              <Divider />
+              <Stack gap="xs">
+                {mockData.history.map((item) => (
+                  <Box
+                    key={item.id}
+                    py="xs"
+                    px="sm"
+                    style={{
+                      border: "1px solid var(--mantine-color-gray-3)",
+                      borderRadius: "8px",
+                      backgroundColor: "var(--mantine-color-gray-0)",
+                    }}
+                  >
+                    <Stack gap={2}>
+                      <Text fw={500}>{item.name}</Text>
+                      <Text size="sm" c="dimmed">
+                        {item.path}
+                      </Text>
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </Stack>
+          </Grid.Col>
+        </Grid>
+      </Paper>
     </Box>
   );
 };
