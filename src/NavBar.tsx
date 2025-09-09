@@ -1,39 +1,35 @@
-import { useState } from "react";
 import { Burger, Container, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useNavigate, Link } from "react-router-dom";
+import { NavLink } from "@mantine/core";
 import classes from "./NavBar.module.css";
-
-const links = [
-  { link: "/about", label: "Features" },
-  { link: "/pricing", label: "Pricing" },
-  { link: "/learn", label: "Learn" },
-  { link: "/community", label: "Community" },
-];
 
 export function NavBar() {
   const [opened, { toggle }] = useDisclosure(false);
-  const [active, setActive] = useState(links[0].link);
+  const navigate = useNavigate();
 
-  const items = links.map((link) => (
-    <a
-      key={link.label}
-      href={link.link}
-      className={classes.link}
-      data-active={active === link.link || undefined}
-      onClick={(event) => {
-        event.preventDefault();
-        setActive(link.link);
-      }}
-    >
-      {link.label}
-    </a>
-  ));
+  const handleGoBack = () => {
+    navigate(-1);
+  };
 
   return (
     <header className={classes.header}>
       <Container size="md" className={classes.inner}>
         <Group gap={5} visibleFrom="xs">
-          {items}
+          {/* Back Button */}
+          <div className={classes.link}>
+            <NavLink label="Go Back" onClick={handleGoBack} />
+          </div>
+
+          {/* Home NavLink */}
+          <div className={classes.link}>
+            <NavLink
+              className={classes.link}
+              component={Link}
+              to="/"
+              label="Home"
+            />
+          </div>
         </Group>
 
         <Burger opened={opened} onClick={toggle} hiddenFrom="xs" size="sm" />
