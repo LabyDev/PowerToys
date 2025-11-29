@@ -11,30 +11,34 @@ import {
   Divider,
   Paper,
 } from "@mantine/core";
-
-// You would replace this with actual data from your application's state management
-const mockData = {
-  paths: [
-    { id: 1, name: "Documents", path: "/home/user/documents" },
-    { id: 2, name: "Pictures", path: "/home/user/pictures" },
-  ],
-  files: [
-    { id: 1, name: "image1.png", path: "/home/user/pictures/image1.png" },
-    { id: 2, name: "report.pdf", path: "/home/user/documents/report.pdf" },
-  ],
-  history: [
-    { id: 1, name: "old_file.txt", path: "/home/user/documents/old_file.txt" },
-  ],
-};
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { AppStateData } from "../types/filerandomiser";
 
 const FileRandomiser = () => {
+  const [data, setData] = useState<AppStateData>({
+    paths: [],
+    files: [],
+    history: [],
+  });
+
+  // Fetch data on mount
+  useEffect(() => {
+    invoke<AppStateData>("get_initial_app_data")
+      .then((response) => setData(response))
+      .catch((err) => console.error("Failed to fetch data:", err));
+  }, []);
+
   return (
     <Box p="lg">
       <Paper shadow="sm" p="lg" radius="md" withBorder>
         {/* Top section: Controls */}
         <Group justify="space-between" mb="lg">
           <Group>
-            <Button variant="filled" onClick={() => console.log("Add path")}>
+            <Button
+              variant="filled"
+              onClick={() => invoke("my_custom_command")}
+            >
               Add Path
             </Button>
             <Button variant="filled" onClick={() => console.log("Crawl files")}>
@@ -69,7 +73,7 @@ const FileRandomiser = () => {
               <Title order={4}>Paths</Title>
               <Divider />
               <Stack gap="xs">
-                {mockData.paths.map((item) => (
+                {data.paths.map((item) => (
                   <Box
                     key={item.id}
                     py="xs"
@@ -108,7 +112,7 @@ const FileRandomiser = () => {
               <Title order={4}>Files</Title>
               <Divider />
               <Stack gap="xs">
-                {mockData.files.map((item) => (
+                {data.files.map((item) => (
                   <Box
                     key={item.id}
                     py="xs"
@@ -137,7 +141,7 @@ const FileRandomiser = () => {
               <Title order={4}>History</Title>
               <Divider />
               <Stack gap="xs">
-                {mockData.history.map((item) => (
+                {data.history.map((item) => (
                   <Box
                     key={item.id}
                     py="xs"
