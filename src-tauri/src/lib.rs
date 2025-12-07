@@ -1,11 +1,20 @@
-mod models;
+use std::sync::Mutex;
+mod context;
 mod filerandomisercommands;
+mod models;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![filerandomisercommands::get_initial_app_data])
+        .manage(context::AppState {
+            enable_context_menu: Mutex::new(false),
+        })
+        .invoke_handler(tauri::generate_handler![
+            filerandomisercommands::get_initial_app_data,
+            context::get_app_settings,
+            context::toggle_context_menu_item
+        ])
         .plugin(tauri_plugin_opener::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

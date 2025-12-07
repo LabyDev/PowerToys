@@ -2,6 +2,7 @@ import { NavBar } from "./NavBar";
 import FileRandomiser from "../../file-randomiser/fileRandomiser";
 import MainPage from "../mainpage/MainPage";
 import { Routes, Route, useLocation } from "react-router";
+import Settings from "../settings/settings";
 
 export function App() {
   const location = useLocation();
@@ -16,6 +17,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/FileRandomiser" element={<FileRandomiser />} />
+        <Route path="/Settings" element={<Settings />} />
       </Routes>
     </>
   );

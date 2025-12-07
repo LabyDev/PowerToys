@@ -37,7 +37,7 @@ function App() {
         mt="xl"
         variant="subtle"
         component={NavLink}
-        to="/settings"
+        to="/Settings"
         leftSection={<GearSixIcon />}
         style={{ alignSelf: "center" }}
       >
