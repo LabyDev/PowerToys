@@ -1,7 +1,12 @@
-use std::ffi::OsStr;
+use std::ffi::c_void;
+use std::mem::{size_of, zeroed};
 use std::os::windows::ffi::OsStrExt;
 use std::sync::Mutex;
 use tauri::{Manager, State};
+use windows::Win32::Foundation::*;
+use windows::Win32::Security::*;
+use windows::Win32::System::Threading::*;
+use windows::Win32::UI::Shell::*;
 
 #[derive(Default)]
 pub struct AppState {
@@ -31,8 +36,7 @@ mod windows_shell {
     use windows::core::PCWSTR;
     use windows::Win32::Foundation::GetLastError;
     use windows::Win32::System::Registry::{
-        RegCreateKeyExW, RegDeleteTreeW, RegOpenKeyExW, RegSetValueExW, HKEY, HKEY_CURRENT_USER,
-        KEY_SET_VALUE, KEY_WRITE, REG_CREATE_KEY_DISPOSITION, REG_OPEN_CREATE_OPTIONS, REG_SZ,
+        HKEY, HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE, KEY_WRITE, REG_CREATE_KEY_DISPOSITION, REG_OPEN_CREATE_OPTIONS, REG_SZ, RegCloseKey, RegCreateKeyExW, RegDeleteTreeW, RegOpenKeyExW, RegSetValueExW
     };
 
     const KEY_NAME: &str = "FileRandomiser";
@@ -124,7 +128,7 @@ mod windows_shell {
         let res = unsafe {
             RegSetValueExW(
                 key,
-                 PCWSTR::null(), // default value
+                PCWSTR::null(), // default value
                 Some(0),
                 REG_SZ,
                 Some(std::slice::from_raw_parts(data_ptr, data_len)),
@@ -159,6 +163,26 @@ mod windows_shell {
             }
         }
     }
+
+    pub fn is_context_menu_registered() -> bool {
+    let full_key_path = format!(r"{}\{}", PARENT_KEY_PATH, KEY_NAME);
+    let mut hkey = HKEY::default();
+    let res = unsafe {
+        RegOpenKeyExW(
+            HKEY_CURRENT_USER,
+            PCWSTR(to_wide(&full_key_path).as_ptr()),
+            Some(0),
+            KEY_READ,
+            &mut hkey,
+        )
+    };
+    if res.is_ok() {
+        unsafe { RegCloseKey(hkey) };
+        true
+    } else {
+        false
+    }
+}
 }
 
 // --- Context Menu Logic for Other Platforms (Placeholder) ---
@@ -175,30 +199,94 @@ mod non_windows_shell {
 
 // --- The Main Tauri Command ---
 #[tauri::command]
-pub fn toggle_context_menu_item(state: State<AppState>, enable: bool) -> Result<(), String> {
-    let mut enabled_lock = state.enable_context_menu.lock().unwrap();
-    *enabled_lock = enable;
-
-    // Use the appropriate module based on the compilation target
+pub fn toggle_context_menu_item() -> Result<(), String> {
     #[cfg(windows)]
     {
-        if enable {
+        if !is_elevated() {
+            return spawn_elevated_toggle();
+        }
+
+        if windows_shell::is_context_menu_registered() {
             windows_shell::register_context_menu_item()?;
         } else {
             windows_shell::unregister_context_menu_item()?;
         }
     }
 
-    #[cfg(not(windows))]
-    {
-        if enable {
-            non_windows_shell::register_context_menu_item()?;
-        } else {
-            non_windows_shell::unregister_context_menu_item()?;
-        }
+    // #[cfg(not(windows))]
+    // {
+    //     if enable {
+    //         non_windows_shell::register_context_menu_item()?;
+    //     } else {
+    //         non_windows_shell::unregister_context_menu_item()?;
+    //     }
+    // }
+
+    Ok(())
+}
+
+#[cfg(windows)]
+fn spawn_elevated_toggle() -> Result<(), String> {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+
+    let exe = std::env::current_exe().map_err(|e| format!("exe path: {e}"))?;
+
+    let args = "--toggle-context-menu";
+
+    let exe_w: Vec<u16> = OsStr::new(exe.as_os_str())
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+
+    let args_w: Vec<u16> = OsStr::new(args).encode_wide().chain(Some(0)).collect();
+
+    let verb_w: Vec<u16> = OsStr::new("runas").encode_wide().chain(Some(0)).collect();
+
+    let res = unsafe {
+        use windows::{Win32::UI::WindowsAndMessaging::SW_HIDE, core::PCWSTR};
+
+        ShellExecuteW(
+            None,
+            PCWSTR(verb_w.as_ptr()),
+            PCWSTR(exe_w.as_ptr()),
+            PCWSTR(args_w.as_ptr()),
+            PCWSTR::null(),
+            SW_HIDE,
+        )
+    };
+
+    if res.0 as usize <= 32 {
+        return Err("Elevation cancelled or failed".into());
     }
 
     Ok(())
+}
+
+#[cfg(windows)]
+fn is_elevated() -> bool {
+    unsafe {
+        let mut token: HANDLE = HANDLE::default();
+
+        // Result-based API → use .is_ok()
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token).is_ok() {
+            let mut elevation: TOKEN_ELEVATION = zeroed();
+            let mut size = size_of::<TOKEN_ELEVATION>() as u32;
+
+            if GetTokenInformation(
+                token,
+                TokenElevation,
+                Some(&mut elevation as *mut _ as *mut c_void),
+                size,
+                &mut size,
+            )
+            .is_ok()
+            {
+                return elevation.TokenIsElevated != 0;
+            }
+        }
+    }
+    false
 }
 
 fn main() {

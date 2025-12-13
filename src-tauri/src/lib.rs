@@ -1,5 +1,5 @@
 use std::sync::Mutex;
-mod context;
+pub mod context;
 mod filerandomisercommands;
 mod models;
 
