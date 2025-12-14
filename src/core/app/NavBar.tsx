@@ -15,7 +15,7 @@ export function NavBar() {
 
   return (
     <header className={classes.header}>
-      <Container size="md" className={classes.inner}>
+      <Container fluid className={classes.inner}>
         <Group gap="sm" visibleFrom="xs" className={classes["no-wrap-group"]}>
           {/* Back Button with an icon */}
           <Button

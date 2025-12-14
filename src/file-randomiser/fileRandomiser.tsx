@@ -1,19 +1,43 @@
 import {
+  ActionIcon,
+  Box,
   Button,
   Checkbox,
-  TextInput,
-  Grid,
-  Stack,
-  Title,
-  Text,
-  Box,
-  Group,
   Divider,
+  Group,
   Paper,
+  Stack,
+  Text,
+  TextInput,
+  Title,
 } from "@mantine/core";
-import { useState, useEffect } from "react";
+import {
+  FolderPlus,
+  ArrowsClockwise,
+  MagnifyingGlass,
+  Shuffle,
+  Trash,
+} from "@phosphor-icons/react";
+import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Virtuoso } from "react-virtuoso";
 import { AppStateData } from "../types/filerandomiser";
+
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <Paper withBorder radius="md" p="sm" style={{ height: "100%" }}>
+    <Stack gap="xs" h="100%">
+      <Title order={5}>{title}</Title>
+      <Divider />
+      <Box style={{ flex: 1, minHeight: 0 }}>{children}</Box>
+    </Stack>
+  </Paper>
+);
 
 const FileRandomiser = () => {
   const [data, setData] = useState<AppStateData>({
@@ -22,149 +46,114 @@ const FileRandomiser = () => {
     history: [],
   });
 
-  // Fetch data on mount
+  const [query, setQuery] = useState("");
+
   useEffect(() => {
     invoke<AppStateData>("get_initial_app_data")
-      .then((response) => setData(response))
-      .catch((err) => console.error("Failed to fetch data:", err));
+      .then(setData)
+      .catch(console.error);
   }, []);
 
+  const filteredFiles = useMemo(() => {
+    if (!query) return data.files;
+    const q = query.toLowerCase();
+    return data.files.filter((f) => f.name.toLowerCase().includes(q));
+  }, [data.files, query]);
+
   return (
-    <Box p="lg">
-      <Paper shadow="sm" p="lg" radius="md" withBorder>
-        {/* Top section: Controls */}
-        <Group justify="space-between" mb="lg">
-          <Group>
-            <Button
-              variant="filled"
-              onClick={() => invoke("my_custom_command")}
-            >
-              Add Path
-            </Button>
-            <Button variant="filled" onClick={() => console.log("Crawl files")}>
-              Crawl Files
-            </Button>
-            <Button variant="filled" onClick={() => console.log("Get file")}>
-              Get Random File
-            </Button>
-          </Group>
-          <Group gap="md">
-            <Checkbox label="Shuffle" defaultChecked />
-            <Checkbox label="Tracking" defaultChecked />
-          </Group>
-        </Group>
+    <Box p="md" h="88vh">
+      <Stack h="100%" gap="md">
+        {/* Top toolbar */}
+        <Paper withBorder radius="md" p="sm">
+          <Group justify="space-between" wrap="nowrap">
+            <Group>
+              <Button leftSection={<FolderPlus size={16} />}>Add path</Button>
+              <Button
+                variant="light"
+                leftSection={<ArrowsClockwise size={16} />}
+              >
+                Crawl
+              </Button>
+              <Button variant="filled" leftSection={<Shuffle size={16} />}>
+                Random file
+              </Button>
+            </Group>
 
-        <Divider mb="lg" />
+            <Group>
+              <Checkbox label="Shuffle" defaultChecked />
+              <Checkbox label="Tracking" defaultChecked />
+            </Group>
+          </Group>
+        </Paper>
 
-        {/* Search input without icon */}
+        {/* Search */}
         <TextInput
-          placeholder="Search for files or paths..."
-          mb="lg"
-          onChange={(event) =>
-            console.log("Search:", event.currentTarget.value)
-          }
+          placeholder="Search files…"
+          leftSection={<MagnifyingGlass size={16} />}
+          value={query}
+          onChange={(e) => setQuery(e.currentTarget.value)}
         />
 
-        {/* Bottom section: Lists in a Grid */}
-        <Grid gutter="xl">
-          {/* Paths List */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-            <Stack>
-              <Title order={4}>Paths</Title>
-              <Divider />
-              <Stack gap="xs">
-                {data.paths.map((item) => (
-                  <Box
-                    key={item.id}
-                    py="xs"
-                    px="sm"
-                    style={{
-                      border: "1px solid var(--mantine-color-gray-3)",
-                      borderRadius: "8px",
-                      backgroundColor: "var(--mantine-color-gray-0)",
-                    }}
-                  >
-                    <Group justify="space-between" align="center">
-                      <Stack gap={2}>
-                        <Text fw={700}>{item.name}</Text>
-                        <Text size="sm" c="dimmed">
-                          {item.path}
-                        </Text>
-                      </Stack>
-                      <Button
-                        variant="subtle"
-                        size="xs"
-                        color="red"
-                        onClick={() => console.log("Delete path", item.id)}
-                      >
-                        Delete
-                      </Button>
-                    </Group>
-                  </Box>
-                ))}
-              </Stack>
-            </Stack>
-          </Grid.Col>
+        {/* Main content */}
+        <Group align="stretch" grow style={{ flex: 1, minHeight: 0 }}>
+          {/* Paths */}
+          <Section title={`Paths (${data.paths.length})`}>
+            <Virtuoso
+              data={data.paths}
+              itemContent={(_, item) => (
+                <Group key={item.id} justify="space-between" px="sm" py={6}>
+                  <Stack gap={0}>
+                    <Text size="sm" fw={600} lineClamp={1}>
+                      {item.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" lineClamp={1}>
+                      {item.path}
+                    </Text>
+                  </Stack>
+                  <ActionIcon color="red" variant="subtle">
+                    <Trash size={16} />
+                  </ActionIcon>
+                </Group>
+              )}
+            />
+          </Section>
 
-          {/* Files List */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-            <Stack>
-              <Title order={4}>Files</Title>
-              <Divider />
-              <Stack gap="xs">
-                {data.files.map((item) => (
-                  <Box
-                    key={item.id}
-                    py="xs"
-                    px="sm"
-                    style={{
-                      border: "1px solid var(--mantine-color-gray-3)",
-                      borderRadius: "8px",
-                      backgroundColor: "var(--mantine-color-gray-0)",
-                    }}
-                  >
-                    <Stack gap={2}>
-                      <Text fw={500}>{item.name}</Text>
-                      <Text size="sm" c="dimmed">
-                        {item.path}
-                      </Text>
-                    </Stack>
-                  </Box>
-                ))}
-              </Stack>
-            </Stack>
-          </Grid.Col>
+          {/* Files */}
+          <Section title={`Files (${filteredFiles.length})`}>
+            <Virtuoso
+              style={{ height: "100%" }}
+              data={filteredFiles}
+              itemContent={(_, item) => (
+                <Box px="sm" py={6}>
+                  <Text size="sm" lineClamp={1}>
+                    {item.name}
+                  </Text>
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {item.path}
+                  </Text>
+                </Box>
+              )}
+            />
+          </Section>
 
-          {/* History List */}
-          <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-            <Stack>
-              <Title order={4}>History</Title>
-              <Divider />
-              <Stack gap="xs">
-                {data.history.map((item) => (
-                  <Box
-                    key={item.id}
-                    py="xs"
-                    px="sm"
-                    style={{
-                      border: "1px solid var(--mantine-color-gray-3)",
-                      borderRadius: "8px",
-                      backgroundColor: "var(--mantine-color-gray-0)",
-                    }}
-                  >
-                    <Stack gap={2}>
-                      <Text fw={500}>{item.name}</Text>
-                      <Text size="sm" c="dimmed">
-                        {item.path}
-                      </Text>
-                    </Stack>
-                  </Box>
-                ))}
-              </Stack>
-            </Stack>
-          </Grid.Col>
-        </Grid>
-      </Paper>
+          {/* History */}
+          <Section title={`History (${data.history.length})`}>
+            <Virtuoso
+              data={data.history}
+              itemContent={(_, item) => (
+                <Box px="sm" py={6}>
+                  <Text size="sm" lineClamp={1}>
+                    {item.name}
+                  </Text>
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {item.path}
+                  </Text>
+                </Box>
+              )}
+            />
+          </Section>
+        </Group>
+      </Stack>
     </Box>
   );
 };
