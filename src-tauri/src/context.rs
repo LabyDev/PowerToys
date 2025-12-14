@@ -23,7 +23,8 @@ fn open_random_file_logic() {
 pub fn get_app_settings(
     state: State<AppState>,
 ) -> Result<std::collections::HashMap<&'static str, bool>, String> {
-    let enabled = *state.enable_context_menu.lock().unwrap();
+    let mut enabled = *state.enable_context_menu.lock().unwrap();
+    enabled = windows_shell::is_context_menu_registered();
     let mut settings = std::collections::HashMap::new();
     settings.insert("enableContextMenu", enabled);
     Ok(settings)
@@ -36,7 +37,9 @@ mod windows_shell {
     use windows::core::PCWSTR;
     use windows::Win32::Foundation::GetLastError;
     use windows::Win32::System::Registry::{
-        HKEY, HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE, KEY_WRITE, REG_CREATE_KEY_DISPOSITION, REG_OPEN_CREATE_OPTIONS, REG_SZ, RegCloseKey, RegCreateKeyExW, RegDeleteTreeW, RegOpenKeyExW, RegSetValueExW
+        RegCloseKey, RegCreateKeyExW, RegDeleteTreeW, RegOpenKeyExW, RegSetValueExW, HKEY,
+        HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE, KEY_WRITE, REG_CREATE_KEY_DISPOSITION,
+        REG_OPEN_CREATE_OPTIONS, REG_SZ,
     };
 
     const KEY_NAME: &str = "FileRandomiser";
@@ -165,24 +168,24 @@ mod windows_shell {
     }
 
     pub fn is_context_menu_registered() -> bool {
-    let full_key_path = format!(r"{}\{}", PARENT_KEY_PATH, KEY_NAME);
-    let mut hkey = HKEY::default();
-    let res = unsafe {
-        RegOpenKeyExW(
-            HKEY_CURRENT_USER,
-            PCWSTR(to_wide(&full_key_path).as_ptr()),
-            Some(0),
-            KEY_READ,
-            &mut hkey,
-        )
-    };
-    if res.is_ok() {
-        unsafe { RegCloseKey(hkey) };
-        true
-    } else {
-        false
+        let full_key_path = format!(r"{}\{}", PARENT_KEY_PATH, KEY_NAME);
+        let mut hkey = HKEY::default();
+        let res = unsafe {
+            RegOpenKeyExW(
+                HKEY_CURRENT_USER,
+                PCWSTR(to_wide(&full_key_path).as_ptr()),
+                Some(0),
+                KEY_READ,
+                &mut hkey,
+            )
+        };
+        if res.is_ok() {
+            unsafe { RegCloseKey(hkey) };
+            true
+        } else {
+            false
+        }
     }
-}
 }
 
 // --- Context Menu Logic for Other Platforms (Placeholder) ---
@@ -205,8 +208,8 @@ pub fn toggle_context_menu_item() -> Result<(), String> {
         if !is_elevated() {
             return spawn_elevated_toggle();
         }
-
-        if windows_shell::is_context_menu_registered() {
+        let registered = windows_shell::is_context_menu_registered();
+        if !registered {
             windows_shell::register_context_menu_item()?;
         } else {
             windows_shell::unregister_context_menu_item()?;
@@ -244,7 +247,7 @@ fn spawn_elevated_toggle() -> Result<(), String> {
     let verb_w: Vec<u16> = OsStr::new("runas").encode_wide().chain(Some(0)).collect();
 
     let res = unsafe {
-        use windows::{Win32::UI::WindowsAndMessaging::SW_HIDE, core::PCWSTR};
+        use windows::{core::PCWSTR, Win32::UI::WindowsAndMessaging::SW_HIDE};
 
         ShellExecuteW(
             None,
