@@ -12,20 +12,17 @@ import {
   Title,
 } from "@mantine/core";
 import {
-  FolderPlus,
-  ArrowsClockwise,
-  MagnifyingGlass,
-  Shuffle,
-  Trash,
+  FolderPlusIcon,
+  ArrowsClockwiseIcon,
+  MagnifyingGlassIcon,
+  ShuffleIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Virtuoso } from "react-virtuoso";
 import { AppStateData } from "../types/filerandomiser";
-
-/* -------------------------------------------------------------------------- */
-/*                                   Helpers                                  */
-/* -------------------------------------------------------------------------- */
+import "./fileRandomiser.css";
 
 const Section = ({
   title,
@@ -43,10 +40,6 @@ const Section = ({
   </Paper>
 );
 
-/* -------------------------------------------------------------------------- */
-/*                              FileRandomiser                                */
-/* -------------------------------------------------------------------------- */
-
 const FileRandomiser = () => {
   const [data, setData] = useState<AppStateData>({
     paths: [],
@@ -58,20 +51,14 @@ const FileRandomiser = () => {
   const [shuffle, setShuffle] = useState(true);
   const [tracking, setTracking] = useState(true);
 
-  /* ------------------------------- Lifecycle ------------------------------- */
-
   useEffect(() => {
     refreshData();
   }, []);
-
-  /* -------------------------------- Helpers -------------------------------- */
 
   const refreshData = async () => {
     const updated = await invoke<AppStateData>("get_app_state");
     setData(updated);
   };
-
-  /* -------------------------------- Actions -------------------------------- */
 
   const handleAddPath = async () => {
     await invoke("add_path_via_dialog");
@@ -92,15 +79,11 @@ const FileRandomiser = () => {
     setData(updated);
   };
 
-  /* --------------------------------- Derived -------------------------------- */
-
   const filteredFiles = useMemo(() => {
     if (!query) return data.files;
     const q = query.toLowerCase();
     return data.files.filter((f) => f.name.toLowerCase().includes(q));
   }, [data.files, query]);
-
-  /* ---------------------------------- Render -------------------------------- */
 
   return (
     <Box p="md" h="88vh">
@@ -110,7 +93,7 @@ const FileRandomiser = () => {
           <Group justify="space-between" wrap="nowrap">
             <Group>
               <Button
-                leftSection={<FolderPlus size={16} />}
+                leftSection={<FolderPlusIcon size={16} />}
                 onClick={handleAddPath}
               >
                 Add path
@@ -118,7 +101,7 @@ const FileRandomiser = () => {
 
               <Button
                 variant="light"
-                leftSection={<ArrowsClockwise size={16} />}
+                leftSection={<ArrowsClockwiseIcon size={16} />}
                 onClick={handleCrawl}
               >
                 Crawl
@@ -126,7 +109,7 @@ const FileRandomiser = () => {
 
               <Button
                 variant="filled"
-                leftSection={<Shuffle size={16} />}
+                leftSection={<ShuffleIcon size={16} />}
                 onClick={handleRandomFile}
               >
                 Random file
@@ -151,7 +134,7 @@ const FileRandomiser = () => {
         {/* Search */}
         <TextInput
           placeholder="Search files…"
-          leftSection={<MagnifyingGlass size={16} />}
+          leftSection={<MagnifyingGlassIcon size={16} />}
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
         />
@@ -163,8 +146,14 @@ const FileRandomiser = () => {
             <Virtuoso
               data={data.paths}
               itemContent={(_, item) => (
-                <Group key={item.id} justify="space-between" px="sm" py={6}>
-                  <Stack gap={0}>
+                <Group
+                  key={item.id}
+                  px="sm"
+                  py={6}
+                  style={{ alignItems: "center", gap: 8 }} // remove relative
+                  className="path-item"
+                >
+                  <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
                     <Text size="sm" fw={600} lineClamp={1}>
                       {item.name}
                     </Text>
@@ -180,8 +169,9 @@ const FileRandomiser = () => {
                       await invoke("remove_path", { id: item.id });
                       await refreshData();
                     }}
+                    className="trash-icon"
                   >
-                    <Trash size={16} />
+                    <TrashIcon size={16} />
                   </ActionIcon>
                 </Group>
               )}
