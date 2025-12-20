@@ -1,4 +1,14 @@
 import React, { ErrorInfo, ReactNode } from "react";
+import {
+  Button,
+  Card,
+  Text,
+  Stack,
+  Title,
+  CopyButton,
+  Tooltip,
+} from "@mantine/core";
+import { WarningCircleIcon, CopyIcon } from "@phosphor-icons/react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -20,12 +30,10 @@ export class ErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError(error: Error) {
-    // Update state so the next render shows the fallback UI.
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // You can log error details here or send to a dev server
     console.error("Error caught by ErrorBoundary:", error);
     console.error(errorInfo.componentStack);
     this.setState({ error, errorInfo });
@@ -33,15 +41,67 @@ export class ErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
+      const errorDetails = `${this.state.error?.toString()}\n\n${
+        this.state.errorInfo?.componentStack
+      }`;
+
+      const mailtoLink = `mailto:dev@example.com?subject=App%20Error%20Report&body=${encodeURIComponent(
+        errorDetails,
+      )}`;
+
       return (
-        <div style={{ padding: 20, fontFamily: "sans-serif" }}>
-          <h1 style={{ color: "red" }}>Something went wrong.</h1>
-          <details style={{ whiteSpace: "pre-wrap" }}>
-            {this.state.error && this.state.error.toString()}
-            <br />
-            {this.state.errorInfo?.componentStack}
-          </details>
-        </div>
+        <Card shadow="sm" padding="lg" style={{ margin: 20 }}>
+          <Stack gap="md" align="center" style={{ width: "100%" }}>
+            <WarningCircleIcon size={48} color="red" weight="bold" />
+            <Title order={2} style={{ color: "red" }}>
+              Oops! Something went wrong.
+            </Title>
+            <Text style={{ textAlign: "center" }}>
+              The app encountered an unexpected error. You can help us fix it by
+              sending a report.
+            </Text>
+
+            <Button
+              component="a"
+              href={mailtoLink}
+              color="red"
+              variant="outline"
+              target="_blank"
+            >
+              Send Error Report
+            </Button>
+
+            <CopyButton value={errorDetails}>
+              {({ copied, copy }) => (
+                <Tooltip label={copied ? "Copied!" : "Copy error details"}>
+                  <Button
+                    variant="light"
+                    onClick={copy}
+                    leftSection={<CopyIcon />}
+                  >
+                    Copy Error Details
+                  </Button>
+                </Tooltip>
+              )}
+            </CopyButton>
+
+            {/* Show error details in scrollable box */}
+            <pre
+              style={{
+                marginTop: 20,
+                maxHeight: 300,
+                overflow: "auto",
+                width: "100%",
+                backgroundColor: "#f8f8f8",
+                padding: 10,
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+            >
+              {errorDetails}
+            </pre>
+          </Stack>
+        </Card>
       );
     }
 

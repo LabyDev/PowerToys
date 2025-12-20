@@ -9,12 +9,12 @@ import { ErrorBoundary } from "./core/app/ErrorBoundary";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <BrowserRouter>
-        <MantineProvider>
+    <MantineProvider>
+      <ErrorBoundary>
+        <BrowserRouter>
           <App />
-        </MantineProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </MantineProvider>
   </React.StrictMode>,
 );
