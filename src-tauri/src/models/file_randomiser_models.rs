@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
+use tauri_plugin_dialog::FilePath;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")] // Ensures Rust snake_case becomes JS camelCase
 pub struct SavedPath {
     pub id: u64,
     pub name: String,
-    pub path: String,
+    pub path: FilePath,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -24,7 +25,6 @@ pub struct HistoryEntry {
     pub path: String,
 }
 
-// 2. Define the container structure (represents your `mockData` object)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AppStateData {

@@ -23,6 +23,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { Virtuoso } from "react-virtuoso";
 import { AppStateData } from "../types/filerandomiser";
 
+/* -------------------------------------------------------------------------- */
+/*                                   Helpers                                  */
+/* -------------------------------------------------------------------------- */
+
 const Section = ({
   title,
   children,
@@ -39,6 +43,10 @@ const Section = ({
   </Paper>
 );
 
+/* -------------------------------------------------------------------------- */
+/*                              FileRandomiser                                */
+/* -------------------------------------------------------------------------- */
+
 const FileRandomiser = () => {
   const [data, setData] = useState<AppStateData>({
     paths: [],
@@ -47,18 +55,52 @@ const FileRandomiser = () => {
   });
 
   const [query, setQuery] = useState("");
+  const [shuffle, setShuffle] = useState(true);
+  const [tracking, setTracking] = useState(true);
+
+  /* ------------------------------- Lifecycle ------------------------------- */
 
   useEffect(() => {
-    invoke<AppStateData>("get_initial_app_data")
-      .then(setData)
-      .catch(console.error);
+    refreshData();
   }, []);
+
+  /* -------------------------------- Helpers -------------------------------- */
+
+  const refreshData = async () => {
+    const updated = await invoke<AppStateData>("get_app_state");
+    setData(updated);
+  };
+
+  /* -------------------------------- Actions -------------------------------- */
+
+  const handleAddPath = async () => {
+    await invoke("add_path_via_dialog");
+    await refreshData();
+  };
+
+  const handleCrawl = async () => {
+    await invoke("crawl_paths");
+    await refreshData();
+  };
+
+  const handleRandomFile = async () => {
+    const updated = await invoke<AppStateData>("pick_random_file", {
+      shuffle,
+      tracking,
+    });
+
+    setData(updated);
+  };
+
+  /* --------------------------------- Derived -------------------------------- */
 
   const filteredFiles = useMemo(() => {
     if (!query) return data.files;
     const q = query.toLowerCase();
     return data.files.filter((f) => f.name.toLowerCase().includes(q));
   }, [data.files, query]);
+
+  /* ---------------------------------- Render -------------------------------- */
 
   return (
     <Box p="md" h="88vh">
@@ -67,21 +109,41 @@ const FileRandomiser = () => {
         <Paper withBorder radius="md" p="sm">
           <Group justify="space-between" wrap="nowrap">
             <Group>
-              <Button leftSection={<FolderPlus size={16} />}>Add path</Button>
+              <Button
+                leftSection={<FolderPlus size={16} />}
+                onClick={handleAddPath}
+              >
+                Add path
+              </Button>
+
               <Button
                 variant="light"
                 leftSection={<ArrowsClockwise size={16} />}
+                onClick={handleCrawl}
               >
                 Crawl
               </Button>
-              <Button variant="filled" leftSection={<Shuffle size={16} />}>
+
+              <Button
+                variant="filled"
+                leftSection={<Shuffle size={16} />}
+                onClick={handleRandomFile}
+              >
                 Random file
               </Button>
             </Group>
 
             <Group>
-              <Checkbox label="Shuffle" defaultChecked />
-              <Checkbox label="Tracking" defaultChecked />
+              <Checkbox
+                label="Shuffle"
+                checked={shuffle}
+                onChange={(e) => setShuffle(e.currentTarget.checked)}
+              />
+              <Checkbox
+                label="Tracking"
+                checked={tracking}
+                onChange={(e) => setTracking(e.currentTarget.checked)}
+              />
             </Group>
           </Group>
         </Paper>
@@ -110,7 +172,15 @@ const FileRandomiser = () => {
                       {item.path}
                     </Text>
                   </Stack>
-                  <ActionIcon color="red" variant="subtle">
+
+                  <ActionIcon
+                    color="red"
+                    variant="subtle"
+                    onClick={async () => {
+                      await invoke("remove_path", { id: item.id });
+                      await refreshData();
+                    }}
+                  >
                     <Trash size={16} />
                   </ActionIcon>
                 </Group>
