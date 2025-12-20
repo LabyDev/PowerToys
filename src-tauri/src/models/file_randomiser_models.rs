@@ -14,7 +14,7 @@ pub struct SavedPath {
 pub struct FileEntry {
     pub id: u64,
     pub name: String,
-    pub path: String,
+    pub path: FilePath,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -22,7 +22,7 @@ pub struct FileEntry {
 pub struct HistoryEntry {
     pub id: u64,
     pub name: String,
-    pub path: String,
+    pub path: FilePath,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

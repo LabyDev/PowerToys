@@ -150,7 +150,7 @@ const FileRandomiser = () => {
                   key={item.id}
                   px="sm"
                   py={6}
-                  style={{ alignItems: "center", gap: 8 }} // remove relative
+                  style={{ alignItems: "center", gap: 8 }}
                   className="path-item"
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
@@ -166,8 +166,12 @@ const FileRandomiser = () => {
                     color="red"
                     variant="subtle"
                     onClick={async () => {
-                      await invoke("remove_path", { id: item.id });
-                      await refreshData();
+                      const removed = await invoke<boolean>("remove_path", {
+                        id: item.id,
+                      });
+                      if (removed) {
+                        handleCrawl();
+                      }
                     }}
                     className="trash-icon"
                   >

@@ -19,6 +19,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
+            filerandomisercommands::remove_path,
+            filerandomisercommands::crawl_paths,
             context::get_app_settings,
             context::toggle_context_menu_item
         ])
