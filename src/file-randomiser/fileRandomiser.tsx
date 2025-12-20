@@ -60,6 +60,12 @@ const FileRandomiser = () => {
     setData(updated);
   };
 
+  const reversedHistory = useMemo(() => {
+    return [...data.history].sort(
+      (a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime(),
+    );
+  }, [data.history]);
+
   const handleAddPath = async () => {
     await invoke("add_path_via_dialog");
     await handleCrawl();
@@ -202,17 +208,28 @@ const FileRandomiser = () => {
           {/* History */}
           <Section title={`History (${data.history.length})`}>
             <Virtuoso
-              data={data.history}
-              itemContent={(_, item) => (
-                <Box px="sm" py={6}>
-                  <Text size="sm" lineClamp={1}>
-                    {item.name}
-                  </Text>
-                  <Text size="xs" c="dimmed" lineClamp={1}>
-                    {item.path}
-                  </Text>
-                </Box>
-              )}
+              data={reversedHistory}
+              itemContent={(_, item) => {
+                const opened = new Date(item.openedAt);
+                const formattedDate = `${opened.getDate().toString().padStart(2, "0")} ${opened.toLocaleString(
+                  "en",
+                  { month: "short" },
+                )} ${opened.getFullYear()} ${opened.getHours().toString().padStart(2, "0")}:${opened.getMinutes().toString().padStart(2, "0")}:${opened.getSeconds().toString().padStart(2, "0")}`;
+
+                return (
+                  <Box px="sm" py={6}>
+                    <Text size="sm" lineClamp={1}>
+                      {item.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" lineClamp={1}>
+                      {item.path}
+                    </Text>
+                    <Text size="xs" c="dimmed" lineClamp={1} tt="italic">
+                      Opened at: {formattedDate}
+                    </Text>
+                  </Box>
+                );
+              }}
             />
           </Section>
         </Group>

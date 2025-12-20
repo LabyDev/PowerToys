@@ -14,6 +14,7 @@ export interface HistoryEntry {
   id: number;
   name: string;
   path: string;
+  openedAt: Date; // ISO string from Rust DateTime<Utc>
 }
 
 export interface AppStateData {
