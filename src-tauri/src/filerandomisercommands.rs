@@ -1,8 +1,10 @@
-use crate::models::{AppStateData, FileEntry, SavedPath};
+use crate::models::{AppStateData, FileEntry, HistoryEntry, SavedPath};
+use chrono::Utc;
 use std::fs;
 use std::sync::Mutex;
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
+use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn get_app_state(state: State<'_, Mutex<AppStateData>>) -> AppStateData {
@@ -47,7 +49,7 @@ pub fn remove_path(app_data: State<'_, Mutex<AppStateData>>, id: u64) -> bool {
 #[tauri::command]
 pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let mut data = app_data.lock().unwrap();
-    let mut next_id = data.files.len() as u64 + 1;
+    let mut next_id = 1u64;
 
     // Clear existing files before repopulating
     data.files.clear();
@@ -55,31 +57,74 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     // Clone the paths so we don't immutably borrow while mutating
     let paths = data.paths.clone();
 
-    for saved_path in &paths {
-        if let Some(folder_path) = saved_path.path.as_path() {
-            if folder_path.is_dir() {
-                if let Ok(entries) = fs::read_dir(folder_path) {
-                    for entry in entries.flatten() {
-                        let path = entry.path();
-                        if path.is_file() {
-                            let name = path
-                                .file_name()
-                                .map(|s| s.to_string_lossy().to_string())
-                                .unwrap_or_else(|| "unknown".to_string());
+    // Recursive helper function
+    fn add_files_from_dir(dir: &std::path::Path, data: &mut AppStateData, next_id: &mut u64) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    let name = path
+                        .file_name()
+                        .map(|s| s.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "unknown".to_string());
 
-                            data.files.push(FileEntry {
-                                id: next_id,
-                                name,
-                                path: FilePath::Path(path),
-                            });
-
-                            next_id += 1;
-                        }
-                    }
+                    data.files.push(FileEntry {
+                        id: *next_id,
+                        name,
+                        path: FilePath::Path(path),
+                    });
+                    *next_id += 1;
+                } else if path.is_dir() {
+                    // Recursive call for subdirectory
+                    add_files_from_dir(&path, data, next_id);
                 }
             }
         }
     }
 
+    for saved_path in &paths {
+        if let Some(folder_path) = saved_path.path.as_path() {
+            if folder_path.is_dir() {
+                add_files_from_dir(folder_path, &mut data, &mut next_id);
+            }
+        }
+    }
+
     data.files.clone()
+}
+
+#[tauri::command]
+pub fn pick_random_file(
+    app: tauri::AppHandle,
+    app_data: State<'_, Mutex<AppStateData>>,
+) -> Option<FileEntry> {
+    let mut data = app_data.lock().unwrap();
+
+    if data.files.is_empty() {
+        return None;
+    }
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let index = (now % (data.files.len() as u128)) as usize;
+    let file = data.files[index].clone();
+
+    let history_entry = HistoryEntry {
+        id: file.id,
+        name: file.name.clone(),
+        path: file.path.clone(),
+        opened_at: Utc::now(),
+    };
+    data.history.push(history_entry);
+
+    if let FilePath::Path(path) = &file.path {
+        let path_str = path.to_string_lossy(); // Cow<str>
+        if let Err(e) = app.opener().open_path(path_str.to_string(), None::<&str>) {
+            println!("Failed to open file: {}", e);
+        }
+    }
+
+    Some(file)
 }

@@ -62,7 +62,7 @@ const FileRandomiser = () => {
 
   const handleAddPath = async () => {
     await invoke("add_path_via_dialog");
-    await refreshData();
+    await handleCrawl();
   };
 
   const handleCrawl = async () => {
@@ -71,12 +71,11 @@ const FileRandomiser = () => {
   };
 
   const handleRandomFile = async () => {
-    const updated = await invoke<AppStateData>("pick_random_file", {
+    await invoke<AppStateData>("pick_random_file", {
       shuffle,
       tracking,
     });
-
-    setData(updated);
+    await refreshData();
   };
 
   const filteredFiles = useMemo(() => {
@@ -142,7 +141,7 @@ const FileRandomiser = () => {
         {/* Main content */}
         <Group align="stretch" grow style={{ flex: 1, minHeight: 0 }}>
           {/* Paths */}
-          <Section title={`Paths (${data.paths.length})`}>
+          <Section title={`Paths (${data.paths?.length})`}>
             <Virtuoso
               data={data.paths}
               itemContent={(_, item) => (
