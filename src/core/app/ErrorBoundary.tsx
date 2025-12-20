@@ -45,9 +45,7 @@ export class ErrorBoundary extends React.Component<
         this.state.errorInfo?.componentStack
       }`;
 
-      const mailtoLink = `mailto:dev@example.com?subject=App%20Error%20Report&body=${encodeURIComponent(
-        errorDetails,
-      )}`;
+      const githubIssuesLink = "https://github.com/LabyDev/PowerToys/issues";
 
       return (
         <Card shadow="sm" padding="lg" style={{ margin: 20 }}>
@@ -58,17 +56,17 @@ export class ErrorBoundary extends React.Component<
             </Title>
             <Text style={{ textAlign: "center" }}>
               The app encountered an unexpected error. You can help us fix it by
-              sending a report.
+              reporting it on GitHub.
             </Text>
 
             <Button
               component="a"
-              href={mailtoLink}
+              href={githubIssuesLink}
               color="red"
               variant="outline"
               target="_blank"
             >
-              Send Error Report
+              Report on GitHub
             </Button>
 
             <CopyButton value={errorDetails}>
