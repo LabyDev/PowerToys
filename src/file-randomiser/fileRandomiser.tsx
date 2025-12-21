@@ -49,6 +49,7 @@ const FileRandomiser = () => {
   });
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const currentIndexRef = useRef<number | null>(null);
 
   const [query, setQuery] = useState("");
   const [shuffle, setShuffle] = useState(false);
@@ -58,6 +59,11 @@ const FileRandomiser = () => {
   useEffect(() => {
     refreshData();
   }, []);
+
+  // Keep the ref in sync whenever state changes
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
 
   useEffect(() => {
     if (!shuffle && currentIndex !== null) {
@@ -69,25 +75,12 @@ const FileRandomiser = () => {
   }, [currentIndex, shuffle]);
 
   useEffect(() => {
-    if (!tracking) {
-      invoke("stop_tracking");
-      return;
-    }
-
-    invoke("start_tracking");
-
-    return () => {
-      invoke("stop_tracking");
-    };
-  }, [tracking]);
-
-  useEffect(() => {
     if (!tracking) return;
 
     let unlisten: (() => void) | null = null;
 
-    listen("file-closed", async () => {
-      await handlePickFile();
+    listen("file-closed", () => {
+      handlePickFile();
     }).then((fn) => {
       unlisten = fn;
     });
@@ -95,7 +88,7 @@ const FileRandomiser = () => {
     return () => {
       unlisten?.();
     };
-  }, [tracking, shuffle, currentIndex, data.files]);
+  }, [tracking]);
 
   const refreshData = async () => {
     const updated = await invoke<AppStateData>("get_app_state");
@@ -127,13 +120,16 @@ const FileRandomiser = () => {
       index = Math.floor(Math.random() * data.files.length);
     } else {
       index =
-        currentIndex === null ? 0 : (currentIndex + 1) % data.files.length;
+        currentIndexRef.current === null
+          ? 0
+          : (currentIndexRef.current + 1) % data.files.length;
     }
 
     const file = data.files[index];
 
     await invoke("open_file_by_id", { id: file.id });
     setCurrentIndex(index);
+    currentIndexRef.current = index;
     await refreshData();
   }, [data.files, shuffle, currentIndex]);
 

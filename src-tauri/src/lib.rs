@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicBool, Mutex};
+use std::sync::{Mutex};
 pub mod context;
 mod filerandomisercommands;
 mod models;
@@ -18,10 +18,6 @@ pub fn run() {
             history: vec![],
             tracking_enabled: false,
         }))
-        .manage(Mutex::new(models::file_randomiser_models::RuntimeState {
-            running: AtomicBool::new(false),
-            current_child: Mutex::new(None),
-        }))
         .invoke_handler(tauri::generate_handler![
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
@@ -29,8 +25,6 @@ pub fn run() {
             filerandomisercommands::crawl_paths,
             filerandomisercommands::pick_random_file,
             filerandomisercommands::open_file_by_id,
-            filerandomisercommands::start_tracking,
-            filerandomisercommands::stop_tracking,
             context::get_app_settings,
             context::toggle_context_menu_item
         ])

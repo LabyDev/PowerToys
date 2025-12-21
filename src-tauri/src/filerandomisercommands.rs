@@ -1,13 +1,11 @@
-use crate::models::{AppStateData, FileEntry, HistoryEntry, RuntimeState, SavedPath};
+use crate::models::{AppStateData, FileEntry, HistoryEntry, SavedPath};
 use chrono::Utc;
-use std::process::Child;
+use std::fs;
 use std::sync::Mutex;
-use std::{fs, sync::atomic::Ordering};
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
-use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn get_app_state(state: State<'_, Mutex<AppStateData>>) -> AppStateData {
@@ -96,57 +94,84 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     data.files.clone()
 }
 
+#[cfg(target_os = "windows")]
+fn open_and_wait(path: &str) -> std::io::Result<()> {
+    use std::ffi::OsStr;
+    use std::iter::once;
+    use std::os::windows::ffi::OsStrExt;
+    use windows::{
+        core::PCWSTR,
+        Win32::UI::{
+            Shell::{SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW},
+            WindowsAndMessaging::SW_SHOWNORMAL,
+        },
+    };
+
+    let mut info: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
+    let wide_path: Vec<u16> = OsStr::new(path).encode_wide().chain(once(0)).collect();
+
+    info.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+    info.fMask = SEE_MASK_NOCLOSEPROCESS;
+    info.lpFile = PCWSTR(wide_path.as_ptr());
+    info.nShow = SW_SHOWNORMAL.0 as i32;
+
+    unsafe {
+        use windows::Win32::{
+            Foundation::CloseHandle,
+            System::Threading::{WaitForSingleObject, INFINITE},
+            UI::Shell::ShellExecuteExW,
+        };
+
+        ShellExecuteExW(&mut info)?;
+        WaitForSingleObject(info.hProcess, INFINITE);
+        CloseHandle(info.hProcess)?;
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn open_and_wait(path: &str) -> std::io::Result<()> {
+    std::process::Command::new("open")
+        .arg("-W")
+        .arg(path)
+        .status()
+        .map(|_| ())
+}
+
+#[cfg(target_os = "linux")]
+fn open_and_wait(path: &str) -> std::io::Result<()> {
+    std::process::Command::new("gio")
+        .args(["open", "--wait", path])
+        .status()
+        .map(|_| ())
+}
+
 pub fn open_file_tracked(
     app: tauri::AppHandle,
-    runtime: State<'_, Mutex<RuntimeState>>,
-    app_data: State<'_, Mutex<AppStateData>>,
     path: String,
     id: Option<u64>,
     name: Option<String>,
 ) -> Result<(), String> {
-    // Spawn OS-specific command
-    let child: Option<Child> = {
-        #[cfg(target_os = "windows")]
-        {
-            std::process::Command::new("cmd")
-                .args(["/C", "start", "", &path])
-                .spawn()
-                .ok()
-        }
-        #[cfg(target_os = "macos")]
-        {
-            std::process::Command::new("open").arg(&path).spawn().ok()
-        }
-        #[cfg(target_os = "linux")]
-        {
-            std::process::Command::new("xdg-open")
-                .arg(&path)
-                .spawn()
-                .ok()
-        }
-    };
+    let app_clone = app.clone();
 
-    // Store child
-    if let Some(c) = child {
-        let mut runtime_lock = runtime.lock().map_err(|e| e.to_string())?;
-        let mut current_child = runtime_lock
-            .current_child
-            .lock()
-            .map_err(|e| e.to_string())?;
-        current_child.replace(c);
-    }
+    std::thread::spawn(move || {
+        let _ = open_and_wait(&path);
 
-    // Update history
-    if let (Some(id), Some(name)) = (id, name) {
-        let state_handle = app_data;
-        let mut app_state = state_handle.lock().map_err(|e| e.to_string())?;
-        app_state.history.push(HistoryEntry {
-            id,
-            name,
-            path: FilePath::Path(std::path::PathBuf::from(&path)),
-            opened_at: Utc::now(),
-        });
-    }
+        if let (Some(id), Some(name)) = (id, name) {
+            let app_data = app_clone.state::<Mutex<AppStateData>>();
+            let mut state = app_data.lock().unwrap();
+
+            state.history.push(HistoryEntry {
+                id,
+                name,
+                path: FilePath::Path(path.into()),
+                opened_at: Utc::now(),
+            });
+        }
+
+        let _ = app_clone.emit("file-closed", ());
+    });
 
     Ok(())
 }
@@ -154,7 +179,6 @@ pub fn open_file_tracked(
 #[tauri::command]
 pub fn pick_random_file(
     app: tauri::AppHandle,
-    runtime: State<'_, Mutex<RuntimeState>>,
     app_data: State<'_, Mutex<AppStateData>>,
 ) -> Option<FileEntry> {
     let data = app_data.lock().unwrap();
@@ -173,12 +197,9 @@ pub fn pick_random_file(
 
     let _ = open_file_tracked(
         app.clone(),
-        runtime,
-        app_data,
         match &file.path {
             FilePath::Path(p) => p.to_string_lossy().to_string(),
             FilePath::Url(u) => u.clone().to_string(),
-            _ => return None,
         },
         Some(file.id),
         Some(file.name.clone()),
@@ -190,7 +211,6 @@ pub fn pick_random_file(
 #[tauri::command]
 pub fn open_file_by_id(
     app: tauri::AppHandle,
-    runtime: State<'_, Mutex<RuntimeState>>,
     app_data: State<'_, Mutex<AppStateData>>,
     id: u64,
 ) -> Option<FileEntry> {
@@ -200,74 +220,13 @@ pub fn open_file_by_id(
 
     let _ = open_file_tracked(
         app.clone(),
-        runtime,
-        app_data,
         match &file.path {
             FilePath::Path(p) => p.to_string_lossy().to_string(),
             FilePath::Url(u) => u.clone().to_string(),
-            _ => return None,
         },
         Some(file.id),
         Some(file.name.clone()),
     );
 
     Some(file)
-}
-
-#[tauri::command]
-pub fn start_tracking(app: tauri::AppHandle) {
-    let runtime_mutex = app.state::<Mutex<RuntimeState>>();
-
-    // Prevent multiple tracking threads
-    if runtime_mutex
-        .lock()
-        .unwrap()
-        .running
-        .swap(true, Ordering::SeqCst)
-    {
-        return;
-    }
-
-    let app_clone = app.clone();
-
-    std::thread::spawn(move || {
-        let runtime = app_clone.state::<Mutex<RuntimeState>>();
-
-        while runtime.lock().unwrap().running.load(Ordering::SeqCst) {
-            std::thread::sleep(std::time::Duration::from_millis(500));
-
-            // Lock the runtime and current_child
-            let mut runtime_guard = runtime.lock().unwrap();
-            let mut child_guard = runtime_guard.current_child.lock().unwrap();
-
-            // Only check if there's a child
-            if let Some(c) = child_guard.as_mut() {
-                match c.try_wait() {
-                    Ok(Some(_)) => {
-                        // Process exited, clear it
-                        *child_guard = None;
-                        drop(child_guard);
-                        drop(runtime_guard);
-
-                        // Emit after releasing locks
-                        let _ = app_clone.emit("file-closed", ());
-                    }
-                    Ok(None) => {
-                        // Still running, do nothing
-                    }
-                    Err(e) => {
-                        eprintln!("Error checking child: {}", e);
-                        *child_guard = None;
-                    }
-                }
-            }
-        }
-    });
-}
-
-#[tauri::command]
-pub fn stop_tracking(runtime: State<'_, Mutex<RuntimeState>>) {
-    let runtime_data = runtime.lock().unwrap();
-    runtime_data.running.store(false, Ordering::SeqCst);
-    runtime_data.current_child.lock().unwrap().take();
 }

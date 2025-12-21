@@ -32,7 +32,7 @@ pub fn get_app_settings(
 
 // --- Context Menu Logic for Windows (using the 'windows' crate) ---
 #[cfg(windows)]
-mod windows_shell {
+pub mod windows_shell {
     use super::*;
     use windows::core::PCWSTR;
     use windows::Win32::Foundation::GetLastError;
@@ -45,7 +45,7 @@ mod windows_shell {
     const KEY_NAME: &str = "FileRandomiser";
     const PARENT_KEY_PATH: &str = r"Software\Classes\Directory\Background\shell";
 
-    fn to_wide(s: &str) -> Vec<u16> {
+    pub fn to_wide(s: &str) -> Vec<u16> {
         std::ffi::OsStr::new(s)
             .encode_wide()
             .chain(Some(0))
