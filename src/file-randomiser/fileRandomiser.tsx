@@ -18,11 +18,12 @@ import {
   ShuffleIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { AppStateData } from "../types/filerandomiser";
 import "./fileRandomiser.css";
+import { listen } from "@tauri-apps/api/event";
 
 const Section = ({
   title,
@@ -47,16 +48,16 @@ const FileRandomiser = () => {
     history: [],
   });
 
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+
   const [query, setQuery] = useState("");
   const [shuffle, setShuffle] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
-  const [tracking, setTracking] = useState(true);
+  const [tracking, setTracking] = useState(false);
 
   useEffect(() => {
     refreshData();
   }, []);
-
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
 
   useEffect(() => {
     if (!shuffle && currentIndex !== null) {
@@ -66,6 +67,35 @@ const FileRandomiser = () => {
       });
     }
   }, [currentIndex, shuffle]);
+
+  useEffect(() => {
+    if (!tracking) {
+      invoke("stop_tracking");
+      return;
+    }
+
+    invoke("start_tracking");
+
+    return () => {
+      invoke("stop_tracking");
+    };
+  }, [tracking]);
+
+  useEffect(() => {
+    if (!tracking) return;
+
+    let unlisten: (() => void) | null = null;
+
+    listen("file-closed", async () => {
+      await handlePickFile();
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      unlisten?.();
+    };
+  }, [tracking, shuffle, currentIndex, data.files]);
 
   const refreshData = async () => {
     const updated = await invoke<AppStateData>("get_app_state");
@@ -88,7 +118,7 @@ const FileRandomiser = () => {
     await refreshData();
   };
 
-  const handlePickFile = async () => {
+  const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
     let index: number;
@@ -105,7 +135,7 @@ const FileRandomiser = () => {
     await invoke("open_file_by_id", { id: file.id });
     setCurrentIndex(index);
     await refreshData();
-  };
+  }, [data.files, shuffle, currentIndex]);
 
   const filteredFiles = useMemo(() => {
     if (!query) return data.files;
@@ -220,7 +250,9 @@ const FileRandomiser = () => {
                   px="sm"
                   py={6}
                   bg={
-                    !shuffle && data.files[currentIndex!]?.id === item.id
+                    !shuffle &&
+                    currentIndex !== null &&
+                    data.files[currentIndex]?.id === item.id
                       ? "var(--mantine-color-blue-light)"
                       : undefined
                   }
@@ -228,7 +260,9 @@ const FileRandomiser = () => {
                   <Text
                     size="sm"
                     fw={
-                      !shuffle && data.files[currentIndex!]?.id === item.id
+                      !shuffle &&
+                      currentIndex !== null &&
+                      data.files[currentIndex]?.id === item.id
                         ? 600
                         : 400
                     }

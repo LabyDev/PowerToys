@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::{process::Child, sync::{Mutex, atomic::AtomicBool}};
 use tauri_plugin_dialog::FilePath;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -33,4 +34,10 @@ pub struct AppStateData {
     pub paths: Vec<SavedPath>,
     pub files: Vec<FileEntry>,
     pub history: Vec<HistoryEntry>,
+    pub tracking_enabled: bool,
+}
+
+pub struct RuntimeState {
+    pub running: AtomicBool,
+    pub current_child: Mutex<Option<Child>>,
 }

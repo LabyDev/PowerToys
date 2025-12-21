@@ -1,7 +1,10 @@
-use crate::models::{AppStateData, FileEntry, HistoryEntry, SavedPath};
+use crate::models::{AppStateData, FileEntry, HistoryEntry, RuntimeState, SavedPath};
 use chrono::Utc;
-use std::fs;
+use std::process::Child;
 use std::sync::Mutex;
+use std::{fs, sync::atomic::Ordering};
+use tauri::Emitter;
+use tauri::Manager;
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
 use tauri_plugin_opener::OpenerExt;
@@ -93,12 +96,68 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     data.files.clone()
 }
 
+pub fn open_file_tracked(
+    app: tauri::AppHandle,
+    runtime: State<'_, Mutex<RuntimeState>>,
+    app_data: State<'_, Mutex<AppStateData>>,
+    path: String,
+    id: Option<u64>,
+    name: Option<String>,
+) -> Result<(), String> {
+    // Spawn OS-specific command
+    let child: Option<Child> = {
+        #[cfg(target_os = "windows")]
+        {
+            std::process::Command::new("cmd")
+                .args(["/C", "start", "", &path])
+                .spawn()
+                .ok()
+        }
+        #[cfg(target_os = "macos")]
+        {
+            std::process::Command::new("open").arg(&path).spawn().ok()
+        }
+        #[cfg(target_os = "linux")]
+        {
+            std::process::Command::new("xdg-open")
+                .arg(&path)
+                .spawn()
+                .ok()
+        }
+    };
+
+    // Store child
+    if let Some(c) = child {
+        let mut runtime_lock = runtime.lock().map_err(|e| e.to_string())?;
+        let mut current_child = runtime_lock
+            .current_child
+            .lock()
+            .map_err(|e| e.to_string())?;
+        current_child.replace(c);
+    }
+
+    // Update history
+    if let (Some(id), Some(name)) = (id, name) {
+        let state_handle = app_data;
+        let mut app_state = state_handle.lock().map_err(|e| e.to_string())?;
+        app_state.history.push(HistoryEntry {
+            id,
+            name,
+            path: FilePath::Path(std::path::PathBuf::from(&path)),
+            opened_at: Utc::now(),
+        });
+    }
+
+    Ok(())
+}
+
 #[tauri::command]
 pub fn pick_random_file(
     app: tauri::AppHandle,
+    runtime: State<'_, Mutex<RuntimeState>>,
     app_data: State<'_, Mutex<AppStateData>>,
 ) -> Option<FileEntry> {
-    let mut data = app_data.lock().unwrap();
+    let data = app_data.lock().unwrap();
 
     if data.files.is_empty() {
         return None;
@@ -110,21 +169,20 @@ pub fn pick_random_file(
         .as_nanos();
     let index = (now % (data.files.len() as u128)) as usize;
     let file = data.files[index].clone();
+    drop(data); // release lock before calling open_file_tracked
 
-    let history_entry = HistoryEntry {
-        id: file.id,
-        name: file.name.clone(),
-        path: file.path.clone(),
-        opened_at: Utc::now(),
-    };
-    data.history.push(history_entry);
-
-    if let FilePath::Path(path) = &file.path {
-        let path_str = path.to_string_lossy(); // Cow<str>
-        if let Err(e) = app.opener().open_path(path_str.to_string(), None::<&str>) {
-            println!("Failed to open file: {}", e);
-        }
-    }
+    let _ = open_file_tracked(
+        app.clone(),
+        runtime,
+        app_data,
+        match &file.path {
+            FilePath::Path(p) => p.to_string_lossy().to_string(),
+            FilePath::Url(u) => u.clone().to_string(),
+            _ => return None,
+        },
+        Some(file.id),
+        Some(file.name.clone()),
+    );
 
     Some(file)
 }
@@ -132,22 +190,84 @@ pub fn pick_random_file(
 #[tauri::command]
 pub fn open_file_by_id(
     app: tauri::AppHandle,
+    runtime: State<'_, Mutex<RuntimeState>>,
     app_data: State<'_, Mutex<AppStateData>>,
     id: u64,
 ) -> Option<FileEntry> {
-    let mut data = app_data.lock().unwrap();
+    let data = app_data.lock().unwrap();
     let file = data.files.iter().find(|f| f.id == id)?.clone();
+    drop(data);
 
-    data.history.push(HistoryEntry {
-        id: file.id,
-        name: file.name.clone(),
-        path: file.path.clone(),
-        opened_at: Utc::now(),
-    });
-
-    if let FilePath::Path(path) = &file.path {
-        let _ = app.opener().open_path(path.to_string_lossy(), None::<&str>);
-    }
+    let _ = open_file_tracked(
+        app.clone(),
+        runtime,
+        app_data,
+        match &file.path {
+            FilePath::Path(p) => p.to_string_lossy().to_string(),
+            FilePath::Url(u) => u.clone().to_string(),
+            _ => return None,
+        },
+        Some(file.id),
+        Some(file.name.clone()),
+    );
 
     Some(file)
+}
+
+#[tauri::command]
+pub fn start_tracking(app: tauri::AppHandle) {
+    let runtime_mutex = app.state::<Mutex<RuntimeState>>();
+
+    // Prevent multiple tracking threads
+    if runtime_mutex
+        .lock()
+        .unwrap()
+        .running
+        .swap(true, Ordering::SeqCst)
+    {
+        return;
+    }
+
+    let app_clone = app.clone();
+
+    std::thread::spawn(move || {
+        let runtime = app_clone.state::<Mutex<RuntimeState>>();
+
+        while runtime.lock().unwrap().running.load(Ordering::SeqCst) {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+
+            // Lock the runtime and current_child
+            let mut runtime_guard = runtime.lock().unwrap();
+            let mut child_guard = runtime_guard.current_child.lock().unwrap();
+
+            // Only check if there's a child
+            if let Some(c) = child_guard.as_mut() {
+                match c.try_wait() {
+                    Ok(Some(_)) => {
+                        // Process exited, clear it
+                        *child_guard = None;
+                        drop(child_guard);
+                        drop(runtime_guard);
+
+                        // Emit after releasing locks
+                        let _ = app_clone.emit("file-closed", ());
+                    }
+                    Ok(None) => {
+                        // Still running, do nothing
+                    }
+                    Err(e) => {
+                        eprintln!("Error checking child: {}", e);
+                        *child_guard = None;
+                    }
+                }
+            }
+        }
+    });
+}
+
+#[tauri::command]
+pub fn stop_tracking(runtime: State<'_, Mutex<RuntimeState>>) {
+    let runtime_data = runtime.lock().unwrap();
+    runtime_data.running.store(false, Ordering::SeqCst);
+    runtime_data.current_child.lock().unwrap().take();
 }
