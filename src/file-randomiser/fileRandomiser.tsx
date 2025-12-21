@@ -18,9 +18,9 @@ import {
   ShuffleIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Virtuoso } from "react-virtuoso";
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { AppStateData } from "../types/filerandomiser";
 import "./fileRandomiser.css";
 
@@ -48,12 +48,24 @@ const FileRandomiser = () => {
   });
 
   const [query, setQuery] = useState("");
-  const [shuffle, setShuffle] = useState(true);
+  const [shuffle, setShuffle] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [tracking, setTracking] = useState(true);
 
   useEffect(() => {
     refreshData();
   }, []);
+
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+
+  useEffect(() => {
+    if (!shuffle && currentIndex !== null) {
+      virtuosoRef.current?.scrollToIndex({
+        index: currentIndex,
+        align: "center",
+      });
+    }
+  }, [currentIndex, shuffle]);
 
   const refreshData = async () => {
     const updated = await invoke<AppStateData>("get_app_state");
@@ -76,11 +88,22 @@ const FileRandomiser = () => {
     await refreshData();
   };
 
-  const handleRandomFile = async () => {
-    await invoke<AppStateData>("pick_random_file", {
-      shuffle,
-      tracking,
-    });
+  const handlePickFile = async () => {
+    if (!data.files.length) return;
+
+    let index: number;
+
+    if (shuffle) {
+      index = Math.floor(Math.random() * data.files.length);
+    } else {
+      index =
+        currentIndex === null ? 0 : (currentIndex + 1) % data.files.length;
+    }
+
+    const file = data.files[index];
+
+    await invoke("open_file_by_id", { id: file.id });
+    setCurrentIndex(index);
     await refreshData();
   };
 
@@ -115,9 +138,9 @@ const FileRandomiser = () => {
               <Button
                 variant="filled"
                 leftSection={<ShuffleIcon size={16} />}
-                onClick={handleRandomFile}
+                onClick={handlePickFile}
               >
-                Random file
+                {shuffle ? "Random file" : "Next file"}
               </Button>
             </Group>
 
@@ -190,14 +213,29 @@ const FileRandomiser = () => {
           {/* Files */}
           <Section title={`Files (${filteredFiles.length})`}>
             <Virtuoso
-              style={{ height: "100%" }}
               data={filteredFiles}
-              itemContent={(_, item) => (
-                <Box px="sm" py={6}>
-                  <Text size="sm" lineClamp={1}>
+              ref={virtuosoRef}
+              itemContent={(_index, item) => (
+                <Box
+                  px="sm"
+                  py={6}
+                  bg={
+                    !shuffle && data.files[currentIndex!]?.id === item.id
+                      ? "var(--mantine-color-blue-light)"
+                      : undefined
+                  }
+                >
+                  <Text
+                    size="sm"
+                    fw={
+                      !shuffle && data.files[currentIndex!]?.id === item.id
+                        ? 600
+                        : 400
+                    }
+                  >
                     {item.name}
                   </Text>
-                  <Text size="xs" c="dimmed" lineClamp={1}>
+                  <Text size="xs" c="dimmed">
                     {item.path}
                   </Text>
                 </Box>

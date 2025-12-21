@@ -128,3 +128,26 @@ pub fn pick_random_file(
 
     Some(file)
 }
+
+#[tauri::command]
+pub fn open_file_by_id(
+    app: tauri::AppHandle,
+    app_data: State<'_, Mutex<AppStateData>>,
+    id: u64,
+) -> Option<FileEntry> {
+    let mut data = app_data.lock().unwrap();
+    let file = data.files.iter().find(|f| f.id == id)?.clone();
+
+    data.history.push(HistoryEntry {
+        id: file.id,
+        name: file.name.clone(),
+        path: file.path.clone(),
+        opened_at: Utc::now(),
+    });
+
+    if let FilePath::Path(path) = &file.path {
+        let _ = app.opener().open_path(path.to_string_lossy(), None::<&str>);
+    }
+
+    Some(file)
+}

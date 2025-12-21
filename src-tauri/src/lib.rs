@@ -23,6 +23,7 @@ pub fn run() {
             filerandomisercommands::remove_path,
             filerandomisercommands::crawl_paths,
             filerandomisercommands::pick_random_file,
+            filerandomisercommands::open_file_by_id,
             context::get_app_settings,
             context::toggle_context_menu_item
         ])
