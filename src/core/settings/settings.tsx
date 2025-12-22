@@ -7,23 +7,11 @@ import {
   Divider,
   Text,
 } from "@mantine/core";
-import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-
-type AppSettings = {
-  enableContextMenu: boolean;
-};
+import { useAppSettings } from "../hooks/useAppSettings";
 
 const Settings = () => {
-  const [settings, setSettings] = useState<AppSettings>({
-    enableContextMenu: false,
-  });
-
-  useEffect(() => {
-    invoke<AppSettings>("get_app_settings")
-      .then((response) => setSettings(response))
-      .catch((err) => console.error("Failed to fetch settings:", err));
-  }, []);
+  const { settings, setSettings } = useAppSettings();
 
   const handleContextMenuToggle = async (checked: boolean) => {
     setSettings((prev) => ({ ...prev, enableContextMenu: checked }));
@@ -33,6 +21,17 @@ const Settings = () => {
     } catch (err) {
       console.error("Failed to toggle context menu:", err);
       setSettings((prev) => ({ ...prev, enableContextMenu: !checked }));
+    }
+  };
+
+  const handleProcessTrackingToggle = async (checked: boolean) => {
+    setSettings((prev) => ({ ...prev, allowProcessTracking: checked }));
+    try {
+      await invoke("toggle_process_tracking", { enable: checked });
+      console.log(`Process tracking permission toggled: ${checked}`);
+    } catch (err) {
+      console.error("Failed to toggle process tracking permission:", err);
+      setSettings((prev) => ({ ...prev, allowProcessTracking: !checked }));
     }
   };
 
@@ -58,6 +57,25 @@ const Settings = () => {
                 handleContextMenuToggle(event.currentTarget.checked)
               }
               size="md"
+            />
+          </Stack>
+
+          <Stack gap="sm">
+            <Title order={4}>Experimental Features</Title>
+            <Text size="sm" c="dimmed">
+              These features are unstable and may cause high CPU/RAM usage or
+              other issues. Enable at your own risk.
+            </Text>
+
+            <Checkbox
+              checked={settings.allowProcessTracking}
+              label="Allow process tracking"
+              description="Enables the File Randomiser to track opened processes. May spam processes or consume significant memory depending on the program."
+              onChange={(event) =>
+                handleProcessTrackingToggle(event.currentTarget.checked)
+              }
+              size="md"
+              color="red"
             />
           </Stack>
         </Stack>

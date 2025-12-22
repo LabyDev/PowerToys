@@ -3,13 +3,11 @@ import {
   Box,
   Button,
   Checkbox,
-  Divider,
   Group,
   Paper,
   Stack,
   Text,
   TextInput,
-  Title,
 } from "@mantine/core";
 import {
   FolderPlusIcon,
@@ -24,24 +22,12 @@ import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { AppStateData } from "../types/filerandomiser";
 import "./fileRandomiser.css";
 import { listen } from "@tauri-apps/api/event";
-
-const Section = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
-  <Paper withBorder radius="md" p="sm" style={{ height: "100%" }}>
-    <Stack gap="xs" h="100%">
-      <Title order={5}>{title}</Title>
-      <Divider />
-      <Box style={{ flex: 1, minHeight: 0 }}>{children}</Box>
-    </Stack>
-  </Paper>
-);
+import { useAppSettings } from "../core/hooks/useAppSettings";
+import Section from "./section";
 
 const FileRandomiser = () => {
+  const { settings } = useAppSettings();
+
   const [data, setData] = useState<AppStateData>({
     paths: [],
     files: [],
@@ -73,6 +59,12 @@ const FileRandomiser = () => {
       });
     }
   }, [currentIndex, shuffle]);
+
+  useEffect(() => {
+    if (!settings.allowProcessTracking && tracking) {
+      setTracking(false);
+    }
+  }, [settings.allowProcessTracking, tracking]);
 
   useEffect(() => {
     if (!tracking) return;
@@ -176,11 +168,13 @@ const FileRandomiser = () => {
                 checked={shuffle}
                 onChange={(e) => setShuffle(e.currentTarget.checked)}
               />
-              <Checkbox
-                label="Tracking"
-                checked={tracking}
-                onChange={(e) => setTracking(e.currentTarget.checked)}
-              />
+              {settings.allowProcessTracking && (
+                <Checkbox
+                  label="Tracking"
+                  checked={tracking}
+                  onChange={(e) => setTracking(e.currentTarget.checked)}
+                />
+              )}
             </Group>
           </Group>
         </Paper>

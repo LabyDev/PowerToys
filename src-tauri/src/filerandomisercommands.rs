@@ -1,3 +1,4 @@
+use crate::models::AppSettings;
 use crate::models::{AppStateData, FileEntry, HistoryEntry, SavedPath};
 use chrono::Utc;
 use std::fs;
@@ -229,4 +230,11 @@ pub fn open_file_by_id(
     );
 
     Some(file)
+}
+
+#[tauri::command]
+pub fn toggle_process_tracking(state: State<AppSettings>, enable: bool) -> Result<(), String> {
+    let mut setting = state.allow_process_tracking.lock().unwrap();
+    *setting = enable;
+    Ok(())
 }

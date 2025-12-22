@@ -1,33 +1,17 @@
 use std::ffi::c_void;
 use std::mem::{size_of, zeroed};
 use std::os::windows::ffi::OsStrExt;
-use std::sync::Mutex;
-use tauri::{Manager, State};
+use tauri::Manager;
 use windows::Win32::Foundation::*;
 use windows::Win32::Security::*;
 use windows::Win32::System::Threading::*;
 use windows::Win32::UI::Shell::*;
-
-#[derive(Default)]
-pub struct AppState {
-    pub enable_context_menu: Mutex<bool>,
-}
+use crate::models::AppSettings;
+use crate::setting_commands;
 
 // Placeholder for file opening logic
 fn open_random_file_logic() {
     println!("Executing: Open a random file!");
-}
-
-// Command to get the current settings
-#[tauri::command]
-pub fn get_app_settings(
-    state: State<AppState>,
-) -> Result<std::collections::HashMap<&'static str, bool>, String> {
-    let mut enabled = *state.enable_context_menu.lock().unwrap();
-    enabled = windows_shell::is_context_menu_registered();
-    let mut settings = std::collections::HashMap::new();
-    settings.insert("enableContextMenu", enabled);
-    Ok(settings)
 }
 
 // --- Context Menu Logic for Windows (using the 'windows' crate) ---
@@ -305,12 +289,11 @@ fn main() {
     // Normal app launch
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            // ... your existing commands ...
-            get_app_settings,
+            setting_commands::get_app_settings,
             toggle_context_menu_item
         ])
         .setup(|app| {
-            app.manage(AppState::default());
+            app.manage(AppSettings::default());
             Ok(())
         })
         .run(tauri::generate_context!())
