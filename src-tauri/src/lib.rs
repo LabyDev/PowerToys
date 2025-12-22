@@ -11,10 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(models::settings::AppSettings {
-            enable_context_menu: Mutex::new(false),
-            allow_process_tracking: Mutex::new(false),
-        })
+        .manage(models::settings::AppSettings::default())
         .manage(Mutex::new(models::file_randomiser_models::AppStateData {
             paths: vec![],
             files: vec![],
@@ -23,13 +20,14 @@ pub fn run() {
         }))
         .invoke_handler(tauri::generate_handler![
             setting_commands::get_app_settings,
+            setting_commands::set_app_settings,
+            setting_commands::toggle_process_tracking,
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
             filerandomisercommands::remove_path,
             filerandomisercommands::crawl_paths,
             filerandomisercommands::pick_random_file,
             filerandomisercommands::open_file_by_id,
-            filerandomisercommands::toggle_process_tracking,
             context::toggle_context_menu_item,
         ])
         .run(tauri::generate_context!())

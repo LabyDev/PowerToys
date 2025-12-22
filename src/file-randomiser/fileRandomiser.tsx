@@ -61,10 +61,10 @@ const FileRandomiser = () => {
   }, [currentIndex, shuffle]);
 
   useEffect(() => {
-    if (!settings.allowProcessTracking && tracking) {
+    if (!settings.allow_process_tracking && tracking) {
       setTracking(false);
     }
-  }, [settings.allowProcessTracking, tracking]);
+  }, [settings.allow_process_tracking, tracking]);
 
   useEffect(() => {
     if (!tracking) return;
@@ -168,7 +168,7 @@ const FileRandomiser = () => {
                 checked={shuffle}
                 onChange={(e) => setShuffle(e.currentTarget.checked)}
               />
-              {settings.allowProcessTracking && (
+              {settings.allow_process_tracking && (
                 <Checkbox
                   label="Tracking"
                   checked={tracking}

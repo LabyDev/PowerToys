@@ -1,8 +1,7 @@
-use std::sync::Mutex;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default)]
-
+#[derive(Default, Serialize, Deserialize, Clone)]
 pub struct AppSettings {
-    pub enable_context_menu: Mutex<bool>,
-    pub allow_process_tracking: Mutex<bool>,
+    pub enable_context_menu: bool,
+    pub allow_process_tracking: bool,
 }

@@ -1,4 +1,4 @@
 export type AppSettings = {
-  enableContextMenu: boolean;
-  allowProcessTracking: boolean;
+  enable_context_menu: boolean;
+  allow_process_tracking: boolean;
 };

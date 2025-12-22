@@ -9,29 +9,31 @@ import {
 } from "@mantine/core";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
+import { AppSettings } from "../../types/settings";
 
 const Settings = () => {
   const { settings, setSettings } = useAppSettings();
 
   const handleContextMenuToggle = async (checked: boolean) => {
-    setSettings((prev) => ({ ...prev, enableContextMenu: checked }));
     try {
-      await invoke("toggle_context_menu_item", { enable: checked });
-      console.log(`Context menu toggled: ${checked}`);
+      const updated: boolean = await invoke("toggle_context_menu", {
+        enable: checked,
+      });
+      setSettings({ enable_context_menu: updated });
     } catch (err) {
       console.error("Failed to toggle context menu:", err);
-      setSettings((prev) => ({ ...prev, enableContextMenu: !checked }));
     }
   };
 
   const handleProcessTrackingToggle = async (checked: boolean) => {
-    setSettings((prev) => ({ ...prev, allowProcessTracking: checked }));
     try {
-      await invoke("toggle_process_tracking", { enable: checked });
-      console.log(`Process tracking permission toggled: ${checked}`);
+      const updatedSettings: AppSettings = await invoke(
+        "toggle_process_tracking",
+        { enable: checked },
+      );
+      setSettings(updatedSettings);
     } catch (err) {
-      console.error("Failed to toggle process tracking permission:", err);
-      setSettings((prev) => ({ ...prev, allowProcessTracking: !checked }));
+      console.error("Failed to toggle process tracking:", err);
     }
   };
 
@@ -50,7 +52,7 @@ const Settings = () => {
             </Text>
 
             <Checkbox
-              checked={settings.enableContextMenu}
+              checked={settings.enable_context_menu}
               label="Enable right-click context menu item (Opens a random file)"
               description="This feature allows you to right-click anywhere and quickly open a random file from your tracked paths."
               onChange={(event) =>
@@ -68,7 +70,7 @@ const Settings = () => {
             </Text>
 
             <Checkbox
-              checked={settings.allowProcessTracking}
+              checked={settings.allow_process_tracking}
               label="Allow process tracking"
               description="Enables the File Randomiser to track opened processes. May spam processes or consume significant memory depending on the program."
               onChange={(event) =>
