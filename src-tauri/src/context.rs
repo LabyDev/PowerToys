@@ -1,3 +1,5 @@
+use crate::models::AppSettings;
+use crate::setting_commands;
 use std::ffi::c_void;
 use std::mem::{size_of, zeroed};
 use std::os::windows::ffi::OsStrExt;
@@ -6,8 +8,6 @@ use windows::Win32::Foundation::*;
 use windows::Win32::Security::*;
 use windows::Win32::System::Threading::*;
 use windows::Win32::UI::Shell::*;
-use crate::models::AppSettings;
-use crate::setting_commands;
 
 // Placeholder for file opening logic
 fn open_random_file_logic() {

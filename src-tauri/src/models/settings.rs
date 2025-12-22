@@ -1,6 +1,5 @@
 use std::sync::Mutex;
 
-
 #[derive(Default)]
 
 pub struct AppSettings {
