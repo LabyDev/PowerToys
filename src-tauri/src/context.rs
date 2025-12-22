@@ -1,18 +1,10 @@
-use crate::models::AppSettings;
-use crate::setting_commands;
 use std::ffi::c_void;
 use std::mem::{size_of, zeroed};
 use std::os::windows::ffi::OsStrExt;
-use tauri::Manager;
 use windows::Win32::Foundation::*;
 use windows::Win32::Security::*;
 use windows::Win32::System::Threading::*;
 use windows::Win32::UI::Shell::*;
-
-// Placeholder for file opening logic
-fn open_random_file_logic() {
-    println!("Executing: Open a random file!");
-}
 
 // --- Context Menu Logic for Windows (using the 'windows' crate) ---
 #[cfg(windows)]
@@ -22,7 +14,7 @@ pub mod windows_shell {
     use windows::Win32::Foundation::GetLastError;
     use windows::Win32::System::Registry::{
         RegCloseKey, RegCreateKeyExW, RegDeleteTreeW, RegOpenKeyExW, RegSetValueExW, HKEY,
-        HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE, KEY_WRITE, REG_CREATE_KEY_DISPOSITION,
+        HKEY_CURRENT_USER, KEY_READ, KEY_WRITE, REG_CREATE_KEY_DISPOSITION,
         REG_OPEN_CREATE_OPTIONS, REG_SZ,
     };
 
@@ -68,7 +60,9 @@ pub mod windows_shell {
         let display_name = "Open Random File (via FileRandomiser)";
         set_reg_value(main_handle, display_name)?;
 
-        unsafe { windows::Win32::System::Registry::RegCloseKey(main_handle) };
+        unsafe {
+            let _ = windows::Win32::System::Registry::RegCloseKey(main_handle);
+        };
 
         // --- 3. Create or open the command subkey ---
         let mut cmd_handle = HKEY::default();
@@ -99,7 +93,9 @@ pub mod windows_shell {
         let command = format!(r#""{}" "%1""#, exe_path.display());
         set_reg_value(cmd_handle, &command)?;
 
-        unsafe { windows::Win32::System::Registry::RegCloseKey(cmd_handle) };
+        unsafe {
+            let _ = windows::Win32::System::Registry::RegCloseKey(cmd_handle);
+        };
 
         println!("Context menu registered successfully.");
         Ok(())
@@ -164,7 +160,9 @@ pub mod windows_shell {
             )
         };
         if res.is_ok() {
-            unsafe { RegCloseKey(hkey) };
+            unsafe {
+                let _ = RegCloseKey(hkey);
+            };
             true
         } else {
             false
@@ -274,28 +272,4 @@ fn is_elevated() -> bool {
         }
     }
     false
-}
-
-fn main() {
-    let args: Vec<String> = std::env::args().collect();
-
-    // Check for the custom context menu argument to execute logic and exit
-    if args.contains(&String::from("--random-file-action")) {
-        println!("App launched from context menu. Opening random file...");
-        open_random_file_logic();
-        return;
-    }
-
-    // Normal app launch
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            setting_commands::get_app_settings,
-            toggle_context_menu_item
-        ])
-        .setup(|app| {
-            app.manage(AppSettings::default());
-            Ok(())
-        })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
 }
