@@ -10,3 +10,18 @@
   visibility: visible;
   opacity: 1;
 }
+
+.path-item .exclude-icon,
+.file-item .exclude-icon {
+  visibility: hidden;
+  transition:
+    visibility 0.2s ease,
+    opacity 0.2s ease;
+  opacity: 0;
+}
+
+.path-item:hover .exclude-icon,
+.file-item:hover .exclude-icon {
+  visibility: visible;
+  opacity: 1;
+}

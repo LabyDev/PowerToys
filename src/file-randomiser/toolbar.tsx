@@ -1,9 +1,10 @@
-import { Button, Checkbox, Group, TextInput } from "@mantine/core";
+import { Button, Checkbox, Group, TextInput, ActionIcon } from "@mantine/core";
 import {
   FolderPlusIcon,
   ArrowsClockwiseIcon,
   ShuffleIcon,
   MagnifyingGlassIcon,
+  XCircleIcon,
 } from "@phosphor-icons/react";
 
 interface ToolbarProps {
@@ -73,6 +74,13 @@ const Toolbar = ({
       mt="sm"
       placeholder="Search paths, files, and history…"
       leftSection={<MagnifyingGlassIcon size={16} />}
+      rightSection={
+        query && (
+          <ActionIcon onClick={() => onQueryChange("")}>
+            <XCircleIcon size={16} />
+          </ActionIcon>
+        )
+      }
       value={query}
       onChange={(e) => onQueryChange(e.currentTarget.value)}
     />

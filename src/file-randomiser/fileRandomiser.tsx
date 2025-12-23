@@ -10,7 +10,7 @@ import Section from "./section";
 import Toolbar from "./toolbar";
 import FiltersPanel from "./filtersPanel";
 import "./fileRandomiser.css";
-import { TrashIcon } from "@phosphor-icons/react";
+import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -187,6 +187,24 @@ const FileRandomiser = () => {
                     </Text>
                   </Stack>
 
+                  {/* Exclude button */}
+                  <ActionIcon
+                    color="orange"
+                    variant="subtle"
+                    className="exclude-icon"
+                    onClick={async () => {
+                      await updateAndRefreshData({
+                        ...data,
+                        excludedFolders: [
+                          ...data.excludedFolders,
+                          { id: crypto.randomUUID(), path: item.path },
+                        ],
+                      });
+                    }}
+                  >
+                    <PlusIcon size={16} />
+                  </ActionIcon>
+
                   <ActionIcon
                     color="red"
                     variant="subtle"
@@ -216,6 +234,8 @@ const FileRandomiser = () => {
                 <Box
                   px="sm"
                   py={6}
+                  className="file-item hoverable"
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
                   bg={
                     !shuffle &&
                     currentIndex !== null &&
@@ -224,10 +244,36 @@ const FileRandomiser = () => {
                       : undefined
                   }
                 >
-                  <Text size="sm">{item.name}</Text>
-                  <Text size="xs" c="dimmed">
-                    {item.path}
-                  </Text>
+                  <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
+                    <Text size="sm" lineClamp={1}>
+                      {item.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" lineClamp={1}>
+                      {item.path}
+                    </Text>
+                  </Stack>
+
+                  {/* Exclude button */}
+                  <ActionIcon
+                    color="orange"
+                    variant="subtle"
+                    className="exclude-icon"
+                    onClick={async () => {
+                      await updateAndRefreshData({
+                        ...data,
+                        excludedFilenames: [
+                          ...data.excludedFilenames,
+                          {
+                            id: crypto.randomUUID(),
+                            pattern: item.name,
+                            isRegex: false,
+                          },
+                        ],
+                      });
+                    }}
+                  >
+                    <PlusIcon size={16} />
+                  </ActionIcon>
                 </Box>
               )}
             />
