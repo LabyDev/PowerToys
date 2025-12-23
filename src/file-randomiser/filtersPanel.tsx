@@ -9,51 +9,86 @@ import {
   Checkbox,
   Divider,
   Collapse,
+  Select,
 } from "@mantine/core";
 import { FunnelIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import { AppStateData } from "../types/filerandomiser";
+import {
+  AppStateData,
+  FilterRule,
+  FilterMatchType,
+  FilterTarget,
+  FilterAction,
+} from "../types/filerandomiser";
 
 interface FiltersPanelProps {
   data: AppStateData;
   updateData: (updated: AppStateData) => Promise<void>;
 }
 
+const RULE_TYPES: { value: FilterMatchType; label: string }[] = [
+  { value: "contains", label: "Contains" },
+  { value: "startsWith", label: "Starts with" },
+  { value: "endsWith", label: "Ends with" },
+  { value: "regex", label: "Regex" },
+];
+
 const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [newFolder, setNewFolder] = useState("");
-  const [newFilename, setNewFilename] = useState("");
-  const [newIsRegex, setNewIsRegex] = useState(false);
 
-  // Add folder helper
-  const addFolder = async () => {
-    if (!newFolder.trim()) return;
-    await updateData({
-      ...data,
-      excludedFolders: [
-        ...data.excludedFolders,
-        { id: crypto.randomUUID(), path: newFolder.trim() },
-      ],
+  const [newRule, setNewRule] = useState<Omit<FilterRule, "id">>({
+    target: "filename",
+    action: "exclude",
+    type: "contains",
+    pattern: "",
+    caseSensitive: false,
+  });
+
+  // Add a new rule
+  const addRule = async () => {
+    if (!newRule.pattern.trim()) return;
+    const rule: FilterRule = { ...newRule, id: crypto.randomUUID() };
+    await updateData({ ...data, filterRules: [...data.filterRules, rule] });
+    setNewRule({
+      target: "filename",
+      action: "exclude",
+      type: "contains",
+      pattern: "",
+      caseSensitive: false,
     });
-    setNewFolder("");
   };
 
-  // Add filename helper
-  const addFilename = async () => {
-    if (!newFilename.trim()) return;
+  // Remove a rule
+  const removeRule = async (id: string) => {
     await updateData({
       ...data,
-      excludedFilenames: [
-        ...data.excludedFilenames,
-        {
-          id: crypto.randomUUID(),
-          pattern: newFilename.trim(),
-          isRegex: newIsRegex,
-        },
-      ],
+      filterRules: data.filterRules.filter((r) => r.id !== id),
     });
-    setNewFilename("");
-    setNewIsRegex(false);
   };
+
+  // Render rules by target/action
+  const renderRules = (target: FilterTarget, action: FilterAction) =>
+    data.filterRules
+      .filter((r) => r.target === target && r.action === action)
+      .map((r) => (
+        <Group key={r.id} justify="space-between" px="xs">
+          <Group gap={6}>
+            <Text size="sm" lineClamp={1}>
+              {r.pattern}
+            </Text>
+            <Text size="xs" c="dimmed">
+              ({r.type}
+              {r.caseSensitive ? ", case-sensitive" : ""})
+            </Text>
+          </Group>
+          <ActionIcon
+            color="red"
+            variant="subtle"
+            onClick={() => removeRule(r.id)}
+          >
+            <TrashIcon size={14} />
+          </ActionIcon>
+        </Group>
+      ));
 
   return (
     <Paper withBorder radius="md" p="sm">
@@ -73,98 +108,93 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
 
       <Collapse in={filtersOpen}>
         <Stack gap="md" mt="sm">
-          {/* Excluded folders */}
+          {/* Add new rule */}
           <Stack gap={6}>
             <Text size="sm" fw={600}>
-              Excluded folders
+              Add Rule
             </Text>
-            <Group gap="xs">
+            <Group gap="xs" align="flex-start">
+              <Select
+                data={RULE_TYPES}
+                value={newRule.type}
+                onChange={(v) =>
+                  setNewRule((r) => ({ ...r, type: v as FilterMatchType }))
+                }
+                style={{ width: 120 }}
+              />
               <TextInput
-                placeholder="e.g. node_modules or src/generated"
-                value={newFolder}
-                onChange={(e) => setNewFolder(e.currentTarget.value)}
-                onKeyDown={(e) => e.key === "Enter" && addFolder()}
+                placeholder="Pattern"
+                value={newRule.pattern}
+                onChange={(e) =>
+                  setNewRule((r) => ({ ...r, pattern: e.currentTarget.value }))
+                }
+                onKeyDown={(e) => e.key === "Enter" && addRule()}
                 style={{ flex: 1 }}
               />
-              <ActionIcon variant="light" onClick={addFolder}>
+              <Checkbox
+                label="Folder"
+                checked={newRule.target === "folder"}
+                onChange={(e) =>
+                  setNewRule((r) => ({
+                    ...r,
+                    target: e.currentTarget.checked ? "folder" : "filename",
+                  }))
+                }
+              />
+              <Checkbox
+                label="Include"
+                checked={newRule.action === "include"}
+                onChange={(e) =>
+                  setNewRule((r) => ({
+                    ...r,
+                    action: e.currentTarget.checked ? "include" : "exclude",
+                  }))
+                }
+              />
+              <Checkbox
+                label="Case-sensitive"
+                checked={newRule.caseSensitive}
+                onChange={(e) =>
+                  setNewRule((r) => ({
+                    ...r,
+                    caseSensitive: e.currentTarget.checked,
+                  }))
+                }
+              />
+              <ActionIcon variant="light" onClick={addRule}>
                 <PlusIcon size={16} />
               </ActionIcon>
             </Group>
-
-            {data.excludedFolders.map((f) => (
-              <Group key={f.id} justify="space-between" px="xs">
-                <Text size="sm" lineClamp={1}>
-                  {f.path}
-                </Text>
-                <ActionIcon
-                  color="red"
-                  variant="subtle"
-                  onClick={async () => {
-                    const updated = data.excludedFolders.filter(
-                      (x) => x.id !== f.id,
-                    );
-                    await updateData({ ...data, excludedFolders: updated });
-                  }}
-                >
-                  <TrashIcon size={14} />
-                </ActionIcon>
-              </Group>
-            ))}
           </Stack>
 
           <Divider />
 
-          {/* Excluded filenames */}
+          {/* Folder Rules */}
           <Stack gap={6}>
             <Text size="sm" fw={600}>
-              Excluded filenames
+              Excluded Folders
             </Text>
-            <Group gap="xs" align="flex-start">
-              <TextInput
-                placeholder={
-                  newIsRegex ? "Regex pattern" : "Filename contains…"
-                }
-                value={newFilename}
-                onChange={(e) => setNewFilename(e.currentTarget.value)}
-                onKeyDown={(e) => e.key === "Enter" && addFilename()}
-                style={{ flex: 1 }}
-              />
-              <Checkbox
-                label="Regex"
-                checked={newIsRegex}
-                onChange={(e) => setNewIsRegex(e.currentTarget.checked)}
-              />
-              <ActionIcon variant="light" onClick={addFilename}>
-                <PlusIcon size={16} />
-              </ActionIcon>
-            </Group>
+            {renderRules("folder", "exclude")}
 
-            {data.excludedFilenames.map((f) => (
-              <Group key={f.id} justify="space-between" px="xs">
-                <Group gap="xs">
-                  <Text size="sm" lineClamp={1}>
-                    {f.pattern}
-                  </Text>
-                  {f.isRegex && (
-                    <Text size="xs" c="dimmed">
-                      (regex)
-                    </Text>
-                  )}
-                </Group>
-                <ActionIcon
-                  color="red"
-                  variant="subtle"
-                  onClick={async () => {
-                    const updated = data.excludedFilenames.filter(
-                      (x) => x.id !== f.id,
-                    );
-                    await updateData({ ...data, excludedFilenames: updated });
-                  }}
-                >
-                  <TrashIcon size={14} />
-                </ActionIcon>
-              </Group>
-            ))}
+            <Text size="sm" fw={600} mt="sm">
+              Included Folders
+            </Text>
+            {renderRules("folder", "include")}
+          </Stack>
+
+          <Divider />
+
+          {/* Filename Rules */}
+          <Stack gap={6}>
+            <Text size="sm" fw={600}>
+              Excluded Filenames
+            </Text>
+            {renderRules("filename", "exclude")}
+
+            <Text size="sm" fw={600} mt="sm">
+              Included Filenames
+            </Text>
+            {renderRules("filename", "include")}
           </Stack>
         </Stack>
       </Collapse>

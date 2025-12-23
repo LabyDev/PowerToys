@@ -22,17 +22,18 @@ export type AppStateData = {
   paths: SavedPath[];
   files: FileEntry[];
   history: HistoryEntry[];
-  excludedFolders: FolderExclusion[];
-  excludedFilenames: FilenameExclusion[];
+  filterRules: FilterRule[];
 };
 
-export type FolderExclusion = {
-  id: string;
-  path: string;
-};
+export type FilterTarget = "filename" | "folder"; // what the rule applies to
+export type FilterAction = "include" | "exclude"; // inclusion or exclusion
+export type FilterMatchType = "contains" | "startsWith" | "endsWith" | "regex"; // match type
 
-export type FilenameExclusion = {
+export type FilterRule = {
   id: string;
-  pattern: string;
-  isRegex: boolean;
+  target: FilterTarget;
+  action: FilterAction;
+  type: FilterMatchType;
+  pattern: string; // string or regex pattern
+  caseSensitive?: boolean; // default false
 };

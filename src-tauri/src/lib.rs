@@ -17,8 +17,7 @@ pub fn run() {
             files: vec![],
             history: vec![],
             tracking_enabled: false,
-            excluded_filenames: vec![],
-            excluded_folders: vec![],
+            filter_rules: vec![],
         }))
         .invoke_handler(tauri::generate_handler![
             setting_commands::get_app_settings,

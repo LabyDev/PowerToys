@@ -1,5 +1,7 @@
-use crate::models::{AppStateData, FileEntry, HistoryEntry, SavedPath};
-use crate::models::{FilenameExclusion, FolderExclusion};
+use crate::models::FilterAction;
+use crate::models::{
+    AppStateData, FileEntry, FilterMatchType, FilterRule, FilterTarget, HistoryEntry, SavedPath,
+};
 use chrono::Utc;
 use std::fs;
 use std::sync::Mutex;
@@ -55,20 +57,60 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let paths = data.paths.clone();
     let mut next_id = 1u64;
 
-    let excluded_folders = data.excluded_folders.clone();
-    let excluded_filenames = data.excluded_filenames.clone();
+    let filter_rules = data.filter_rules.clone();
+
+    fn matches_rule(path: &str, target: FilterTarget, rule: &FilterRule) -> bool {
+        if rule.target != target {
+            return false;
+        }
+
+        let text = if rule.case_sensitive {
+            path.to_string()
+        } else {
+            path.to_lowercase()
+        };
+
+        let pattern = if rule.case_sensitive {
+            rule.pattern.clone()
+        } else {
+            rule.pattern.to_lowercase()
+        };
+
+        match rule.match_type {
+            FilterMatchType::Contains => text.contains(&pattern),
+            FilterMatchType::StartsWith => text.starts_with(&pattern),
+            FilterMatchType::EndsWith => text.ends_with(&pattern),
+            FilterMatchType::Regex => regex::Regex::new(&rule.pattern)
+                .map(|r| r.is_match(path))
+                .unwrap_or(false),
+        }
+    }
+
+    fn should_exclude(path: &std::path::Path, filter_rules: &[FilterRule], is_file: bool) -> bool {
+        let path_str = path.to_string_lossy();
+        let target = if is_file {
+            FilterTarget::Filename
+        } else {
+            FilterTarget::Folder
+        };
+
+        // Apply rules: last matching rule wins
+        let mut result = false; // default: not excluded
+        for rule in filter_rules {
+            if matches_rule(&path_str, target.clone(), rule) {
+                result = matches!(rule.action, FilterAction::Exclude);
+            }
+        }
+        result
+    }
 
     fn add_files_from_dir(
         dir: &std::path::Path,
         data: &mut AppStateData,
         next_id: &mut u64,
-        excluded_folders: &[FolderExclusion],
-        excluded_filenames: &[FilenameExclusion],
+        filter_rules: &[FilterRule],
     ) {
-        if excluded_folders
-            .iter()
-            .any(|f| dir.to_string_lossy().contains(&f.path))
-        {
+        if should_exclude(dir, filter_rules, false) {
             return;
         }
 
@@ -81,25 +123,17 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                         .map(|s| s.to_string_lossy().to_string())
                         .unwrap_or_else(|| "unknown".to_string());
 
-                    let excluded = excluded_filenames.iter().any(|f| {
-                        if f.is_regex {
-                            regex::Regex::new(&f.pattern)
-                                .map(|r| r.is_match(&name))
-                                .unwrap_or(false)
-                        } else {
-                            name.contains(&f.pattern)
-                        }
-                    });
+                    let excluded = should_exclude(&path, filter_rules, true);
 
                     data.files.push(FileEntry {
                         id: *next_id,
                         name,
                         path: FilePath::Path(path),
-                        excluded: excluded,
+                        excluded,
                     });
                     *next_id += 1;
                 } else if path.is_dir() {
-                    add_files_from_dir(&path, data, next_id, excluded_folders, excluded_filenames);
+                    add_files_from_dir(&path, data, next_id, filter_rules);
                 }
             }
         }
@@ -108,13 +142,7 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     for saved_path in &paths {
         if let Some(folder_path) = saved_path.path.as_path() {
             if folder_path.is_dir() {
-                add_files_from_dir(
-                    folder_path,
-                    &mut data,
-                    &mut next_id,
-                    &excluded_folders,
-                    &excluded_filenames,
-                );
+                add_files_from_dir(folder_path, &mut data, &mut next_id, &filter_rules);
             }
         }
     }
@@ -215,12 +243,7 @@ pub fn pick_random_file(
         return None;
     }
 
-    let available_files: Vec<_> = data
-        .files
-        .iter()
-        .filter(|f| !f.excluded)
-        .cloned()
-        .collect();
+    let available_files: Vec<_> = data.files.iter().filter(|f| !f.excluded).cloned().collect();
 
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

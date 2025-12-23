@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tauri_plugin_dialog::FilePath;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")] // Ensures Rust snake_case becomes JS camelCase
+#[serde(rename_all = "camelCase")]
 pub struct SavedPath {
     pub id: u64,
     pub name: String,
@@ -28,18 +28,41 @@ pub struct HistoryEntry {
     pub opened_at: DateTime<Utc>,
 }
 
+/// New unified filter rule
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct FolderExclusion {
+#[serde(rename_all = "camelCase")]
+pub struct FilterRule {
     pub id: String,
-    pub path: String,
+    pub target: FilterTarget,
+    pub action: FilterAction,
+    #[serde(rename = "type")]
+    pub match_type: FilterMatchType,
+    pub pattern: String,
+    #[serde(default)]
+    pub case_sensitive: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum FilterTarget {
+    Filename,
+    Folder,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct FilenameExclusion {
-    pub id: String,
-    pub pattern: String,
-    pub is_regex: bool,
+pub enum FilterAction {
+    Include,
+    Exclude,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum FilterMatchType {
+    Contains,
+    StartsWith,
+    EndsWith,
+    Regex,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -49,6 +72,5 @@ pub struct AppStateData {
     pub files: Vec<FileEntry>,
     pub history: Vec<HistoryEntry>,
     pub tracking_enabled: bool,
-    pub excluded_folders: Vec<FolderExclusion>,
-    pub excluded_filenames: Vec<FilenameExclusion>,
+    pub filter_rules: Vec<FilterRule>,
 }

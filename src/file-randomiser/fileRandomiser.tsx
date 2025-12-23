@@ -19,8 +19,7 @@ const FileRandomiser = () => {
     paths: [],
     files: [],
     history: [],
-    excludedFilenames: [],
-    excludedFolders: [],
+    filterRules: [],
   });
 
   const [query, setQuery] = useState("");
@@ -210,12 +209,17 @@ const FileRandomiser = () => {
                     variant="subtle"
                     className="exclude-icon"
                     onClick={async () => {
+                      const rule = {
+                        id: crypto.randomUUID(),
+                        target: "folder" as const,
+                        action: "exclude" as const,
+                        type: "contains" as const,
+                        pattern: item.name,
+                        caseSensitive: false,
+                      };
                       await updateAndRefreshData({
                         ...data,
-                        excludedFolders: [
-                          ...data.excludedFolders,
-                          { id: crypto.randomUUID(), path: item.path },
-                        ],
+                        filterRules: [...data.filterRules, rule],
                       });
                       handleCrawl();
                     }}
@@ -287,16 +291,17 @@ const FileRandomiser = () => {
                     variant="subtle"
                     className="exclude-icon"
                     onClick={async () => {
+                      const rule = {
+                        id: crypto.randomUUID(),
+                        target: "filename" as const,
+                        action: "exclude" as const,
+                        type: "contains" as const,
+                        pattern: item.name,
+                        caseSensitive: false,
+                      };
                       await updateAndRefreshData({
                         ...data,
-                        excludedFilenames: [
-                          ...data.excludedFilenames,
-                          {
-                            id: crypto.randomUUID(),
-                            pattern: item.name,
-                            isRegex: false,
-                          },
-                        ],
+                        filterRules: [...data.filterRules, rule],
                       });
                       handleCrawl();
                     }}
