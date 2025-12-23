@@ -24,6 +24,37 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
   const [newFilename, setNewFilename] = useState("");
   const [newIsRegex, setNewIsRegex] = useState(false);
 
+  // Add folder helper
+  const addFolder = async () => {
+    if (!newFolder.trim()) return;
+    await updateData({
+      ...data,
+      excludedFolders: [
+        ...data.excludedFolders,
+        { id: crypto.randomUUID(), path: newFolder.trim() },
+      ],
+    });
+    setNewFolder("");
+  };
+
+  // Add filename helper
+  const addFilename = async () => {
+    if (!newFilename.trim()) return;
+    await updateData({
+      ...data,
+      excludedFilenames: [
+        ...data.excludedFilenames,
+        {
+          id: crypto.randomUUID(),
+          pattern: newFilename.trim(),
+          isRegex: newIsRegex,
+        },
+      ],
+    });
+    setNewFilename("");
+    setNewIsRegex(false);
+  };
+
   return (
     <Paper withBorder radius="md" p="sm">
       <Group
@@ -52,22 +83,10 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                 placeholder="e.g. node_modules or src/generated"
                 value={newFolder}
                 onChange={(e) => setNewFolder(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && addFolder()}
                 style={{ flex: 1 }}
               />
-              <ActionIcon
-                variant="light"
-                onClick={async () => {
-                  if (!newFolder.trim()) return;
-                  await updateData({
-                    ...data,
-                    excludedFolders: [
-                      ...data.excludedFolders,
-                      { id: crypto.randomUUID(), path: newFolder.trim() },
-                    ],
-                  });
-                  setNewFolder("");
-                }}
-              >
+              <ActionIcon variant="light" onClick={addFolder}>
                 <PlusIcon size={16} />
               </ActionIcon>
             </Group>
@@ -107,6 +126,7 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                 }
                 value={newFilename}
                 onChange={(e) => setNewFilename(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && addFilename()}
                 style={{ flex: 1 }}
               />
               <Checkbox
@@ -114,25 +134,7 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                 checked={newIsRegex}
                 onChange={(e) => setNewIsRegex(e.currentTarget.checked)}
               />
-              <ActionIcon
-                variant="light"
-                onClick={async () => {
-                  if (!newFilename.trim()) return;
-                  await updateData({
-                    ...data,
-                    excludedFilenames: [
-                      ...data.excludedFilenames,
-                      {
-                        id: crypto.randomUUID(),
-                        pattern: newFilename.trim(),
-                        isRegex: newIsRegex,
-                      },
-                    ],
-                  });
-                  setNewFilename("");
-                  setNewIsRegex(false);
-                }}
-              >
+              <ActionIcon variant="light" onClick={addFilename}>
                 <PlusIcon size={16} />
               </ActionIcon>
             </Group>
