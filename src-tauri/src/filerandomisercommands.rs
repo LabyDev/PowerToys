@@ -182,23 +182,23 @@ pub fn open_file_tracked(
     id: Option<u64>,
     name: Option<String>,
 ) -> Result<(), String> {
-    let app_clone = app.clone();
+    // Update history immediately
+    if let (Some(id), Some(name)) = (id, name) {
+        let app_data = app.state::<Mutex<AppStateData>>();
+        let mut state = app_data.lock().unwrap();
 
+        state.history.push(HistoryEntry {
+            id,
+            name,
+            path: FilePath::Path(path.clone().into()),
+            opened_at: Utc::now(),
+        });
+    }
+
+    // Spawn thread to open file and emit event when closed
+    let app_clone = app.clone();
     std::thread::spawn(move || {
         let _ = open_and_wait(&path);
-
-        if let (Some(id), Some(name)) = (id, name) {
-            let app_data = app_clone.state::<Mutex<AppStateData>>();
-            let mut state = app_data.lock().unwrap();
-
-            state.history.push(HistoryEntry {
-                id,
-                name,
-                path: FilePath::Path(path.into()),
-                opened_at: Utc::now(),
-            });
-        }
-
         let _ = app_clone.emit("file-closed", ());
     });
 
