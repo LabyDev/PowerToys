@@ -184,7 +184,7 @@ mod non_windows_shell {
 
 // --- The Main Tauri Command ---
 #[tauri::command]
-pub fn toggle_context_menu_item() -> Result<(), String> {
+pub fn toggle_context_menu_item() -> Result<bool, String> {
     #[cfg(windows)]
     {
         if !is_elevated() {
@@ -207,11 +207,11 @@ pub fn toggle_context_menu_item() -> Result<(), String> {
     //     }
     // }
 
-    Ok(())
+    Ok(true)
 }
 
 #[cfg(windows)]
-fn spawn_elevated_toggle() -> Result<(), String> {
+fn spawn_elevated_toggle() -> Result<bool, String> {
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
 
@@ -245,7 +245,7 @@ fn spawn_elevated_toggle() -> Result<(), String> {
         return Err("Elevation cancelled or failed".into());
     }
 
-    Ok(())
+    Ok(true)
 }
 
 #[cfg(windows)]

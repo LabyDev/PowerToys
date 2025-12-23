@@ -1,7 +1,7 @@
+use crate::context::windows_shell::is_context_menu_registered;
 use crate::models::settings::AppSettings;
 use tauri::{AppHandle, Wry};
 use tauri_plugin_store::StoreExt;
-use crate::context::windows_shell::{is_context_menu_registered};
 
 /// Get the current settings, merging persisted store + runtime context menu status
 #[tauri::command]
@@ -21,11 +21,11 @@ pub fn get_app_settings(app: AppHandle<Wry>) -> Result<AppSettings, String> {
 
 /// Save updated settings to the persistent store
 #[tauri::command]
-pub fn set_app_settings(app: AppHandle<Wry>, settings: AppSettings) -> Result<(), String> {
+pub fn set_app_settings(app: AppHandle<Wry>, settings: AppSettings) -> Result<AppSettings, String> {
     let store = app.store("store.json").map_err(|e| e.to_string())?;
-    store.set("settings", serde_json::to_value(settings).unwrap());
+    store.set("settings", serde_json::to_value(&settings).unwrap());
     store.save().map_err(|e| e.to_string())?;
-    Ok(())
+    Ok(settings)
 }
 
 #[tauri::command]

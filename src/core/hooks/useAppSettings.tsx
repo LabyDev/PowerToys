@@ -20,10 +20,9 @@ export function useAppSettings() {
     async (partial: Partial<AppSettings>) => {
       try {
         const newSettings = { ...settings, ...partial };
-        const updated = await invoke<AppSettings>(
-          "set_app_settings",
-          newSettings,
-        );
+        const updated: AppSettings = await invoke("set_app_settings", {
+          settings: newSettings,
+        });
         setSettings(updated);
       } catch (err) {
         console.error("Failed to update settings:", err);

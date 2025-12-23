@@ -16,7 +16,7 @@ const Settings = () => {
 
   const handleContextMenuToggle = async (checked: boolean) => {
     try {
-      const updated: boolean = await invoke("toggle_context_menu", {
+      const updated: boolean = await invoke("toggle_context_menu_item", {
         enable: checked,
       });
       setSettings({ enable_context_menu: updated });
