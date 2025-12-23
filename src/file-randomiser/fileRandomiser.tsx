@@ -55,7 +55,7 @@ const FileRandomiser = () => {
   const [newIsRegex, setNewIsRegex] = useState(false);
 
   useEffect(() => {
-    refreshData();
+    updateAndRefreshData();
   }, []);
 
   useEffect(() => {
@@ -93,15 +93,12 @@ const FileRandomiser = () => {
     };
   }, [tracking]);
 
-  const refreshData = async () => {
-    const updated = await invoke<AppStateData>("get_app_state");
-    setData(updated);
-  };
-
-  const syncAppData = async (updatedData: AppStateData) => {
-    setData(updatedData);
-    await invoke("update_app_state", { newData: updatedData });
-    refreshData();
+  const updateAndRefreshData = async (updatedData?: AppStateData) => {
+    if (updatedData) {
+      await invoke("update_app_state", { newData: updatedData });
+    }
+    const latest = await invoke<AppStateData>("get_app_state");
+    setData(latest);
   };
 
   /* ------------------------- Searching -------------------------- */
@@ -148,7 +145,7 @@ const FileRandomiser = () => {
       excludedFolders: data.excludedFolders,
       excludedFilenames: data.excludedFilenames,
     });
-    await refreshData();
+    updateAndRefreshData();
   };
 
   const handlePickFile = useCallback(async () => {
@@ -170,7 +167,7 @@ const FileRandomiser = () => {
     await invoke("open_file_by_id", { id: file.id });
     setCurrentIndex(index);
     currentIndexRef.current = index;
-    await refreshData();
+    updateAndRefreshData();
   }, [data.files, shuffle]);
 
   return (
@@ -264,15 +261,14 @@ const FileRandomiser = () => {
                     variant="light"
                     onClick={async () => {
                       if (!newFolder.trim()) return;
-                      const updatedFolders = [
-                        ...data.excludedFolders,
-                        { id: crypto.randomUUID(), path: newFolder.trim() },
-                      ];
-                      setNewFolder("");
-                      await syncAppData({
+                      await updateAndRefreshData({
                         ...data,
-                        excludedFolders: updatedFolders,
+                        excludedFolders: [
+                          ...data.excludedFolders,
+                          { id: crypto.randomUUID(), path: newFolder.trim() },
+                        ],
                       });
+                      setNewFolder("");
                     }}
                   >
                     <PlusIcon size={16} />
@@ -291,7 +287,7 @@ const FileRandomiser = () => {
                         const updated = data.excludedFolders.filter(
                           (x) => x.id !== f.id,
                         );
-                        await syncAppData({
+                        await updateAndRefreshData({
                           ...data,
                           excludedFolders: updated,
                         });
@@ -331,20 +327,19 @@ const FileRandomiser = () => {
                     variant="light"
                     onClick={async () => {
                       if (!newFilename.trim()) return;
-                      const updatedFilenames = [
-                        ...data.excludedFilenames,
-                        {
-                          id: crypto.randomUUID(),
-                          pattern: newFilename.trim(),
-                          isRegex: newIsRegex,
-                        },
-                      ];
+                      await updateAndRefreshData({
+                        ...data,
+                        excludedFilenames: [
+                          ...data.excludedFilenames,
+                          {
+                            id: crypto.randomUUID(),
+                            pattern: newFilename.trim(),
+                            isRegex: newIsRegex,
+                          },
+                        ],
+                      });
                       setNewFilename("");
                       setNewIsRegex(false);
-                      await syncAppData({
-                        ...data,
-                        excludedFilenames: updatedFilenames,
-                      });
                     }}
                   >
                     <PlusIcon size={16} />
@@ -371,7 +366,7 @@ const FileRandomiser = () => {
                         const updated = data.excludedFilenames.filter(
                           (x) => x.id !== f.id,
                         );
-                        await syncAppData({
+                        await updateAndRefreshData({
                           ...data,
                           excludedFilenames: updated,
                         });
