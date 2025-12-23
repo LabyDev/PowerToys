@@ -77,16 +77,18 @@ const FileRandomiser = () => {
     setData(latest);
   };
 
+  const updateFiltersAndCrawl = async (updatedData: AppStateData) => {
+    await updateAndRefreshData(updatedData); // update state
+    await handleCrawl(); // crawl paths again
+  };
+
   const handleAddPath = async () => {
     await invoke("add_path_via_dialog");
     await handleCrawl();
   };
 
   const handleCrawl = async () => {
-    await invoke("crawl_paths", {
-      excludedFolders: data.excludedFolders,
-      excludedFilenames: data.excludedFilenames,
-    });
+    await invoke("crawl_paths");
     updateAndRefreshData();
   };
 
@@ -162,7 +164,7 @@ const FileRandomiser = () => {
         />
 
         {/* Filters */}
-        <FiltersPanel data={data} updateData={updateAndRefreshData} />
+        <FiltersPanel data={data} updateData={updateFiltersAndCrawl} />
 
         {/* Main content */}
         <Group align="stretch" grow style={{ flex: 1, minHeight: 0 }}>
@@ -200,6 +202,7 @@ const FileRandomiser = () => {
                           { id: crypto.randomUUID(), path: item.path },
                         ],
                       });
+                      handleCrawl();
                     }}
                   >
                     <PlusIcon size={16} />
@@ -270,6 +273,7 @@ const FileRandomiser = () => {
                           },
                         ],
                       });
+                      handleCrawl();
                     }}
                   >
                     <PlusIcon size={16} />
