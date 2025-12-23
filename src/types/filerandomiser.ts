@@ -22,3 +22,14 @@ export interface AppStateData {
   files: FileEntry[];
   history: HistoryEntry[];
 }
+
+export type FolderExclusion = {
+  id: string;
+  path: string;
+};
+
+export type FilenameExclusion = {
+  id: string;
+  pattern: string;
+  isRegex: boolean;
+};

@@ -3,6 +3,8 @@ import {
   Box,
   Button,
   Checkbox,
+  Collapse,
+  Divider,
   Group,
   Paper,
   Stack,
@@ -15,11 +17,17 @@ import {
   MagnifyingGlassIcon,
   ShuffleIcon,
   TrashIcon,
+  PlusIcon,
+  FunnelIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import { AppStateData } from "../types/filerandomiser";
+import {
+  AppStateData,
+  FilenameExclusion,
+  FolderExclusion,
+} from "../types/filerandomiser";
 import "./fileRandomiser.css";
 import { listen } from "@tauri-apps/api/event";
 import { useAppSettings } from "../core/hooks/useAppSettings";
@@ -42,11 +50,21 @@ const FileRandomiser = () => {
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [tracking, setTracking] = useState(false);
 
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const [excludedFolders, setExcludedFolders] = useState<FolderExclusion[]>([]);
+  const [excludedFilenames, setExcludedFilenames] = useState<
+    FilenameExclusion[]
+  >([]);
+
+  const [newFolder, setNewFolder] = useState("");
+  const [newFilename, setNewFilename] = useState("");
+  const [newIsRegex, setNewIsRegex] = useState(false);
+
   useEffect(() => {
     refreshData();
   }, []);
 
-  // Keep the ref in sync whenever state changes
   useEffect(() => {
     currentIndexRef.current = currentIndex;
   }, [currentIndex]);
@@ -123,7 +141,7 @@ const FileRandomiser = () => {
     setCurrentIndex(index);
     currentIndexRef.current = index;
     await refreshData();
-  }, [data.files, shuffle, currentIndex]);
+  }, [data.files, shuffle]);
 
   const filteredFiles = useMemo(() => {
     if (!query) return data.files;
@@ -187,10 +205,154 @@ const FileRandomiser = () => {
           onChange={(e) => setQuery(e.currentTarget.value)}
         />
 
+        {/* Filters & Exclusions */}
+        <Paper withBorder radius="md" p="sm">
+          <Group
+            justify="space-between"
+            style={{ cursor: "pointer" }}
+            onClick={() => setFiltersOpen((o) => !o)}
+          >
+            <Group gap="xs">
+              <FunnelIcon size={16} />
+              <Text fw={600}>Filters & Exclusions</Text>
+            </Group>
+            <Text size="xs" c="dimmed">
+              {filtersOpen ? "Hide" : "Show"}
+            </Text>
+          </Group>
+
+          <Collapse in={filtersOpen}>
+            <Stack gap="md" mt="sm">
+              {/* Excluded folders */}
+              <Stack gap={6}>
+                <Text size="sm" fw={600}>
+                  Excluded folders
+                </Text>
+
+                <Group gap="xs">
+                  <TextInput
+                    placeholder="e.g. node_modules or src/generated"
+                    value={newFolder}
+                    onChange={(e) => setNewFolder(e.currentTarget.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <ActionIcon
+                    variant="light"
+                    onClick={() => {
+                      if (!newFolder.trim()) return;
+                      setExcludedFolders((prev) => [
+                        ...prev,
+                        {
+                          id: crypto.randomUUID(),
+                          path: newFolder.trim(),
+                        },
+                      ]);
+                      setNewFolder("");
+                    }}
+                  >
+                    <PlusIcon size={16} />
+                  </ActionIcon>
+                </Group>
+
+                {excludedFolders.map((f) => (
+                  <Group key={f.id} justify="space-between" px="xs">
+                    <Text size="sm" lineClamp={1}>
+                      {f.path}
+                    </Text>
+                    <ActionIcon
+                      color="red"
+                      variant="subtle"
+                      onClick={() =>
+                        setExcludedFolders((prev) =>
+                          prev.filter((x) => x.id !== f.id),
+                        )
+                      }
+                    >
+                      <TrashIcon size={14} />
+                    </ActionIcon>
+                  </Group>
+                ))}
+              </Stack>
+
+              <Divider />
+
+              {/* Excluded filenames */}
+              <Stack gap={6}>
+                <Text size="sm" fw={600}>
+                  Excluded filenames
+                </Text>
+
+                <Group gap="xs" align="flex-start">
+                  <TextInput
+                    placeholder={
+                      newIsRegex ? "Regex pattern" : "Filename contains…"
+                    }
+                    value={newFilename}
+                    onChange={(e) => setNewFilename(e.currentTarget.value)}
+                    style={{ flex: 1 }}
+                  />
+
+                  <Checkbox
+                    label="Regex"
+                    checked={newIsRegex}
+                    onChange={(e) => setNewIsRegex(e.currentTarget.checked)}
+                  />
+
+                  <ActionIcon
+                    variant="light"
+                    onClick={() => {
+                      if (!newFilename.trim()) return;
+                      setExcludedFilenames((prev) => [
+                        ...prev,
+                        {
+                          id: crypto.randomUUID(),
+                          pattern: newFilename.trim(),
+                          isRegex: newIsRegex,
+                        },
+                      ]);
+                      setNewFilename("");
+                      setNewIsRegex(false);
+                    }}
+                  >
+                    <PlusIcon size={16} />
+                  </ActionIcon>
+                </Group>
+
+                {excludedFilenames.map((f) => (
+                  <Group key={f.id} justify="space-between" px="xs">
+                    <Group gap="xs">
+                      <Text size="sm" lineClamp={1}>
+                        {f.pattern}
+                      </Text>
+                      {f.isRegex && (
+                        <Text size="xs" c="dimmed">
+                          (regex)
+                        </Text>
+                      )}
+                    </Group>
+
+                    <ActionIcon
+                      color="red"
+                      variant="subtle"
+                      onClick={() =>
+                        setExcludedFilenames((prev) =>
+                          prev.filter((x) => x.id !== f.id),
+                        )
+                      }
+                    >
+                      <TrashIcon size={14} />
+                    </ActionIcon>
+                  </Group>
+                ))}
+              </Stack>
+            </Stack>
+          </Collapse>
+        </Paper>
+
         {/* Main content */}
         <Group align="stretch" grow style={{ flex: 1, minHeight: 0 }}>
           {/* Paths */}
-          <Section title={`Paths (${data.paths?.length})`}>
+          <Section title={`Paths (${data.paths.length})`}>
             <Virtuoso
               data={data.paths}
               itemContent={(_, item) => (
@@ -221,7 +383,6 @@ const FileRandomiser = () => {
                         handleCrawl();
                       }
                     }}
-                    className="trash-icon"
                   >
                     <TrashIcon size={16} />
                   </ActionIcon>
@@ -235,7 +396,7 @@ const FileRandomiser = () => {
             <Virtuoso
               data={filteredFiles}
               ref={virtuosoRef}
-              itemContent={(_index, item) => (
+              itemContent={(_, item) => (
                 <Box
                   px="sm"
                   py={6}
@@ -247,18 +408,7 @@ const FileRandomiser = () => {
                       : undefined
                   }
                 >
-                  <Text
-                    size="sm"
-                    fw={
-                      !shuffle &&
-                      currentIndex !== null &&
-                      data.files[currentIndex]?.id === item.id
-                        ? 600
-                        : 400
-                    }
-                  >
-                    {item.name}
-                  </Text>
+                  <Text size="sm">{item.name}</Text>
                   <Text size="xs" c="dimmed">
                     {item.path}
                   </Text>
@@ -273,11 +423,6 @@ const FileRandomiser = () => {
               data={reversedHistory}
               itemContent={(_, item) => {
                 const opened = new Date(item.openedAt);
-                const formattedDate = `${opened.getDate().toString().padStart(2, "0")} ${opened.toLocaleString(
-                  "en",
-                  { month: "short" },
-                )} ${opened.getFullYear()} ${opened.getHours().toString().padStart(2, "0")}:${opened.getMinutes().toString().padStart(2, "0")}:${opened.getSeconds().toString().padStart(2, "0")}`;
-
                 return (
                   <Box px="sm" py={6}>
                     <Text size="sm" lineClamp={1}>
@@ -286,8 +431,8 @@ const FileRandomiser = () => {
                     <Text size="xs" c="dimmed" lineClamp={1}>
                       {item.path}
                     </Text>
-                    <Text size="xs" c="dimmed" lineClamp={1} tt="italic">
-                      Opened at: {formattedDate}
+                    <Text size="xs" c="dimmed" tt="italic">
+                      Opened at: {opened.toLocaleString()}
                     </Text>
                   </Box>
                 );
