@@ -1,33 +1,16 @@
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Checkbox,
-  Collapse,
-  Divider,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
-import {
-  FolderPlusIcon,
-  ArrowsClockwiseIcon,
-  MagnifyingGlassIcon,
-  ShuffleIcon,
-  TrashIcon,
-  PlusIcon,
-  FunnelIcon,
-} from "@phosphor-icons/react";
+import { ActionIcon, Box, Group, Stack, Text } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import { AppStateData } from "../types/filerandomiser";
 import { listen } from "@tauri-apps/api/event";
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
+
+import { AppStateData } from "../types/filerandomiser";
 import { useAppSettings } from "../core/hooks/useAppSettings";
 import Section from "./section";
+import Toolbar from "./toolbar";
+import FiltersPanel from "./filtersPanel";
 import "./fileRandomiser.css";
+import { TrashIcon } from "@phosphor-icons/react";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -40,20 +23,15 @@ const FileRandomiser = () => {
     excludedFolders: [],
   });
 
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const currentIndexRef = useRef<number | null>(null);
-
   const [query, setQuery] = useState("");
   const [shuffle, setShuffle] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [tracking, setTracking] = useState(false);
 
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const currentIndexRef = useRef<number | null>(null);
 
-  const [newFolder, setNewFolder] = useState("");
-  const [newFilename, setNewFilename] = useState("");
-  const [newIsRegex, setNewIsRegex] = useState(false);
-
+  // ------------------------ Effects ------------------------
   useEffect(() => {
     updateAndRefreshData();
   }, []);
@@ -79,7 +57,6 @@ const FileRandomiser = () => {
 
   useEffect(() => {
     if (!tracking) return;
-
     let unlisten: (() => void) | null = null;
 
     listen("file-closed", () => {
@@ -88,11 +65,10 @@ const FileRandomiser = () => {
       unlisten = fn;
     });
 
-    return () => {
-      unlisten?.();
-    };
+    return () => unlisten?.();
   }, [tracking]);
 
+  // ------------------------ Data Handling ------------------------
   const updateAndRefreshData = async (updatedData?: AppStateData) => {
     if (updatedData) {
       await invoke("update_app_state", { newData: updatedData });
@@ -101,7 +77,41 @@ const FileRandomiser = () => {
     setData(latest);
   };
 
-  /* ------------------------- Searching -------------------------- */
+  const handleAddPath = async () => {
+    await invoke("add_path_via_dialog");
+    await handleCrawl();
+  };
+
+  const handleCrawl = async () => {
+    await invoke("crawl_paths", {
+      excludedFolders: data.excludedFolders,
+      excludedFilenames: data.excludedFilenames,
+    });
+    updateAndRefreshData();
+  };
+
+  const handlePickFile = useCallback(async () => {
+    if (!data.files.length) return;
+
+    let index: number;
+
+    if (shuffle) {
+      index = Math.floor(Math.random() * data.files.length);
+    } else {
+      index =
+        currentIndexRef.current === null
+          ? 0
+          : (currentIndexRef.current + 1) % data.files.length;
+    }
+
+    const file = data.files[index];
+    await invoke("open_file_by_id", { id: file.id });
+    setCurrentIndex(index);
+    currentIndexRef.current = index;
+    updateAndRefreshData();
+  }, [data.files, shuffle]);
+
+  // ------------------------ Filtering ------------------------
   const q = query.toLowerCase();
 
   const filteredPaths = useMemo(() => {
@@ -133,256 +143,30 @@ const FileRandomiser = () => {
       (a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime(),
     );
   }, [data.history, q]);
-  /* -------------------------------------------------------------- */
-
-  const handleAddPath = async () => {
-    await invoke("add_path_via_dialog");
-    await handleCrawl();
-  };
-
-  const handleCrawl = async () => {
-    await invoke("crawl_paths", {
-      excludedFolders: data.excludedFolders,
-      excludedFilenames: data.excludedFilenames,
-    });
-    updateAndRefreshData();
-  };
-
-  const handlePickFile = useCallback(async () => {
-    if (!data.files.length) return;
-
-    let index: number;
-
-    if (shuffle) {
-      index = Math.floor(Math.random() * data.files.length);
-    } else {
-      index =
-        currentIndexRef.current === null
-          ? 0
-          : (currentIndexRef.current + 1) % data.files.length;
-    }
-
-    const file = data.files[index];
-
-    await invoke("open_file_by_id", { id: file.id });
-    setCurrentIndex(index);
-    currentIndexRef.current = index;
-    updateAndRefreshData();
-  }, [data.files, shuffle]);
 
   return (
     <Box p="md" h="88vh">
       <Stack h="100%" gap="md">
-        {/* Top toolbar */}
-        <Paper withBorder radius="md" p="sm">
-          <Group justify="space-between" wrap="nowrap">
-            <Group>
-              <Button
-                leftSection={<FolderPlusIcon size={16} />}
-                onClick={handleAddPath}
-              >
-                Add path
-              </Button>
-
-              <Button
-                variant="light"
-                leftSection={<ArrowsClockwiseIcon size={16} />}
-                onClick={handleCrawl}
-              >
-                Crawl
-              </Button>
-
-              <Button
-                variant="filled"
-                leftSection={<ShuffleIcon size={16} />}
-                onClick={handlePickFile}
-              >
-                {shuffle ? "Random file" : "Next file"}
-              </Button>
-            </Group>
-
-            <Group>
-              <Checkbox
-                label="Shuffle"
-                checked={shuffle}
-                onChange={(e) => setShuffle(e.currentTarget.checked)}
-              />
-              {settings.allow_process_tracking && (
-                <Checkbox
-                  label="Tracking"
-                  checked={tracking}
-                  onChange={(e) => setTracking(e.currentTarget.checked)}
-                />
-              )}
-            </Group>
-          </Group>
-        </Paper>
-
-        {/* Global search */}
-        <TextInput
-          placeholder="Search paths, files, and history…"
-          leftSection={<MagnifyingGlassIcon size={16} />}
-          value={query}
-          onChange={(e) => setQuery(e.currentTarget.value)}
+        {/* Toolbar + Search */}
+        <Toolbar
+          shuffle={shuffle}
+          tracking={tracking}
+          allowTracking={settings.allow_process_tracking}
+          query={query}
+          onAddPath={handleAddPath}
+          onCrawl={handleCrawl}
+          onPickFile={handlePickFile}
+          onShuffleChange={setShuffle}
+          onTrackingChange={setTracking}
+          onQueryChange={setQuery}
         />
 
-        {/* Filters & Exclusions */}
-        <Paper withBorder radius="md" p="sm">
-          <Group
-            justify="space-between"
-            style={{ cursor: "pointer" }}
-            onClick={() => setFiltersOpen((o) => !o)}
-          >
-            <Group gap="xs">
-              <FunnelIcon size={16} />
-              <Text fw={600}>Filters & Exclusions</Text>
-            </Group>
-            <Text size="xs" c="dimmed">
-              {filtersOpen ? "Hide" : "Show"}
-            </Text>
-          </Group>
-
-          <Collapse in={filtersOpen}>
-            <Stack gap="md" mt="sm">
-              {/* Excluded folders */}
-              <Stack gap={6}>
-                <Text size="sm" fw={600}>
-                  Excluded folders
-                </Text>
-
-                <Group gap="xs">
-                  <TextInput
-                    placeholder="e.g. node_modules or src/generated"
-                    value={newFolder}
-                    onChange={(e) => setNewFolder(e.currentTarget.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <ActionIcon
-                    variant="light"
-                    onClick={async () => {
-                      if (!newFolder.trim()) return;
-                      await updateAndRefreshData({
-                        ...data,
-                        excludedFolders: [
-                          ...data.excludedFolders,
-                          { id: crypto.randomUUID(), path: newFolder.trim() },
-                        ],
-                      });
-                      setNewFolder("");
-                    }}
-                  >
-                    <PlusIcon size={16} />
-                  </ActionIcon>
-                </Group>
-
-                {data.excludedFolders.map((f) => (
-                  <Group key={f.id} justify="space-between" px="xs">
-                    <Text size="sm" lineClamp={1}>
-                      {f.path}
-                    </Text>
-                    <ActionIcon
-                      color="red"
-                      variant="subtle"
-                      onClick={async () => {
-                        const updated = data.excludedFolders.filter(
-                          (x) => x.id !== f.id,
-                        );
-                        await updateAndRefreshData({
-                          ...data,
-                          excludedFolders: updated,
-                        });
-                      }}
-                    >
-                      <TrashIcon size={14} />
-                    </ActionIcon>
-                  </Group>
-                ))}
-              </Stack>
-
-              <Divider />
-
-              {/* Excluded filenames */}
-              <Stack gap={6}>
-                <Text size="sm" fw={600}>
-                  Excluded filenames
-                </Text>
-
-                <Group gap="xs" align="flex-start">
-                  <TextInput
-                    placeholder={
-                      newIsRegex ? "Regex pattern" : "Filename contains…"
-                    }
-                    value={newFilename}
-                    onChange={(e) => setNewFilename(e.currentTarget.value)}
-                    style={{ flex: 1 }}
-                  />
-
-                  <Checkbox
-                    label="Regex"
-                    checked={newIsRegex}
-                    onChange={(e) => setNewIsRegex(e.currentTarget.checked)}
-                  />
-
-                  <ActionIcon
-                    variant="light"
-                    onClick={async () => {
-                      if (!newFilename.trim()) return;
-                      await updateAndRefreshData({
-                        ...data,
-                        excludedFilenames: [
-                          ...data.excludedFilenames,
-                          {
-                            id: crypto.randomUUID(),
-                            pattern: newFilename.trim(),
-                            isRegex: newIsRegex,
-                          },
-                        ],
-                      });
-                      setNewFilename("");
-                      setNewIsRegex(false);
-                    }}
-                  >
-                    <PlusIcon size={16} />
-                  </ActionIcon>
-                </Group>
-
-                {data.excludedFilenames.map((f) => (
-                  <Group key={f.id} justify="space-between" px="xs">
-                    <Group gap="xs">
-                      <Text size="sm" lineClamp={1}>
-                        {f.pattern}
-                      </Text>
-                      {f.isRegex && (
-                        <Text size="xs" c="dimmed">
-                          (regex)
-                        </Text>
-                      )}
-                    </Group>
-
-                    <ActionIcon
-                      color="red"
-                      variant="subtle"
-                      onClick={async () => {
-                        const updated = data.excludedFilenames.filter(
-                          (x) => x.id !== f.id,
-                        );
-                        await updateAndRefreshData({
-                          ...data,
-                          excludedFilenames: updated,
-                        });
-                      }}
-                    >
-                      <TrashIcon size={14} />
-                    </ActionIcon>
-                  </Group>
-                ))}
-              </Stack>
-            </Stack>
-          </Collapse>
-        </Paper>
+        {/* Filters */}
+        <FiltersPanel data={data} updateData={updateAndRefreshData} />
 
         {/* Main content */}
         <Group align="stretch" grow style={{ flex: 1, minHeight: 0 }}>
+          {/* Paths */}
           <Section title={`Paths (${filteredPaths.length})`}>
             <Virtuoso
               data={filteredPaths}
