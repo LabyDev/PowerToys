@@ -21,6 +21,8 @@ export type AppStateData = {
   paths: SavedPath[];
   files: FileEntry[];
   history: HistoryEntry[];
+  excludedFolders: FolderExclusion[];
+  excludedFilenames: FilenameExclusion[];
 };
 
 export type FolderExclusion = {

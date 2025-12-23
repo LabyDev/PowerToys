@@ -1,10 +1,11 @@
 use crate::models::{AppStateData, FileEntry, HistoryEntry, SavedPath};
+use crate::models::{FilenameExclusion, FolderExclusion};
 use chrono::Utc;
 use std::fs;
 use std::sync::Mutex;
+use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
-use tauri::{Emitter};
 use tauri_plugin_dialog::{DialogExt, FilePath};
 
 #[tauri::command]
@@ -50,16 +51,27 @@ pub fn remove_path(app_data: State<'_, Mutex<AppStateData>>, id: u64) -> bool {
 #[tauri::command]
 pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let mut data = app_data.lock().unwrap();
+    data.files.clear();
+    let paths = data.paths.clone();
     let mut next_id = 1u64;
 
-    // Clear existing files before repopulating
-    data.files.clear();
+    let excluded_folders = data.excluded_folders.clone();
+    let excluded_filenames = data.excluded_filenames.clone();
 
-    // Clone the paths so we don't immutably borrow while mutating
-    let paths = data.paths.clone();
+    fn add_files_from_dir(
+        dir: &std::path::Path,
+        data: &mut AppStateData,
+        next_id: &mut u64,
+        excluded_folders: &[FolderExclusion],
+        excluded_filenames: &[FilenameExclusion],
+    ) {
+        if excluded_folders
+            .iter()
+            .any(|f| dir.to_string_lossy().contains(&f.path))
+        {
+            return;
+        }
 
-    // Recursive helper function
-    fn add_files_from_dir(dir: &std::path::Path, data: &mut AppStateData, next_id: &mut u64) {
         if let Ok(entries) = fs::read_dir(dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
@@ -69,15 +81,26 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                         .map(|s| s.to_string_lossy().to_string())
                         .unwrap_or_else(|| "unknown".to_string());
 
-                    data.files.push(FileEntry {
-                        id: *next_id,
-                        name,
-                        path: FilePath::Path(path),
+                    let excluded = excluded_filenames.iter().any(|f| {
+                        if f.is_regex {
+                            regex::Regex::new(&f.pattern)
+                                .map(|r| r.is_match(&name))
+                                .unwrap_or(false)
+                        } else {
+                            name.contains(&f.pattern)
+                        }
                     });
-                    *next_id += 1;
+
+                    if !excluded {
+                        data.files.push(FileEntry {
+                            id: *next_id,
+                            name,
+                            path: FilePath::Path(path),
+                        });
+                        *next_id += 1;
+                    }
                 } else if path.is_dir() {
-                    // Recursive call for subdirectory
-                    add_files_from_dir(&path, data, next_id);
+                    add_files_from_dir(&path, data, next_id, excluded_folders, excluded_filenames);
                 }
             }
         }
@@ -86,7 +109,13 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     for saved_path in &paths {
         if let Some(folder_path) = saved_path.path.as_path() {
             if folder_path.is_dir() {
-                add_files_from_dir(folder_path, &mut data, &mut next_id);
+                add_files_from_dir(
+                    folder_path,
+                    &mut data,
+                    &mut next_id,
+                    &excluded_folders,
+                    &excluded_filenames,
+                );
             }
         }
     }
@@ -229,4 +258,10 @@ pub fn open_file_by_id(
     );
 
     Some(file)
+}
+
+#[tauri::command]
+pub fn update_app_state(app_data: State<'_, Mutex<AppStateData>>, new_data: AppStateData) {
+    let mut data = app_data.lock().unwrap();
+    *data = new_data;
 }

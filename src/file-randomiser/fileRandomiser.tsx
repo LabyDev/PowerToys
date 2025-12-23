@@ -23,11 +23,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import {
-  AppStateData,
-  FilenameExclusion,
-  FolderExclusion,
-} from "../types/filerandomiser";
+import { AppStateData } from "../types/filerandomiser";
 import { listen } from "@tauri-apps/api/event";
 import { useAppSettings } from "../core/hooks/useAppSettings";
 import Section from "./section";
@@ -40,6 +36,8 @@ const FileRandomiser = () => {
     paths: [],
     files: [],
     history: [],
+    excludedFilenames: [],
+    excludedFolders: [],
   });
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -51,11 +49,6 @@ const FileRandomiser = () => {
   const [tracking, setTracking] = useState(false);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
-
-  const [excludedFolders, setExcludedFolders] = useState<FolderExclusion[]>([]);
-  const [excludedFilenames, setExcludedFilenames] = useState<
-    FilenameExclusion[]
-  >([]);
 
   const [newFolder, setNewFolder] = useState("");
   const [newFilename, setNewFilename] = useState("");
@@ -105,6 +98,12 @@ const FileRandomiser = () => {
     setData(updated);
   };
 
+  const syncAppData = async (updatedData: AppStateData) => {
+    setData(updatedData);
+    await invoke("update_app_state", { newData: updatedData });
+    refreshData();
+  };
+
   /* ------------------------- Searching -------------------------- */
   const q = query.toLowerCase();
 
@@ -145,7 +144,10 @@ const FileRandomiser = () => {
   };
 
   const handleCrawl = async () => {
-    await invoke("crawl_paths");
+    await invoke("crawl_paths", {
+      excludedFolders: data.excludedFolders,
+      excludedFilenames: data.excludedFilenames,
+    });
     await refreshData();
   };
 
@@ -260,23 +262,24 @@ const FileRandomiser = () => {
                   />
                   <ActionIcon
                     variant="light"
-                    onClick={() => {
+                    onClick={async () => {
                       if (!newFolder.trim()) return;
-                      setExcludedFolders((prev) => [
-                        ...prev,
-                        {
-                          id: crypto.randomUUID(),
-                          path: newFolder.trim(),
-                        },
-                      ]);
+                      const updatedFolders = [
+                        ...data.excludedFolders,
+                        { id: crypto.randomUUID(), path: newFolder.trim() },
+                      ];
                       setNewFolder("");
+                      await syncAppData({
+                        ...data,
+                        excludedFolders: updatedFolders,
+                      });
                     }}
                   >
                     <PlusIcon size={16} />
                   </ActionIcon>
                 </Group>
 
-                {excludedFolders.map((f) => (
+                {data.excludedFolders.map((f) => (
                   <Group key={f.id} justify="space-between" px="xs">
                     <Text size="sm" lineClamp={1}>
                       {f.path}
@@ -284,11 +287,15 @@ const FileRandomiser = () => {
                     <ActionIcon
                       color="red"
                       variant="subtle"
-                      onClick={() =>
-                        setExcludedFolders((prev) =>
-                          prev.filter((x) => x.id !== f.id),
-                        )
-                      }
+                      onClick={async () => {
+                        const updated = data.excludedFolders.filter(
+                          (x) => x.id !== f.id,
+                        );
+                        await syncAppData({
+                          ...data,
+                          excludedFolders: updated,
+                        });
+                      }}
                     >
                       <TrashIcon size={14} />
                     </ActionIcon>
@@ -322,25 +329,29 @@ const FileRandomiser = () => {
 
                   <ActionIcon
                     variant="light"
-                    onClick={() => {
+                    onClick={async () => {
                       if (!newFilename.trim()) return;
-                      setExcludedFilenames((prev) => [
-                        ...prev,
+                      const updatedFilenames = [
+                        ...data.excludedFilenames,
                         {
                           id: crypto.randomUUID(),
                           pattern: newFilename.trim(),
                           isRegex: newIsRegex,
                         },
-                      ]);
+                      ];
                       setNewFilename("");
                       setNewIsRegex(false);
+                      await syncAppData({
+                        ...data,
+                        excludedFilenames: updatedFilenames,
+                      });
                     }}
                   >
                     <PlusIcon size={16} />
                   </ActionIcon>
                 </Group>
 
-                {excludedFilenames.map((f) => (
+                {data.excludedFilenames.map((f) => (
                   <Group key={f.id} justify="space-between" px="xs">
                     <Group gap="xs">
                       <Text size="sm" lineClamp={1}>
@@ -356,11 +367,15 @@ const FileRandomiser = () => {
                     <ActionIcon
                       color="red"
                       variant="subtle"
-                      onClick={() =>
-                        setExcludedFilenames((prev) =>
-                          prev.filter((x) => x.id !== f.id),
-                        )
-                      }
+                      onClick={async () => {
+                        const updated = data.excludedFilenames.filter(
+                          (x) => x.id !== f.id,
+                        );
+                        await syncAppData({
+                          ...data,
+                          excludedFilenames: updated,
+                        });
+                      }}
                     >
                       <TrashIcon size={14} />
                     </ActionIcon>

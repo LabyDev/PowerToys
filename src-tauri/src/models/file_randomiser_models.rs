@@ -28,10 +28,26 @@ pub struct HistoryEntry {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FolderExclusion {
+    pub id: String,
+    pub path: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FilenameExclusion {
+    pub id: String,
+    pub pattern: String,
+    pub is_regex: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AppStateData {
     pub paths: Vec<SavedPath>,
     pub files: Vec<FileEntry>,
     pub history: Vec<HistoryEntry>,
     pub tracking_enabled: bool,
+    pub excluded_folders: Vec<FolderExclusion>,
+    pub excluded_filenames: Vec<FilenameExclusion>,
 }

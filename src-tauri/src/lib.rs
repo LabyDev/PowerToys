@@ -17,6 +17,8 @@ pub fn run() {
             files: vec![],
             history: vec![],
             tracking_enabled: false,
+            excluded_filenames: vec![],
+            excluded_folders: vec![],
         }))
         .invoke_handler(tauri::generate_handler![
             setting_commands::get_app_settings,
@@ -28,6 +30,7 @@ pub fn run() {
             filerandomisercommands::crawl_paths,
             filerandomisercommands::pick_random_file,
             filerandomisercommands::open_file_by_id,
+            filerandomisercommands::update_app_state,
             context::toggle_context_menu_item,
         ])
         .run(tauri::generate_context!())
