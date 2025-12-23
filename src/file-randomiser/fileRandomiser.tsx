@@ -28,10 +28,10 @@ import {
   FilenameExclusion,
   FolderExclusion,
 } from "../types/filerandomiser";
-import "./fileRandomiser.css";
 import { listen } from "@tauri-apps/api/event";
 import { useAppSettings } from "../core/hooks/useAppSettings";
 import Section from "./section";
+import "./fileRandomiser.css";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -105,11 +105,39 @@ const FileRandomiser = () => {
     setData(updated);
   };
 
-  const reversedHistory = useMemo(() => {
-    return [...data.history].sort(
+  /* ------------------------- Searching -------------------------- */
+  const q = query.toLowerCase();
+
+  const filteredPaths = useMemo(() => {
+    if (!q) return data.paths;
+    return data.paths.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) || p.path.toLowerCase().includes(q),
+    );
+  }, [data.paths, q]);
+
+  const filteredFiles = useMemo(() => {
+    if (!q) return data.files;
+    return data.files.filter(
+      (f) =>
+        f.name.toLowerCase().includes(q) || f.path.toLowerCase().includes(q),
+    );
+  }, [data.files, q]);
+
+  const filteredHistory = useMemo(() => {
+    const base = q
+      ? data.history.filter(
+          (h) =>
+            h.name.toLowerCase().includes(q) ||
+            h.path.toLowerCase().includes(q),
+        )
+      : data.history;
+
+    return [...base].sort(
       (a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime(),
     );
-  }, [data.history]);
+  }, [data.history, q]);
+  /* -------------------------------------------------------------- */
 
   const handleAddPath = async () => {
     await invoke("add_path_via_dialog");
@@ -142,12 +170,6 @@ const FileRandomiser = () => {
     currentIndexRef.current = index;
     await refreshData();
   }, [data.files, shuffle]);
-
-  const filteredFiles = useMemo(() => {
-    if (!query) return data.files;
-    const q = query.toLowerCase();
-    return data.files.filter((f) => f.name.toLowerCase().includes(q));
-  }, [data.files, query]);
 
   return (
     <Box p="md" h="88vh">
@@ -197,9 +219,9 @@ const FileRandomiser = () => {
           </Group>
         </Paper>
 
-        {/* Search */}
+        {/* Global search */}
         <TextInput
-          placeholder="Search files…"
+          placeholder="Search paths, files, and history…"
           leftSection={<MagnifyingGlassIcon size={16} />}
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
@@ -351,17 +373,16 @@ const FileRandomiser = () => {
 
         {/* Main content */}
         <Group align="stretch" grow style={{ flex: 1, minHeight: 0 }}>
-          {/* Paths */}
-          <Section title={`Paths (${data.paths.length})`}>
+          <Section title={`Paths (${filteredPaths.length})`}>
             <Virtuoso
-              data={data.paths}
+              data={filteredPaths}
               itemContent={(_, item) => (
                 <Group
                   key={item.id}
                   px="sm"
                   py={6}
                   style={{ alignItems: "center", gap: 8 }}
-                  className="path-item"
+                  className="path-item hoverable"
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
                     <Text size="sm" fw={600} lineClamp={1}>
@@ -375,6 +396,7 @@ const FileRandomiser = () => {
                   <ActionIcon
                     color="red"
                     variant="subtle"
+                    className="trash-icon"
                     onClick={async () => {
                       const removed = await invoke<boolean>("remove_path", {
                         id: item.id,
@@ -418,25 +440,22 @@ const FileRandomiser = () => {
           </Section>
 
           {/* History */}
-          <Section title={`History (${data.history.length})`}>
+          <Section title={`History (${filteredHistory.length})`}>
             <Virtuoso
-              data={reversedHistory}
-              itemContent={(_, item) => {
-                const opened = new Date(item.openedAt);
-                return (
-                  <Box px="sm" py={6}>
-                    <Text size="sm" lineClamp={1}>
-                      {item.name}
-                    </Text>
-                    <Text size="xs" c="dimmed" lineClamp={1}>
-                      {item.path}
-                    </Text>
-                    <Text size="xs" c="dimmed" tt="italic">
-                      Opened at: {opened.toLocaleString()}
-                    </Text>
-                  </Box>
-                );
-              }}
+              data={filteredHistory}
+              itemContent={(_, item) => (
+                <Box px="sm" py={6}>
+                  <Text size="sm" lineClamp={1}>
+                    {item.name}
+                  </Text>
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {item.path}
+                  </Text>
+                  <Text size="xs" c="dimmed" tt="italic">
+                    Opened at: {new Date(item.openedAt).toLocaleString()}
+                  </Text>
+                </Box>
+              )}
             />
           </Section>
         </Group>

@@ -1,8 +1,12 @@
 .path-item .trash-icon {
+  visibility: hidden;
+  transition:
+    visibility 0.2s ease,
+    opacity 0.2s ease;
   opacity: 0;
-  transition: opacity 0.2s;
 }
 
 .path-item:hover .trash-icon {
+  visibility: visible;
   opacity: 1;
 }

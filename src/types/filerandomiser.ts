@@ -1,27 +1,27 @@
-export interface SavedPath {
+export type SavedPath = {
   id: number;
   name: string;
   path: string;
-}
+};
 
-export interface FileEntry {
+export type FileEntry = {
   id: number;
   name: string;
   path: string;
-}
+};
 
-export interface HistoryEntry {
+export type HistoryEntry = {
   id: number;
   name: string;
   path: string;
   openedAt: Date; // ISO string from Rust DateTime<Utc>
-}
+};
 
-export interface AppStateData {
+export type AppStateData = {
   paths: SavedPath[];
   files: FileEntry[];
   history: HistoryEntry[];
-}
+};
 
 export type FolderExclusion = {
   id: string;
