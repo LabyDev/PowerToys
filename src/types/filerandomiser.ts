@@ -8,6 +8,7 @@ export type FileEntry = {
   id: number;
   name: string;
   path: string;
+  excluded: boolean;
 };
 
 export type HistoryEntry = {

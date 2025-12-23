@@ -16,6 +16,7 @@ pub struct FileEntry {
     pub id: u64,
     pub name: String,
     pub path: FilePath,
+    pub excluded: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

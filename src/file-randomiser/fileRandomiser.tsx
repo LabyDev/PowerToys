@@ -95,21 +95,36 @@ const FileRandomiser = () => {
   const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
+    // Filter out excluded files
+    const availableFiles = data.files.filter((f) => !f.excluded);
+    if (!availableFiles.length) return; // nothing to pick
+
     let index: number;
 
     if (shuffle) {
-      index = Math.floor(Math.random() * data.files.length);
+      index = Math.floor(Math.random() * availableFiles.length);
     } else {
+      const currentId =
+        currentIndexRef.current !== null
+          ? data.files[currentIndexRef.current]?.id
+          : null;
+      const currentAvailableIndex = availableFiles.findIndex(
+        (f) => f.id === currentId,
+      );
       index =
-        currentIndexRef.current === null
+        currentAvailableIndex === -1
           ? 0
-          : (currentIndexRef.current + 1) % data.files.length;
+          : (currentAvailableIndex + 1) % availableFiles.length;
     }
 
-    const file = data.files[index];
+    const file = availableFiles[index];
     await invoke("open_file_by_id", { id: file.id });
-    setCurrentIndex(index);
-    currentIndexRef.current = index;
+
+    // Update currentIndex using original data.files index
+    const originalIndex = data.files.findIndex((f) => f.id === file.id);
+    setCurrentIndex(originalIndex);
+    currentIndexRef.current = originalIndex;
+
     updateAndRefreshData();
   }, [data.files, shuffle]);
 
@@ -237,18 +252,28 @@ const FileRandomiser = () => {
                 <Box
                   px="sm"
                   py={6}
-                  className="file-item hoverable"
-                  style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  bg={
-                    !shuffle &&
-                    currentIndex !== null &&
-                    data.files[currentIndex]?.id === item.id
-                      ? "var(--mantine-color-blue-light)"
-                      : undefined
-                  }
+                  className={`file-item hoverable ${item.excluded ? "excluded" : ""}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    backgroundColor:
+                      !shuffle &&
+                      currentIndex !== null &&
+                      data.files[currentIndex]?.id === item.id
+                        ? "var(--mantine-color-blue-light)"
+                        : undefined,
+                    opacity: item.excluded ? 0.5 : 1, // dim excluded files
+                  }}
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
-                    <Text size="sm" lineClamp={1}>
+                    <Text
+                      size="sm"
+                      lineClamp={1}
+                      style={{
+                        textDecoration: item.excluded ? "line-through" : "none",
+                      }}
+                    >
                       {item.name}
                     </Text>
                     <Text size="xs" c="dimmed" lineClamp={1}>

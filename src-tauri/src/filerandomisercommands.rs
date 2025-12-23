@@ -91,14 +91,13 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                         }
                     });
 
-                    if !excluded {
-                        data.files.push(FileEntry {
-                            id: *next_id,
-                            name,
-                            path: FilePath::Path(path),
-                        });
-                        *next_id += 1;
-                    }
+                    data.files.push(FileEntry {
+                        id: *next_id,
+                        name,
+                        path: FilePath::Path(path),
+                        excluded: excluded,
+                    });
+                    *next_id += 1;
                 } else if path.is_dir() {
                     add_files_from_dir(&path, data, next_id, excluded_folders, excluded_filenames);
                 }
@@ -216,12 +215,19 @@ pub fn pick_random_file(
         return None;
     }
 
+    let available_files: Vec<_> = data
+        .files
+        .iter()
+        .filter(|f| !f.excluded)
+        .cloned()
+        .collect();
+
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let index = (now % (data.files.len() as u128)) as usize;
-    let file = data.files[index].clone();
+    let index = (now % (available_files.len() as u128)) as usize;
+    let file = available_files[index].clone();
     drop(data); // release lock before calling open_file_tracked
 
     let _ = open_file_tracked(
