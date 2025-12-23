@@ -25,34 +25,35 @@ export function App() {
   return (
     <>
       <AnimatePresence mode="wait" initial={false}>
-        {!isAtRoot && <NavBar />}
-
-        <Routes location={location} key={location.pathname}>
-          <Route
-            path="/"
-            element={
-              <PageWrapper>
-                <MainPage />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/FileRandomiser"
-            element={
-              <PageWrapper>
-                <FileRandomiser />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/Settings"
-            element={
-              <PageWrapper>
-                <Settings />
-              </PageWrapper>
-            }
-          />
-        </Routes>
+        <motion.div key={location.pathname} style={{ height: "100%" }}>
+          {!isAtRoot && <NavBar />}
+          <Routes location={location} key={location.pathname}>
+            <Route
+              path="/"
+              element={
+                <PageWrapper>
+                  <MainPage />
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/FileRandomiser"
+              element={
+                <PageWrapper>
+                  <FileRandomiser />
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/Settings"
+              element={
+                <PageWrapper>
+                  <Settings />
+                </PageWrapper>
+              }
+            />
+          </Routes>
+        </motion.div>
       </AnimatePresence>
     </>
   );
