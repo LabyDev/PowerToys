@@ -9,6 +9,7 @@ use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
+use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub fn get_app_state(state: State<'_, Mutex<AppStateData>>) -> AppStateData {
@@ -293,4 +294,21 @@ pub fn open_file_by_id(
 pub fn update_app_state(app_data: State<'_, Mutex<AppStateData>>, new_data: AppStateData) {
     let mut data = app_data.lock().unwrap();
     *data = new_data;
+}
+
+#[tauri::command]
+pub fn open_presets_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let presets_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("presets");
+
+    std::fs::create_dir_all(&presets_dir).map_err(|e| e.to_string())?;
+
+    app.opener()
+        .open_path(presets_dir.to_string_lossy(), None::<String>)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }

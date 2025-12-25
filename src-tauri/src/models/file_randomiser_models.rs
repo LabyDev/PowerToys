@@ -74,3 +74,15 @@ pub struct AppStateData {
     pub tracking_enabled: bool,
     pub filter_rules: Vec<FilterRule>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RandomiserPreset {
+    pub id: String,
+    pub name: String,
+    pub paths: Vec<SavedPath>,
+    pub filter_rules: Vec<FilterRule>,
+    pub shuffle: Option<bool>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}

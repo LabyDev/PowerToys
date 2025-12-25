@@ -30,6 +30,7 @@ pub fn run() {
             filerandomisercommands::pick_random_file,
             filerandomisercommands::open_file_by_id,
             filerandomisercommands::update_app_state,
+            filerandomisercommands::open_presets_folder,
             context::toggle_context_menu_item,
         ])
         .run(tauri::generate_context!())
