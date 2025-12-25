@@ -11,14 +11,14 @@ import {
   Collapse,
   Select,
 } from "@mantine/core";
-import { FunnelIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { FunnelIcon, PlusIcon } from "@phosphor-icons/react";
 import {
   AppStateData,
   FilterRule,
   FilterMatchType,
   FilterTarget,
-  FilterAction,
 } from "../types/filerandomiser";
+import RuleBadge from "./ruleBadge";
 
 interface FiltersPanelProps {
   data: AppStateData;
@@ -65,30 +65,25 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
     });
   };
 
-  // Render rules by target/action
-  const renderRules = (target: FilterTarget, action: FilterAction) =>
-    data.filterRules
-      .filter((r) => r.target === target && r.action === action)
-      .map((r) => (
-        <Group key={r.id} justify="space-between" px="xs">
-          <Group gap={6}>
-            <Text size="sm" lineClamp={1}>
-              {r.pattern}
-            </Text>
-            <Text size="xs" c="dimmed">
-              ({r.type}
-              {r.caseSensitive ? ", case-sensitive" : ""})
-            </Text>
-          </Group>
-          <ActionIcon
-            color="red"
-            variant="subtle"
-            onClick={() => removeRule(r.id)}
-          >
-            <TrashIcon size={14} />
-          </ActionIcon>
-        </Group>
-      ));
+  const renderRuleGroup = (target: FilterTarget) => {
+    const rules = data.filterRules.filter((r) => r.target === target);
+
+    if (rules.length === 0) {
+      return (
+        <Text size="xs" c="dimmed">
+          No rules
+        </Text>
+      );
+    }
+
+    return (
+      <Group gap="xs">
+        {rules.map((r) => (
+          <RuleBadge key={r.id} rule={r} onRemove={() => removeRule(r.id)} />
+        ))}
+      </Group>
+    );
+  };
 
   return (
     <Paper withBorder radius="md" p="sm">
@@ -169,32 +164,18 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
 
           <Divider />
 
-          {/* Folder Rules */}
-          <Stack gap={6}>
+          <Stack gap="sm">
             <Text size="sm" fw={600}>
-              Excluded Folders
+              Folder rules
             </Text>
-            {renderRules("folder", "exclude")}
+            {renderRuleGroup("folder")}
 
-            <Text size="sm" fw={600} mt="sm">
-              Included Folders
-            </Text>
-            {renderRules("folder", "include")}
-          </Stack>
+            <Divider my="xs" />
 
-          <Divider />
-
-          {/* Filename Rules */}
-          <Stack gap={6}>
             <Text size="sm" fw={600}>
-              Excluded Filenames
+              Filename rules
             </Text>
-            {renderRules("filename", "exclude")}
-
-            <Text size="sm" fw={600} mt="sm">
-              Included Filenames
-            </Text>
-            {renderRules("filename", "include")}
+            {renderRuleGroup("filename")}
           </Stack>
         </Stack>
       </Collapse>
