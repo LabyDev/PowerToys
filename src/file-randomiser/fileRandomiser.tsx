@@ -17,6 +17,9 @@ import "./fileRandomiser.css";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import PresetControls from "./presetControls";
 
+import * as presetApi from "../core/api/presetsApi";
+import * as randomiserApi from "../core/api/fileRandomiserApi";
+
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
 
@@ -45,8 +48,7 @@ const FileRandomiser = () => {
   // ------------------------ Effects ------------------------
   useEffect(() => {
     updateAndRefreshData();
-    // Load presets from backend
-    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
+    presetApi.getPresets().then(setPresets);
   }, []);
 
   useEffect(() => {
@@ -89,9 +91,9 @@ const FileRandomiser = () => {
 
   const updateAndRefreshData = async (updatedData?: AppStateData) => {
     if (updatedData) {
-      await invoke("update_app_state", { newData: updatedData });
+      await randomiserApi.updateAppState(updatedData);
     }
-    const latest = await invoke<AppStateData>("get_app_state");
+    const latest = await randomiserApi.getAppState();
     setData(latest);
   };
 
@@ -101,12 +103,12 @@ const FileRandomiser = () => {
   };
 
   const handleAddPath = async () => {
-    await invoke("add_path_via_dialog");
+    await randomiserApi.addPathViaDialog();
     await handleCrawl();
   };
 
   const handleCrawl = async () => {
-    await invoke("crawl_paths");
+    await randomiserApi.crawlPaths();
     updateAndRefreshData();
   };
 
@@ -134,7 +136,7 @@ const FileRandomiser = () => {
     }
 
     const file = availableFiles[index];
-    await invoke("open_file_by_id", { id: file.id });
+    await randomiserApi.openFileById(file.id);
 
     const originalIndex = data.files.findIndex((f) => f.id === file.id);
     setCurrentIndex(originalIndex);
@@ -144,6 +146,7 @@ const FileRandomiser = () => {
   }, [data.files, shuffle]);
 
   // ------------------------ Preset Handling ------------------------
+
   const applyPreset = async (preset: RandomiserPreset) => {
     setPresetState({ currentId: preset.id, name: preset.name, dirty: false });
     await updateFiltersAndCrawl({
@@ -155,39 +158,34 @@ const FileRandomiser = () => {
 
   const savePreset = async () => {
     if (!presetState.currentId) return savePresetAs();
-    const now = new Date().toISOString();
-    await invoke("save_preset", {
+    await presetApi.savePreset({
       id: presetState.currentId,
       name: presetState.name,
       paths: data.paths,
       filterRules: data.filterRules,
-      createdAt: now,
-      updatedAt: now,
-    });
+    } as RandomiserPreset);
     setPresetState((p) => ({ ...p, dirty: false }));
-    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
+    presetApi.getPresets().then(setPresets);
   };
 
   const savePresetAs = async () => {
-    const now = new Date().toISOString();
     const id = crypto.randomUUID();
-    await invoke("save_preset", {
+    await presetApi.savePreset({
       id,
       name: presetState.name || "New preset",
       paths: data.paths,
       filterRules: data.filterRules,
-      createdAt: now,
-      updatedAt: now,
-    });
+    } as RandomiserPreset);
     setPresetState({ currentId: id, name: presetState.name, dirty: false });
-    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
+    presetApi.getPresets().then(setPresets);
   };
 
-  const openPresetsFolder = async () => {
-    await invoke("open_presets_folder");
+  const openPresetsFolder = () => {
+    presetApi.openPresetsFolder();
   };
 
   // ------------------------ Filtering ------------------------
+
   const q = query.toLowerCase();
 
   const filteredPaths = useMemo(() => {
@@ -222,7 +220,6 @@ const FileRandomiser = () => {
   return (
     <Box p="md" h="88vh">
       <Stack h="100%" gap="md">
-        {/* Toolbar + Presets */}
         <Toolbar
           shuffle={shuffle}
           tracking={tracking}
