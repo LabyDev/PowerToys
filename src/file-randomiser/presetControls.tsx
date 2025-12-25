@@ -29,14 +29,33 @@ const PresetControls = ({
   onOpenFolder,
 }: PresetControlsProps) => (
   <Group gap="xs" align="center">
-    {/* Preset Name Input */}
+    {/* Preset Name Input + Save button */}
     <TextInput
       size="sm"
       value={name}
       onChange={(e) => onNameChange(e.currentTarget.value)}
       placeholder="Preset name"
-      styles={{ input: { width: 180, fontWeight: 500 } }}
-      rightSection={dirty ? "●" : null}
+      styles={{
+        input: {
+          width: 220, // ← tad longer
+          fontWeight: 500,
+          paddingRight: dirty ? 36 : undefined, // space for icon
+        },
+      }}
+      rightSection={
+        dirty ? (
+          <Tooltip label="Save preset">
+            <ActionIcon
+              size="sm"
+              color="blue"
+              variant="filled"
+              onClick={onSave}
+            >
+              <FloppyDiskIcon size={14} />
+            </ActionIcon>
+          </Tooltip>
+        ) : null
+      }
     />
 
     {/* Preset Dropdown */}
@@ -68,18 +87,6 @@ const PresetControls = ({
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>
-
-    {/* Save Button */}
-    <Tooltip label="Save preset">
-      <ActionIcon
-        color={dirty ? "blue" : "gray"}
-        variant={dirty ? "filled" : "subtle"}
-        onClick={onSave}
-        size="sm"
-      >
-        <FloppyDiskIcon size={16} />
-      </ActionIcon>
-    </Tooltip>
   </Group>
 );
 
