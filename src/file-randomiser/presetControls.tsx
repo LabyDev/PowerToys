@@ -6,12 +6,7 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
-import {
-  FloppyDiskIcon,
-  FolderOpenIcon,
-  UploadSimpleIcon,
-  DownloadSimpleIcon,
-} from "@phosphor-icons/react";
+import { FloppyDiskIcon, FolderOpenIcon } from "@phosphor-icons/react";
 import { RandomiserPreset } from "../types/filerandomiser";
 
 interface PresetControlsProps {
@@ -21,9 +16,6 @@ interface PresetControlsProps {
   onNameChange: (name: string) => void;
   onSelect: (preset: RandomiserPreset) => void;
   onSave: () => void;
-  onSaveAs: () => void;
-  onImport: () => void;
-  onExport: () => void;
   onOpenFolder: () => void;
 }
 
@@ -34,20 +26,20 @@ const PresetControls = ({
   onNameChange,
   onSelect,
   onSave,
-  onSaveAs,
-  onImport,
-  onExport,
   onOpenFolder,
 }: PresetControlsProps) => (
-  <Group gap="xs">
+  <Group gap="xs" align="center">
+    {/* Preset Name Input */}
     <TextInput
       size="sm"
       value={name}
       onChange={(e) => onNameChange(e.currentTarget.value)}
-      styles={{ input: { width: 180 } }}
+      placeholder="Preset name"
+      styles={{ input: { width: 180, fontWeight: 500 } }}
       rightSection={dirty ? "●" : null}
     />
 
+    {/* Preset Dropdown */}
     <Menu withinPortal>
       <Menu.Target>
         <Button size="sm" variant="light">
@@ -56,28 +48,17 @@ const PresetControls = ({
       </Menu.Target>
 
       <Menu.Dropdown>
-        {presets.map((p) => (
-          <Menu.Item key={p.id} onClick={() => onSelect(p)}>
-            {p.name}
-          </Menu.Item>
-        ))}
+        {presets.length > 0 ? (
+          presets.map((p) => (
+            <Menu.Item key={p.id} onClick={() => onSelect(p)}>
+              {p.name}
+            </Menu.Item>
+          ))
+        ) : (
+          <Menu.Item disabled>No presets found</Menu.Item>
+        )}
 
         <Menu.Divider />
-
-        <Menu.Item
-          leftSection={<UploadSimpleIcon size={14} />}
-          onClick={onImport}
-        >
-          Import
-        </Menu.Item>
-
-        <Menu.Item
-          leftSection={<DownloadSimpleIcon size={14} />}
-          onClick={onExport}
-          disabled={!presets.length}
-        >
-          Export current
-        </Menu.Item>
 
         <Menu.Item
           leftSection={<FolderOpenIcon size={14} />}
@@ -88,20 +69,16 @@ const PresetControls = ({
       </Menu.Dropdown>
     </Menu>
 
+    {/* Save Button */}
     <Tooltip label="Save preset">
       <ActionIcon
         color={dirty ? "blue" : "gray"}
         variant={dirty ? "filled" : "subtle"}
         onClick={onSave}
+        size="sm"
       >
         <FloppyDiskIcon size={16} />
       </ActionIcon>
-    </Tooltip>
-
-    <Tooltip label="Save as new preset">
-      <Button size="sm" variant="subtle" onClick={onSaveAs}>
-        Save as
-      </Button>
     </Tooltip>
   </Group>
 );

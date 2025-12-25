@@ -183,16 +183,6 @@ const FileRandomiser = () => {
     invoke<RandomiserPreset[]>("get_presets").then(setPresets);
   };
 
-  const importPresets = async () => {
-    await invoke("import_presets");
-    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
-  };
-
-  const exportPreset = async () => {
-    if (!presetState.currentId) return;
-    await invoke("export_preset", { id: presetState.currentId });
-  };
-
   const openPresetsFolder = async () => {
     await invoke("open_presets_folder");
   };
@@ -252,9 +242,6 @@ const FileRandomiser = () => {
               onNameChange={(name) => setPresetState((p) => ({ ...p, name }))}
               onSelect={applyPreset}
               onSave={savePreset}
-              onSaveAs={savePresetAs}
-              onImport={importPresets}
-              onExport={exportPreset}
               onOpenFolder={openPresetsFolder}
             />
           }
