@@ -35,29 +35,37 @@ const Toolbar = ({
   onQueryChange,
 }: ToolbarProps) => (
   <>
-    <Group justify="space-between" wrap="nowrap">
-      <Group>{presetControls}</Group>
-      <Group>
-        <Button leftSection={<FolderPlusIcon size={16} />} onClick={onAddPath}>
-          Add path
-        </Button>
-        <Button
-          variant="light"
-          leftSection={<ArrowsClockwiseIcon size={16} />}
-          onClick={onCrawl}
-        >
-          Crawl
-        </Button>
-        <Button
-          variant="filled"
-          leftSection={<ShuffleIcon size={16} />}
-          onClick={onPickFile}
-        >
-          {shuffle ? "Random file" : "Next file"}
-        </Button>
+    <Group justify="space-between" align="center" wrap="nowrap">
+      {/* Left + middle buttons */}
+      <Group gap="md" align="center" wrap="nowrap">
+        {presetControls}
+
+        <Group gap="sm" ml="xl">
+          <Button
+            leftSection={<FolderPlusIcon size={16} />}
+            onClick={onAddPath}
+          >
+            Add path
+          </Button>
+          <Button
+            variant="light"
+            leftSection={<ArrowsClockwiseIcon size={16} />}
+            onClick={onCrawl}
+          >
+            Crawl
+          </Button>
+          <Button
+            variant="filled"
+            leftSection={<ShuffleIcon size={16} />}
+            onClick={onPickFile}
+          >
+            {shuffle ? "Random file" : "Next file"}
+          </Button>
+        </Group>
       </Group>
 
-      <Group>
+      {/* Right: checkboxes */}
+      <Group gap="sm">
         <Checkbox
           label="Shuffle"
           checked={shuffle}
