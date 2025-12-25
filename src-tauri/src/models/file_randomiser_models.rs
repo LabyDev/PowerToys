@@ -83,6 +83,4 @@ pub struct RandomiserPreset {
     pub paths: Vec<SavedPath>,
     pub filter_rules: Vec<FilterRule>,
     pub shuffle: Option<bool>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }

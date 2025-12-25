@@ -44,8 +44,6 @@ export type RandomiserPreset = {
   paths: SavedPath[];
   filterRules: FilterRule[];
   shuffle?: boolean;
-  createdAt: string;
-  updatedAt: string;
 };
 
 export type PresetState = {

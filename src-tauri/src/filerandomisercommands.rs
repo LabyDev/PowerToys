@@ -1,7 +1,7 @@
-use crate::models::FilterAction;
 use crate::models::{
     AppStateData, FileEntry, FilterMatchType, FilterRule, FilterTarget, HistoryEntry, SavedPath,
 };
+use crate::models::{FilterAction, RandomiserPreset};
 use chrono::Utc;
 use std::fs;
 use std::sync::Mutex;
@@ -309,6 +309,66 @@ pub fn open_presets_folder(app: tauri::AppHandle) -> Result<(), String> {
     app.opener()
         .open_path(presets_dir.to_string_lossy(), None::<String>)
         .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_presets(app: tauri::AppHandle) -> Result<Vec<RandomiserPreset>, String> {
+    let presets_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("presets");
+
+    // Make sure the folder exists
+    std::fs::create_dir_all(&presets_dir).map_err(|e| e.to_string())?;
+
+    let mut presets = Vec::new();
+
+    for entry in std::fs::read_dir(&presets_dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+
+        // Only process .json files
+        if path.extension().and_then(|s| s.to_str()) == Some("json") {
+            let file_content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+
+            // Try to deserialize; skip invalid files
+            if let Ok(preset) = serde_json::from_str::<RandomiserPreset>(&file_content) {
+                presets.push(preset);
+            } else {
+                eprintln!("Skipping invalid preset file: {:?}", path);
+            }
+        }
+    }
+
+    Ok(presets)
+}
+
+#[tauri::command]
+pub fn save_preset(app: tauri::AppHandle, preset: RandomiserPreset) -> Result<(), String> {
+    let presets_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("presets");
+
+    // Ensure the presets folder exists
+    std::fs::create_dir_all(&presets_dir).map_err(|e| e.to_string())?;
+
+    // Sanitize name for file system (basic)
+    let safe_name = preset
+        .name
+        .replace(|c: char| !c.is_alphanumeric() && c != '-' && c != '_', "_");
+    // Shorten the GUID to first 8 characters
+    let short_id = &preset.id[..8];
+
+    // Use both id and sanitized name for the filename
+    let file_path = presets_dir.join(format!("{}_{}.json", safe_name, short_id));
+    let json_data = serde_json::to_string_pretty(&preset).map_err(|e| e.to_string())?;
+
+    std::fs::write(file_path, json_data).map_err(|e| e.to_string())?;
 
     Ok(())
 }

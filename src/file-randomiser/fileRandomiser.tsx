@@ -19,6 +19,7 @@ import PresetControls from "./presetControls";
 
 import * as presetApi from "../core/api/presetsApi";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
+import { arraysEqual } from "../core/utilities/deepCompare";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -30,6 +31,7 @@ const FileRandomiser = () => {
     filterRules: [],
   });
 
+  const lastAppliedPresetRef = useRef<RandomiserPreset | null>(null);
   const [presets, setPresets] = useState<RandomiserPreset[]>([]);
   const [presetState, setPresetState] = useState<PresetState>({
     currentId: null,
@@ -84,6 +86,17 @@ const FileRandomiser = () => {
   }, [tracking]);
 
   useEffect(() => {
+    const preset = lastAppliedPresetRef.current;
+
+    if (
+      preset &&
+      arraysEqual(data.paths, preset.paths) &&
+      arraysEqual(data.filterRules, preset.filterRules)
+    ) {
+      // Matches last applied preset exactly → don't mark dirty
+      return;
+    }
+
     setPresetState((p) => ({ ...p, dirty: true }));
   }, [data.paths, data.filterRules]);
 
@@ -148,6 +161,7 @@ const FileRandomiser = () => {
   // ------------------------ Preset Handling ------------------------
 
   const applyPreset = async (preset: RandomiserPreset) => {
+    lastAppliedPresetRef.current = preset;
     setPresetState({ currentId: preset.id, name: preset.name, dirty: false });
     await updateFiltersAndCrawl({
       ...data,
