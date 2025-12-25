@@ -91,7 +91,8 @@ const FileRandomiser = () => {
     if (
       preset &&
       arraysEqual(data.paths, preset.paths) &&
-      arraysEqual(data.filterRules, preset.filterRules)
+      arraysEqual(data.filterRules, preset.filterRules) &&
+      presetState.name === preset.name
     ) {
       // Matches last applied preset exactly → don't mark dirty
       return;
@@ -159,6 +160,21 @@ const FileRandomiser = () => {
   }, [data.files, shuffle]);
 
   // ------------------------ Preset Handling ------------------------
+
+  const handleNameChange = (newName: string) => {
+    setPresetState((p) => ({
+      ...p,
+      name: newName,
+      dirty:
+        !lastAppliedPresetRef.current || // no preset yet
+        newName !== lastAppliedPresetRef.current.name ||
+        !arraysEqual(data.paths, lastAppliedPresetRef.current.paths) ||
+        !arraysEqual(
+          data.filterRules,
+          lastAppliedPresetRef.current.filterRules,
+        ),
+    }));
+  };
 
   const applyPreset = async (preset: RandomiserPreset) => {
     lastAppliedPresetRef.current = preset;
@@ -250,7 +266,7 @@ const FileRandomiser = () => {
               presets={presets}
               name={presetState.name}
               dirty={presetState.dirty}
-              onNameChange={(name) => setPresetState((p) => ({ ...p, name }))}
+              onNameChange={handleNameChange}
               onSelect={applyPreset}
               onSave={savePreset}
               onOpenFolder={openPresetsFolder}
