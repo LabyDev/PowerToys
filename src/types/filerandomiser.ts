@@ -37,3 +37,19 @@ export type FilterRule = {
   pattern: string; // string or regex pattern
   caseSensitive?: boolean; // default false
 };
+
+export type RandomiserPreset = {
+  id: string;
+  name: string;
+  paths: SavedPath[];
+  filterRules: FilterRule[];
+  shuffle?: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PresetState = {
+  currentId: string | null;
+  name: string;
+  dirty: boolean; // paths/filters changed since last save
+};

@@ -4,13 +4,18 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 
-import { AppStateData } from "../types/filerandomiser";
+import {
+  AppStateData,
+  PresetState,
+  RandomiserPreset,
+} from "../types/filerandomiser";
 import { useAppSettings } from "../core/hooks/useAppSettings";
 import Section from "./section";
 import Toolbar from "./toolbar";
 import FiltersPanel from "./filtersPanel";
 import "./fileRandomiser.css";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import PresetControls from "./presetControls";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -20,6 +25,13 @@ const FileRandomiser = () => {
     files: [],
     history: [],
     filterRules: [],
+  });
+
+  const [presets, setPresets] = useState<RandomiserPreset[]>([]);
+  const [presetState, setPresetState] = useState<PresetState>({
+    currentId: null,
+    name: "Untitled",
+    dirty: false,
   });
 
   const [query, setQuery] = useState("");
@@ -33,6 +45,8 @@ const FileRandomiser = () => {
   // ------------------------ Effects ------------------------
   useEffect(() => {
     updateAndRefreshData();
+    // Load presets from backend
+    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
   }, []);
 
   useEffect(() => {
@@ -67,7 +81,12 @@ const FileRandomiser = () => {
     return () => unlisten?.();
   }, [tracking]);
 
+  useEffect(() => {
+    setPresetState((p) => ({ ...p, dirty: true }));
+  }, [data.paths, data.filterRules]);
+
   // ------------------------ Data Handling ------------------------
+
   const updateAndRefreshData = async (updatedData?: AppStateData) => {
     if (updatedData) {
       await invoke("update_app_state", { newData: updatedData });
@@ -77,8 +96,8 @@ const FileRandomiser = () => {
   };
 
   const updateFiltersAndCrawl = async (updatedData: AppStateData) => {
-    await updateAndRefreshData(updatedData); // update state
-    await handleCrawl(); // crawl paths again
+    await updateAndRefreshData(updatedData);
+    await handleCrawl();
   };
 
   const handleAddPath = async () => {
@@ -94,12 +113,10 @@ const FileRandomiser = () => {
   const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
-    // Filter out excluded files
     const availableFiles = data.files.filter((f) => !f.excluded);
-    if (!availableFiles.length) return; // nothing to pick
+    if (!availableFiles.length) return;
 
     let index: number;
-
     if (shuffle) {
       index = Math.floor(Math.random() * availableFiles.length);
     } else {
@@ -119,13 +136,66 @@ const FileRandomiser = () => {
     const file = availableFiles[index];
     await invoke("open_file_by_id", { id: file.id });
 
-    // Update currentIndex using original data.files index
     const originalIndex = data.files.findIndex((f) => f.id === file.id);
     setCurrentIndex(originalIndex);
     currentIndexRef.current = originalIndex;
 
     updateAndRefreshData();
   }, [data.files, shuffle]);
+
+  // ------------------------ Preset Handling ------------------------
+  const applyPreset = async (preset: RandomiserPreset) => {
+    setPresetState({ currentId: preset.id, name: preset.name, dirty: false });
+    await updateFiltersAndCrawl({
+      ...data,
+      paths: preset.paths,
+      filterRules: preset.filterRules,
+    });
+  };
+
+  const savePreset = async () => {
+    if (!presetState.currentId) return savePresetAs();
+    const now = new Date().toISOString();
+    await invoke("save_preset", {
+      id: presetState.currentId,
+      name: presetState.name,
+      paths: data.paths,
+      filterRules: data.filterRules,
+      createdAt: now,
+      updatedAt: now,
+    });
+    setPresetState((p) => ({ ...p, dirty: false }));
+    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
+  };
+
+  const savePresetAs = async () => {
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+    await invoke("save_preset", {
+      id,
+      name: presetState.name || "New preset",
+      paths: data.paths,
+      filterRules: data.filterRules,
+      createdAt: now,
+      updatedAt: now,
+    });
+    setPresetState({ currentId: id, name: presetState.name, dirty: false });
+    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
+  };
+
+  const importPresets = async () => {
+    await invoke("import_presets");
+    invoke<RandomiserPreset[]>("get_presets").then(setPresets);
+  };
+
+  const exportPreset = async () => {
+    if (!presetState.currentId) return;
+    await invoke("export_preset", { id: presetState.currentId });
+  };
+
+  const openPresetsFolder = async () => {
+    await invoke("open_presets_folder");
+  };
 
   // ------------------------ Filtering ------------------------
   const q = query.toLowerCase();
@@ -154,7 +224,6 @@ const FileRandomiser = () => {
             h.path.toLowerCase().includes(q),
         )
       : data.history;
-
     return [...base].sort(
       (a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime(),
     );
@@ -163,7 +232,7 @@ const FileRandomiser = () => {
   return (
     <Box p="md" h="88vh">
       <Stack h="100%" gap="md">
-        {/* Toolbar + Search */}
+        {/* Toolbar + Presets */}
         <Toolbar
           shuffle={shuffle}
           tracking={tracking}
@@ -175,6 +244,20 @@ const FileRandomiser = () => {
           onShuffleChange={setShuffle}
           onTrackingChange={setTracking}
           onQueryChange={setQuery}
+          presetControls={
+            <PresetControls
+              presets={presets}
+              name={presetState.name}
+              dirty={presetState.dirty}
+              onNameChange={(name) => setPresetState((p) => ({ ...p, name }))}
+              onSelect={applyPreset}
+              onSave={savePreset}
+              onSaveAs={savePresetAs}
+              onImport={importPresets}
+              onExport={exportPreset}
+              onOpenFolder={openPresetsFolder}
+            />
+          }
         />
 
         {/* Filters */}
@@ -203,7 +286,6 @@ const FileRandomiser = () => {
                     </Text>
                   </Stack>
 
-                  {/* Exclude button */}
                   <ActionIcon
                     color="orange"
                     variant="subtle"
@@ -235,9 +317,7 @@ const FileRandomiser = () => {
                       const removed = await invoke<boolean>("remove_path", {
                         id: item.id,
                       });
-                      if (removed) {
-                        handleCrawl();
-                      }
+                      if (removed) handleCrawl();
                     }}
                   >
                     <TrashIcon size={16} />
@@ -256,7 +336,9 @@ const FileRandomiser = () => {
                 <Box
                   px="sm"
                   py={6}
-                  className={`file-item hoverable ${item.excluded ? "excluded" : ""}`}
+                  className={`file-item hoverable ${
+                    item.excluded ? "excluded" : ""
+                  }`}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -267,7 +349,7 @@ const FileRandomiser = () => {
                       data.files[currentIndex]?.id === item.id
                         ? "var(--mantine-color-blue-light)"
                         : undefined,
-                    opacity: item.excluded ? 0.5 : 1, // dim excluded files
+                    opacity: item.excluded ? 0.5 : 1,
                   }}
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
@@ -285,7 +367,6 @@ const FileRandomiser = () => {
                     </Text>
                   </Stack>
 
-                  {/* Exclude button */}
                   <ActionIcon
                     color="orange"
                     variant="subtle"

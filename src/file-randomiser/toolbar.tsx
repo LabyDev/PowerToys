@@ -12,6 +12,7 @@ interface ToolbarProps {
   tracking: boolean;
   allowTracking: boolean;
   query: string;
+  presetControls: React.ReactNode;
   onAddPath: () => void;
   onCrawl: () => void;
   onPickFile: () => void;
@@ -25,6 +26,7 @@ const Toolbar = ({
   tracking,
   allowTracking,
   query,
+  presetControls,
   onAddPath,
   onCrawl,
   onPickFile,
@@ -34,6 +36,7 @@ const Toolbar = ({
 }: ToolbarProps) => (
   <>
     <Group justify="space-between" wrap="nowrap">
+      <Group>{presetControls}</Group>
       <Group>
         <Button leftSection={<FolderPlusIcon size={16} />} onClick={onAddPath}>
           Add path
