@@ -82,7 +82,6 @@ const Toolbar = ({
     </Group>
 
     <TextInput
-      mt="sm"
       placeholder="Search paths, files, and history…"
       leftSection={<MagnifyingGlassIcon size={16} />}
       rightSection={
