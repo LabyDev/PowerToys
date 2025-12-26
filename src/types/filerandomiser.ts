@@ -25,13 +25,11 @@ export type AppStateData = {
   filterRules: FilterRule[];
 };
 
-export type FilterTarget = "filename" | "folder"; // what the rule applies to
 export type FilterAction = "include" | "exclude"; // inclusion or exclusion
 export type FilterMatchType = "contains" | "startsWith" | "endsWith" | "regex"; // match type
 
 export type FilterRule = {
   id: string;
-  target: FilterTarget;
   action: FilterAction;
   type: FilterMatchType;
   pattern: string; // string or regex pattern

@@ -16,7 +16,6 @@ import {
   AppStateData,
   FilterRule,
   FilterMatchType,
-  FilterTarget,
 } from "../types/filerandomiser";
 import RuleBadge from "./ruleBadge";
 
@@ -36,20 +35,26 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [newRule, setNewRule] = useState<Omit<FilterRule, "id">>({
-    target: "filename",
     action: "exclude",
     type: "contains",
     pattern: "",
     caseSensitive: false,
   });
 
-  // Add a new rule
   const addRule = async () => {
     if (!newRule.pattern.trim()) return;
-    const rule: FilterRule = { ...newRule, id: crypto.randomUUID() };
-    await updateData({ ...data, filterRules: [...data.filterRules, rule] });
+
+    const rule: FilterRule = {
+      ...newRule,
+      id: crypto.randomUUID(),
+    };
+
+    await updateData({
+      ...data,
+      filterRules: [...data.filterRules, rule],
+    });
+
     setNewRule({
-      target: "filename",
       action: "exclude",
       type: "contains",
       pattern: "",
@@ -57,32 +62,11 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
     });
   };
 
-  // Remove a rule
   const removeRule = async (id: string) => {
     await updateData({
       ...data,
       filterRules: data.filterRules.filter((r) => r.id !== id),
     });
-  };
-
-  const renderRuleGroup = (target: FilterTarget) => {
-    const rules = data.filterRules.filter((r) => r.target === target);
-
-    if (rules.length === 0) {
-      return (
-        <Text size="xs" c="dimmed">
-          No rules
-        </Text>
-      );
-    }
-
-    return (
-      <Group gap="xs">
-        {rules.map((r) => (
-          <RuleBadge key={r.id} rule={r} onRemove={() => removeRule(r.id)} />
-        ))}
-      </Group>
-    );
   };
 
   return (
@@ -117,25 +101,20 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                 }
                 style={{ width: 120 }}
               />
+
               <TextInput
                 placeholder="Pattern"
                 value={newRule.pattern}
                 onChange={(e) =>
-                  setNewRule((r) => ({ ...r, pattern: e.currentTarget.value }))
+                  setNewRule((r) => ({
+                    ...r,
+                    pattern: e.currentTarget.value,
+                  }))
                 }
                 onKeyDown={(e) => e.key === "Enter" && addRule()}
                 style={{ flex: 1 }}
               />
-              <Checkbox
-                label="Folder"
-                checked={newRule.target === "folder"}
-                onChange={(e) =>
-                  setNewRule((r) => ({
-                    ...r,
-                    target: e.currentTarget.checked ? "folder" : "filename",
-                  }))
-                }
-              />
+
               <Checkbox
                 label="Include"
                 checked={newRule.action === "include"}
@@ -146,6 +125,7 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                   }))
                 }
               />
+
               <Checkbox
                 label="Case-sensitive"
                 checked={newRule.caseSensitive}
@@ -156,6 +136,7 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                   }))
                 }
               />
+
               <ActionIcon variant="light" onClick={addRule}>
                 <PlusIcon size={16} />
               </ActionIcon>
@@ -164,18 +145,22 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
 
           <Divider />
 
-          <Stack gap="sm">
-            <Text size="sm" fw={600}>
-              Folder rules
-            </Text>
-            {renderRuleGroup("folder")}
-
-            <Divider my="xs" />
-
-            <Text size="sm" fw={600}>
-              Filename rules
-            </Text>
-            {renderRuleGroup("filename")}
+          <Stack gap="xs">
+            {data.filterRules.length === 0 ? (
+              <Text size="xs" c="dimmed">
+                No rules
+              </Text>
+            ) : (
+              <Group gap="xs">
+                {data.filterRules.map((r) => (
+                  <RuleBadge
+                    key={r.id}
+                    rule={r}
+                    onRemove={() => removeRule(r.id)}
+                  />
+                ))}
+              </Group>
+            )}
           </Stack>
         </Stack>
       </Collapse>

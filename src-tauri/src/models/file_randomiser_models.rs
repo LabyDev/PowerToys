@@ -33,20 +33,12 @@ pub struct HistoryEntry {
 #[serde(rename_all = "camelCase")]
 pub struct FilterRule {
     pub id: String,
-    pub target: FilterTarget,
     pub action: FilterAction,
     #[serde(rename = "type")]
     pub match_type: FilterMatchType,
     pub pattern: String,
     #[serde(default)]
     pub case_sensitive: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum FilterTarget {
-    Filename,
-    Folder,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
