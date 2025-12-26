@@ -362,11 +362,11 @@ const FileRandomiser = () => {
         <FiltersPanel data={data} updateData={updateFiltersAndCrawl} />
 
         {/* Main content */}
-        <Group align="stretch" style={{ flex: 1 }}>
+        <Group align="stretch" style={{ flex: 1, minHeight: 0 }}>
           {/* Paths */}
           <Section
             title={`Paths (${filteredPaths.length})`}
-            style={{ flex: 1 }}
+            style={{ flex: "0 0 200px", minWidth: 400, maxWidth: 500 }}
           >
             <Virtuoso
               data={filteredPaths}
@@ -428,38 +428,40 @@ const FileRandomiser = () => {
             />
           </Section>
 
-          {/* Files (make this bigger) */}
+          {/* Files */}
           <Section
             title={`Files (${filteredFiles.length})`}
-            style={{ flex: 3 }}
+            style={{ flex: 1, minWidth: 0 }}
           >
-            <FileTree
-              nodes={buildFileTree(filteredFiles)}
-              onExclude={async (file) => {
-                const rule = {
-                  id: crypto.randomUUID(),
-                  target: "filename" as const,
-                  action: "exclude" as const,
-                  type: "contains" as const,
-                  pattern: file.name,
-                  caseSensitive: false,
-                };
-                await updateAndRefreshData({
-                  ...data,
-                  filterRules: [...data.filterRules, rule],
-                });
-                handleCrawl();
-              }}
-              currentFileId={
-                currentIndex !== null ? data.files[currentIndex]?.id : null
-              }
-            />
+            <Box style={{ height: "100%", minHeight: 0, overflowY: "auto" }}>
+              <FileTree
+                nodes={buildFileTree(filteredFiles)}
+                onExclude={async (file) => {
+                  const rule = {
+                    id: crypto.randomUUID(),
+                    target: "filename" as const,
+                    action: "exclude" as const,
+                    type: "contains" as const,
+                    pattern: file.name,
+                    caseSensitive: false,
+                  };
+                  await updateAndRefreshData({
+                    ...data,
+                    filterRules: [...data.filterRules, rule],
+                  });
+                  handleCrawl();
+                }}
+                currentFileId={
+                  currentIndex !== null ? data.files[currentIndex]?.id : null
+                }
+              />
+            </Box>
           </Section>
 
           {/* History */}
           <Section
             title={`History (${filteredHistory.length})`}
-            style={{ flex: 1.5 }}
+            style={{ flex: "0 0 200px", minWidth: 400, maxWidth: 500 }}
           >
             <Virtuoso
               data={filteredHistory}
