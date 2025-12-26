@@ -4,7 +4,7 @@ import {
   Group,
   TextInput,
   ActionIcon,
-  Card,
+  Paper,
 } from "@mantine/core";
 import {
   FolderPlusIcon,
@@ -42,7 +42,7 @@ const Toolbar = ({
   onQueryChange,
 }: ToolbarProps) => (
   <>
-    <Card shadow="sm" padding="md" radius="md" withBorder>
+    <Paper withBorder radius="md" p="md">
       <Group justify="space-between" align="center" wrap="nowrap">
         {/* Left + middle buttons */}
         <Group gap="md" align="center" wrap="nowrap">
@@ -88,7 +88,7 @@ const Toolbar = ({
           )}
         </Group>
       </Group>
-    </Card>
+    </Paper>
 
     <TextInput
       placeholder="Search paths, files, and history…"
