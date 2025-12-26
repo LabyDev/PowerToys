@@ -7,6 +7,7 @@ import {
   Text,
   Select,
   Button,
+  Group,
 } from "@mantine/core";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
@@ -19,7 +20,7 @@ const AppSettingsPage = () => {
   const handleDarkModeChange = async (value: DarkModeOption) => {
     try {
       const updatedSettings: AppSettings = await invoke("set_dark_mode", {
-        mode: value,
+        dark_mode: value, // make sure key matches state
       });
       setSettings(updatedSettings);
     } catch (err) {
@@ -36,6 +37,18 @@ const AppSettingsPage = () => {
       setSettings(updatedSettings);
     } catch (err) {
       console.error("Failed to select background:", err);
+    }
+  };
+
+  // Clear current background
+  const handleBackgroundClear = async () => {
+    try {
+      const updatedSettings: AppSettings = await invoke(
+        "clear_custom_background",
+      );
+      setSettings(updatedSettings);
+    } catch (err) {
+      console.error("Failed to clear background:", err);
     }
   };
 
@@ -57,7 +70,7 @@ const AppSettingsPage = () => {
             <Select
               label="Dark Mode"
               description="Choose your theme preference."
-              value={settings.darkMode}
+              value={settings.darkMode} // ensure key matches
               onChange={(val) => handleDarkModeChange(val as DarkModeOption)}
               data={[
                 { value: "light", label: "Light" },
@@ -67,9 +80,19 @@ const AppSettingsPage = () => {
             />
 
             {/* Custom Background */}
-            <Button onClick={handleBackgroundSelect}>
-              Select Custom Background
-            </Button>
+            <Group gap="sm">
+              <Button onClick={handleBackgroundSelect}>
+                Select Custom Background
+              </Button>
+              <Button
+                color="red"
+                variant="outline"
+                onClick={handleBackgroundClear}
+              >
+                Clear Background
+              </Button>
+            </Group>
+
             {settings.customBackground && (
               <Text size="sm" c="dimmed">
                 Current: {settings.customBackground}

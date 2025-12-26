@@ -69,3 +69,12 @@ pub fn set_custom_background(app: AppHandle<Wry>) -> Result<AppSettings, String>
     set_app_settings(app, settings.clone())?;
     Ok(settings)
 }
+
+/// Clear the custom background
+#[tauri::command]
+pub fn clear_custom_background(app: AppHandle<Wry>) -> Result<AppSettings, String> {
+    let mut settings = get_app_settings(app.clone())?;
+    settings.custom_background = None; // clear the background
+    set_app_settings(app, settings.clone())?;
+    Ok(settings)
+}
