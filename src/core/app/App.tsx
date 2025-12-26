@@ -1,9 +1,10 @@
 import { NavBar } from "./NavBar";
 import FileRandomiser from "../../file-randomiser/fileRandomiser";
 import MainPage from "../mainpage/MainPage";
-import Settings from "../settings/settings";
 import { Routes, Route, useLocation } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import FileRandomiserSettings from "../settings/filerandomiserSettings";
+import Settings from "../settings/settings";
 
 export function App() {
   const location = useLocation();
@@ -41,6 +42,14 @@ export function App() {
               element={
                 <PageWrapper>
                   <FileRandomiser />
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/FileRandomiserSettings"
+              element={
+                <PageWrapper>
+                  <FileRandomiserSettings />
                 </PageWrapper>
               }
             />
