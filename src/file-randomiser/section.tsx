@@ -4,12 +4,20 @@ const Section = ({
   title,
   children,
   style,
+  className,
 }: {
   title: string;
   children: React.ReactNode;
   style?: React.CSSProperties;
+  className?: string;
 }) => (
-  <Paper withBorder radius="md" p="sm" style={{ height: "100%", ...style }}>
+  <Paper
+    withBorder
+    radius="md"
+    p="sm"
+    style={{ height: "100%", ...style }}
+    className={className}
+  >
     <Stack gap="xs" h="100%">
       <Title order={5}>{title}</Title>
       <Divider />
