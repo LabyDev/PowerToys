@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "@mantine/core/styles.css";
-import { ColorSchemeScript, MantineProvider } from "@mantine/core";
+import { MantineProvider } from "@mantine/core";
 import { BrowserRouter } from "react-router";
 import "./main.css";
 import { App } from "./core/app/App";
@@ -10,14 +10,13 @@ import { useAppSettings } from "./core/hooks/useAppSettings";
 
 function Root() {
   const { isDarkMode } = useAppSettings();
-
-  const defaultColorScheme = isDarkMode ? "dark" : "light";
-
   return (
     <>
       {/* Prevent flash of wrong color scheme on load */}
-      <ColorSchemeScript defaultColorScheme={defaultColorScheme} />
-      <MantineProvider defaultColorScheme={defaultColorScheme}>
+      <MantineProvider
+        defaultColorScheme={isDarkMode ? "dark" : "light"}
+        forceColorScheme={isDarkMode ? "dark" : "light"}
+      >
         <ErrorBoundary>
           <BrowserRouter>
             <App />

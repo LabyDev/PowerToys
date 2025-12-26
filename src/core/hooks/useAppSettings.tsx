@@ -58,7 +58,7 @@ export function useAppSettings() {
   }, []);
 
   const isDarkMode =
-    settings.darkMode === "system" ? systemDark : settings.darkMode;
+    settings.darkMode === "system" ? systemDark : settings.darkMode === "dark";
 
   return { settings, setSettings, isDarkMode };
 }

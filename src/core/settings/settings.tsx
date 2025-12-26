@@ -15,12 +15,11 @@ import { DarkModeOption, AppSettings } from "../../types/settings";
 
 const AppSettingsPage = () => {
   const { settings, setSettings } = useAppSettings();
-
   // Handle dark mode selection
   const handleDarkModeChange = async (value: DarkModeOption) => {
     try {
       const updatedSettings: AppSettings = await invoke("set_dark_mode", {
-        dark_mode: value, // make sure key matches state
+        mode: value,
       });
       setSettings(updatedSettings);
     } catch (err) {
