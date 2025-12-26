@@ -62,10 +62,12 @@ const FileTree = ({
 
               <Text
                 size="sm"
-                lineClamp={1}
                 style={{
                   textDecoration: node.file?.excluded ? "line-through" : "none",
                   cursor: node.children ? "pointer" : undefined,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
                 onClick={() => node.children && setExpanded((e) => !e)}
               >

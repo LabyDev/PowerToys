@@ -378,10 +378,26 @@ const FileRandomiser = () => {
                   className="path-item hoverable"
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
-                    <Text size="sm" fw={600} lineClamp={1}>
+                    <Text
+                      size="sm"
+                      fw={600}
+                      style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {item.name}
                     </Text>
-                    <Text size="xs" c="dimmed" lineClamp={1}>
+                    <Text
+                      size="xs"
+                      c="dimmed"
+                      style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {item.path}
                     </Text>
                   </Stack>
@@ -464,10 +480,25 @@ const FileRandomiser = () => {
               data={filteredHistory}
               itemContent={(_, item) => (
                 <Box px="sm" py={6}>
-                  <Text size="sm" lineClamp={1}>
+                  <Text
+                    size="sm"
+                    style={{
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
                     {item.name}
                   </Text>
-                  <Text size="xs" c="dimmed" lineClamp={1}>
+                  <Text
+                    size="xs"
+                    c="dimmed"
+                    style={{
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
                     {item.path}
                   </Text>
                   <Text size="xs" c="dimmed" tt="italic">
