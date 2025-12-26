@@ -1,8 +1,8 @@
 export type DarkModeOption = "light" | "dark" | "system";
 
 export type AppSettings = {
-  dark_mode: DarkModeOption;
-  custom_background?: string;
+  darkMode: DarkModeOption;
+  customBackground?: string;
   fileRandomiser: {
     enable_context_menu: boolean;
     allow_process_tracking: boolean;

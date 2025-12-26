@@ -57,7 +57,7 @@ const AppSettingsPage = () => {
             <Select
               label="Dark Mode"
               description="Choose your theme preference."
-              value={settings.dark_mode}
+              value={settings.darkMode}
               onChange={(val) => handleDarkModeChange(val as DarkModeOption)}
               data={[
                 { value: "light", label: "Light" },
@@ -70,9 +70,9 @@ const AppSettingsPage = () => {
             <Button onClick={handleBackgroundSelect}>
               Select Custom Background
             </Button>
-            {settings.custom_background && (
+            {settings.customBackground && (
               <Text size="sm" c="dimmed">
-                Current: {settings.custom_background}
+                Current: {settings.customBackground}
               </Text>
             )}
           </Stack>

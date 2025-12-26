@@ -6,8 +6,8 @@ export type DarkModeOption = true | false | "system";
 
 export function useAppSettings() {
   const [settings, setSettingsState] = useState<AppSettings>({
-    dark_mode: "system",
-    custom_background: undefined,
+    darkMode: "system",
+    customBackground: undefined,
     fileRandomiser: {
       enable_context_menu: false,
       allow_process_tracking: false,
@@ -26,17 +26,16 @@ export function useAppSettings() {
     try {
       setSettingsState((prevSettings) => {
         const newSettings: AppSettings = {
-          ...prevSettings,
-          ...partial,
+          ...prevSettings, // keep all top-level keys
+          ...partial, // overwrite top-level if present
           fileRandomiser: {
-            ...prevSettings.fileRandomiser,
-            ...(partial.fileRandomiser || {}),
+            ...prevSettings.fileRandomiser, // keep existing nested values
+            ...partial.fileRandomiser, // overwrite nested values if provided
           },
         };
 
-        // Persist the new settings
-        invoke("set_app_settings", { settings: newSettings }).catch((err) =>
-          console.error("Failed to persist settings:", err),
+        invoke("set_app_settings", { settings: newSettings }).catch(
+          console.error,
         );
 
         return newSettings;
@@ -59,7 +58,7 @@ export function useAppSettings() {
   }, []);
 
   const isDarkMode =
-    settings.dark_mode === "system" ? systemDark : settings.dark_mode;
+    settings.darkMode === "system" ? systemDark : settings.darkMode;
 
   return { settings, setSettings, isDarkMode };
 }

@@ -9,21 +9,17 @@ import {
 } from "@mantine/core";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
+import { AppSettings } from "../../types/settings";
 
 const FileRandomiserSettings = () => {
   const { settings, setSettings } = useAppSettings();
 
   const handleContextMenuToggle = async (checked: boolean) => {
     try {
-      const updated: boolean = await invoke("toggle_context_menu_item", {
+      const updated: AppSettings = await invoke("toggle_context_menu_item", {
         enable: checked,
       });
-      setSettings({
-        fileRandomiser: {
-          ...settings.fileRandomiser,
-          enable_context_menu: updated,
-        },
-      });
+      setSettings(updated);
     } catch (err) {
       console.error("Failed to toggle context menu:", err);
     }
@@ -31,15 +27,10 @@ const FileRandomiserSettings = () => {
 
   const handleProcessTrackingToggle = async (checked: boolean) => {
     try {
-      const updated: boolean = await invoke("toggle_process_tracking", {
+      const updated: AppSettings = await invoke("toggle_process_tracking", {
         enable: checked,
       });
-      setSettings({
-        fileRandomiser: {
-          ...settings.fileRandomiser,
-          allow_process_tracking: updated,
-        },
-      });
+      setSettings(updated);
     } catch (err) {
       console.error("Failed to toggle process tracking:", err);
     }
