@@ -18,7 +18,7 @@ const ItemActions = ({
   if (!onOpenFolder && !onExclude && !onRemove && !onOpen) return null;
 
   return (
-    <Group gap={4} wrap="nowrap" className="item-actions">
+    <Group gap={4} wrap="nowrap">
       {onOpenFolder && (
         <Tooltip label="Open in folder" className="item-action">
           <ActionIcon variant="subtle" onClick={onOpenFolder}>

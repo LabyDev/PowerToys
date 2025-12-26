@@ -44,6 +44,7 @@ const FileTreeNodeComponent = ({
     <Box pl={node.children ? 10 : 20} ref={ref}>
       <Group
         gap={8}
+        className="item-actions"
         style={{
           backgroundColor:
             !node.children && node.file && currentFileId === node.file.id

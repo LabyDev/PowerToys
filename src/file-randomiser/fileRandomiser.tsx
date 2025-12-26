@@ -385,7 +385,7 @@ const FileRandomiser = () => {
                   px="sm"
                   py={6}
                   style={{ alignItems: "center", gap: 8 }}
-                  className="path-item hoverable"
+                  className="item-actions"
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
                     <ClampedTooltipText size="sm" fw={600}>
@@ -478,7 +478,13 @@ const FileRandomiser = () => {
             <Virtuoso
               data={filteredHistory}
               itemContent={(_, item) => (
-                <Group px="sm" py={6} align="center" gap={8}>
+                <Group
+                  px="sm"
+                  py={6}
+                  align="center"
+                  gap={8}
+                  className="item-actions"
+                >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
                     <ClampedTooltipText size="sm">
                       {item.name}
