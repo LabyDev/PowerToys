@@ -77,6 +77,10 @@ const AppSettingsPage = () => {
                 { value: "system", label: "Follow System" },
               ]}
             />
+            <Text size="xs" c="dimmed">
+              Changing the theme will take effect after restarting the
+              application.
+            </Text>
 
             {/* Custom Background */}
             <Group gap="sm">
@@ -91,12 +95,6 @@ const AppSettingsPage = () => {
                 Clear Background
               </Button>
             </Group>
-
-            {settings.customBackground && (
-              <Text size="sm" c="dimmed">
-                Current: {settings.customBackground}
-              </Text>
-            )}
           </Stack>
         </Stack>
       </Paper>
