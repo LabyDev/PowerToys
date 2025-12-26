@@ -361,9 +361,12 @@ const FileRandomiser = () => {
         <FiltersPanel data={data} updateData={updateFiltersAndCrawl} />
 
         {/* Main content */}
-        <Group align="stretch" grow style={{ flex: 1, minHeight: 0 }}>
+        <Group align="stretch" style={{ flex: 1 }}>
           {/* Paths */}
-          <Section title={`Paths (${filteredPaths.length})`}>
+          <Section
+            title={`Paths (${filteredPaths.length})`}
+            style={{ flex: 1 }}
+          >
             <Virtuoso
               data={filteredPaths}
               itemContent={(_, item) => (
@@ -424,8 +427,11 @@ const FileRandomiser = () => {
             />
           </Section>
 
-          {/* Files */}
-          <Section title={`Files (${filteredFiles.length})`}>
+          {/* Files (make this bigger) */}
+          <Section
+            title={`Files (${filteredFiles.length})`}
+            style={{ flex: 3 }}
+          >
             <FileTree
               nodes={buildFileTree(filteredFiles)}
               onExclude={async (file) => {
@@ -450,7 +456,10 @@ const FileRandomiser = () => {
           </Section>
 
           {/* History */}
-          <Section title={`History (${filteredHistory.length})`}>
+          <Section
+            title={`History (${filteredHistory.length})`}
+            style={{ flex: 1.5 }}
+          >
             <Virtuoso
               data={filteredHistory}
               itemContent={(_, item) => (

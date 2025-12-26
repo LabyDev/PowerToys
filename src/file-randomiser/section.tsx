@@ -3,11 +3,13 @@ import { Box, Divider, Paper, Stack, Title } from "@mantine/core";
 const Section = ({
   title,
   children,
+  style,
 }: {
   title: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }) => (
-  <Paper withBorder radius="md" p="sm" style={{ height: "100%" }}>
+  <Paper withBorder radius="md" p="sm" style={{ height: "100%", ...style }}>
     <Stack gap="xs" h="100%">
       <Title order={5}>{title}</Title>
       <Divider />
