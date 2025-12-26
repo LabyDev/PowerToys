@@ -46,6 +46,10 @@ function RuleBadge({
           size="xs"
           variant="subtle"
           color={isExclude ? "red" : "green"}
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+          }}
           onClick={(e) => {
             e.stopPropagation();
             onRemove();

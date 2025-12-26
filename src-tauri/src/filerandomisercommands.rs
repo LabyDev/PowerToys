@@ -101,10 +101,7 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         data: &mut AppStateData,
         next_id: &mut u64,
         filter_rules: &[FilterRule],
-        parent_excluded: bool,
     ) {
-        let dir_excluded = parent_excluded || should_exclude(dir, filter_rules);
-
         if let Ok(entries) = fs::read_dir(dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
@@ -115,7 +112,7 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                         .map(|s| s.to_string_lossy().to_string())
                         .unwrap_or_else(|| "unknown".to_string());
 
-                    let excluded = dir_excluded || should_exclude(&path, filter_rules);
+                    let excluded = should_exclude(&path, filter_rules);
 
                     data.files.push(FileEntry {
                         id: *next_id,
@@ -126,7 +123,7 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
 
                     *next_id += 1;
                 } else if path.is_dir() {
-                    add_files_from_dir(&path, data, next_id, filter_rules, dir_excluded);
+                    add_files_from_dir(&path, data, next_id, filter_rules);
                 }
             }
         }
@@ -135,7 +132,7 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     for saved_path in &paths {
         if let Some(folder_path) = saved_path.path.as_path() {
             if folder_path.is_dir() {
-                add_files_from_dir(folder_path, &mut data, &mut next_id, &filter_rules, false);
+                add_files_from_dir(folder_path, &mut data, &mut next_id, &filter_rules);
             }
         }
     }

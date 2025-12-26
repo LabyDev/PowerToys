@@ -19,10 +19,21 @@ import {
 } from "../types/filerandomiser";
 import RuleBadge from "./ruleBadge";
 
-interface FiltersPanelProps {
-  data: AppStateData;
-  updateData: (updated: AppStateData) => Promise<void>;
-}
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const RULE_TYPES: { value: FilterMatchType; label: string }[] = [
   { value: "contains", label: "Contains" },
@@ -30,6 +41,34 @@ const RULE_TYPES: { value: FilterMatchType; label: string }[] = [
   { value: "endsWith", label: "Ends with" },
   { value: "regex", label: "Regex" },
 ];
+
+// Wrap RuleBadge for sortable
+function SortableRuleBadge({
+  rule,
+  onRemove,
+}: {
+  rule: FilterRule;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: rule.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <RuleBadge rule={rule} onRemove={onRemove} />
+    </div>
+  );
+}
+
+interface FiltersPanelProps {
+  data: AppStateData;
+  updateData: (updated: AppStateData) => Promise<void>;
+}
 
 const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -40,6 +79,8 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
     pattern: "",
     caseSensitive: false,
   });
+
+  const sensors = useSensors(useSensor(PointerSensor));
 
   const addRule = async () => {
     if (!newRule.pattern.trim()) return;
@@ -66,6 +107,19 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
     await updateData({
       ...data,
       filterRules: data.filterRules.filter((r) => r.id !== id),
+    });
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = data.filterRules.findIndex((r) => r.id === active.id);
+    const newIndex = data.filterRules.findIndex((r) => r.id === over.id);
+
+    await updateData({
+      ...data,
+      filterRules: arrayMove(data.filterRules, oldIndex, newIndex),
     });
   };
 
@@ -145,23 +199,32 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
 
           <Divider />
 
-          <Stack gap="xs">
-            {data.filterRules.length === 0 ? (
-              <Text size="xs" c="dimmed">
-                No rules
-              </Text>
-            ) : (
-              <Group gap="xs">
-                {data.filterRules.map((r) => (
-                  <RuleBadge
-                    key={r.id}
-                    rule={r}
-                    onRemove={() => removeRule(r.id)}
-                  />
-                ))}
-              </Group>
-            )}
-          </Stack>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={data.filterRules.map((r) => r.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {data.filterRules.length === 0 ? (
+                  <Text size="xs" c="dimmed">
+                    No rules
+                  </Text>
+                ) : (
+                  data.filterRules.map((r) => (
+                    <SortableRuleBadge
+                      key={r.id}
+                      rule={r}
+                      onRemove={() => removeRule(r.id)}
+                    />
+                  ))
+                )}
+              </div>
+            </SortableContext>
+          </DndContext>
         </Stack>
       </Collapse>
     </Paper>
