@@ -1,5 +1,5 @@
 import { Box, ActionIcon, Stack, Text } from "@mantine/core";
-import { PlusIcon, CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
+import { PlusIcon, CaretRight, CaretDown } from "@phosphor-icons/react";
 import { useState } from "react";
 import { FileEntry, FileTreeNode } from "../types/filerandomiser";
 
@@ -7,10 +7,12 @@ const FileTree = ({
   nodes,
   onExclude,
   currentFileId,
+  isRoot = true, // new prop to detect the top-level call
 }: {
   nodes: FileTreeNode[];
   onExclude: (file: FileEntry) => void;
   currentFileId: number | null;
+  isRoot?: boolean;
 }) => {
   const containsCurrentFile = (node: FileTreeNode): boolean => {
     if (node.file && node.file.id === currentFileId) return true;
@@ -20,10 +22,14 @@ const FileTree = ({
 
   return (
     <Stack gap={2}>
-      {nodes.map((node) => {
-        const defaultExpanded = node.children
-          ? containsCurrentFile(node)
-          : false;
+      {nodes.map((node, idx) => {
+        // Always expand the first node at the top level
+        const defaultExpanded =
+          isRoot && idx === 0
+            ? true
+            : node.children
+              ? containsCurrentFile(node)
+              : false;
         const [expanded, setExpanded] = useState(defaultExpanded);
 
         return (
@@ -47,9 +53,9 @@ const FileTree = ({
                   size="xs"
                 >
                   {expanded ? (
-                    <CaretDownIcon size={16} />
+                    <CaretDown size={16} />
                   ) : (
-                    <CaretRightIcon size={16} />
+                    <CaretRight size={16} />
                   )}
                 </ActionIcon>
               )}
@@ -82,6 +88,7 @@ const FileTree = ({
                 nodes={node.children}
                 onExclude={onExclude}
                 currentFileId={currentFileId}
+                isRoot={false} // child nodes are no longer root
               />
             )}
           </Box>
