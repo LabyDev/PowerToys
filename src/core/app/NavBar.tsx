@@ -1,4 +1,10 @@
-import { Burger, Container, Group, Button } from "@mantine/core";
+import {
+  Burger,
+  Container,
+  Group,
+  Button,
+  useMantineColorScheme,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { NavLink } from "@mantine/core";
@@ -9,6 +15,7 @@ export function NavBar() {
   const [opened, { toggle }] = useDisclosure(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { colorScheme } = useMantineColorScheme();
 
   const handleGoBack = () => {
     navigate(-1);
@@ -17,7 +24,7 @@ export function NavBar() {
   const isFileRandomiser = location.pathname === "/FileRandomiser";
 
   return (
-    <header className={classes.header}>
+    <header className={classes.header} data-theme={colorScheme}>
       <Container fluid className={classes.inner}>
         <Group gap="sm" visibleFrom="xs" className={classes["no-wrap-group"]}>
           {/* Back Button */}

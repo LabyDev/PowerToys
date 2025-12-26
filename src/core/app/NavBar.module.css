@@ -1,6 +1,28 @@
+/* Light mode (default) */
+:root {
+  --header-bg: #f8f9fa;
+  --header-border: #dee2e6;
+  --link-color: #495057;
+  --link-hover-bg: #e9ecef;
+  --link-active-bg: #e9ecef;
+  --link-active-color: #333;
+  --btn-color: #495057;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] {
+  --header-bg: #1a1b1e;
+  --header-border: #2c2e33;
+  --link-color: #e9ecef;
+  --link-hover-bg: #2c2e33;
+  --link-active-bg: #2c2e33;
+  --link-active-color: #fff;
+  --btn-color: #e9ecef;
+}
+
 .header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
   padding: 0.4rem 0;
 }
 
@@ -17,7 +39,7 @@
   padding: 0.5rem 0.75rem;
   font-weight: 500;
   text-decoration: none;
-  color: #495057;
+  color: var(--link-color);
   border-radius: 4px;
   transition:
     background-color 0.2s,
@@ -26,12 +48,12 @@
 }
 
 .link:hover {
-  background-color: #e9ecef; /* Lighter gray background on hover */
+  background-color: var(--link-hover-bg);
 }
 
 .link.active {
-  background-color: #e9ecef;
-  color: #333;
+  background-color: var(--link-active-bg);
+  color: var(--link-active-color);
 }
 
 .no-wrap-group {
@@ -40,6 +62,7 @@
 }
 
 .nav-settings-btn {
+  color: var(--btn-color);
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
   line-height: 1;
