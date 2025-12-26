@@ -26,6 +26,7 @@ pub fn run() {
             setting_commands::set_dark_mode,
             setting_commands::set_custom_background,
             setting_commands::clear_custom_background,
+            setting_commands::set_randomness_level,
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
             filerandomisercommands::remove_path,

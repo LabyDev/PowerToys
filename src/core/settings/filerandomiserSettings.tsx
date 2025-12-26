@@ -6,13 +6,18 @@ import {
   Box,
   Divider,
   Text,
+  Slider,
 } from "@mantine/core";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
 import { AppSettings } from "../../types/settings";
+import { useEffect, useState } from "react";
 
 const FileRandomiserSettings = () => {
   const { settings, setSettings } = useAppSettings();
+  const [localRandomnessValue, setLocalRandomnessValue] = useState(
+    settings.fileRandomiser.randomness_level ?? 50,
+  );
 
   const handleContextMenuToggle = async (checked: boolean) => {
     try {
@@ -36,6 +41,29 @@ const FileRandomiserSettings = () => {
     }
   };
 
+  // Debounce logic
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (localRandomnessValue !== settings.fileRandomiser.randomness_level) {
+        try {
+          const updated: AppSettings = await invoke("set_randomness_level", {
+            level: localRandomnessValue,
+          });
+          setSettings(updated);
+        } catch (err) {
+          console.error("Failed to update randomness level:", err);
+        }
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(handler);
+  }, [localRandomnessValue]);
+
+  // Keep localValue in sync if settings change externally
+  useEffect(() => {
+    setLocalRandomnessValue(settings.fileRandomiser.randomness_level ?? 50);
+  }, [settings.fileRandomiser.randomness_level]);
+
   return (
     <Box p="lg">
       <Paper shadow="sm" p="lg" radius="md" withBorder>
@@ -43,6 +71,7 @@ const FileRandomiserSettings = () => {
           <Title order={3}>File Randomiser Settings</Title>
           <Divider />
 
+          {/* Integrations */}
           <Stack gap="sm">
             <Title order={4}>Integrations</Title>
             <Text size="sm" c="dimmed">
@@ -61,19 +90,18 @@ const FileRandomiserSettings = () => {
             />
           </Stack>
 
+          {/* Process Tracking */}
           <Stack gap="sm">
             <Title order={4}>Process Tracking (Feature Flag)</Title>
             <Text size="sm" c="dimmed">
               This toggle enables the process tracking feature in the main app.
               <br />
-              Once enabled in the app itself, the File Randomiser will
-              automatically open the next file (or a random file if shuffle is
-              active) whenever a file is closed, until tracking is disabled in
-              the app.
+              Once enabled, the File Randomiser will automatically open the next
+              file (or a random file if shuffle is active) whenever a file is
+              closed, until tracking is disabled.
               <br />
               <strong>Important:</strong> If an app closes unexpectedly, too
-              soon, or opens in an existing instance (like a browser tab), it
-              may cause the system or app to crash.
+              soon, or opens in an existing instance, it may cause crashes.
             </Text>
 
             <Checkbox
@@ -85,6 +113,30 @@ const FileRandomiserSettings = () => {
               }
               size="md"
               color="red"
+            />
+          </Stack>
+
+          {/* Randomness Slider */}
+          <Stack gap="sm" mb="sm">
+            <Title order={4}>Randomness</Title>
+            <Text size="sm" c="dimmed">
+              Control how random the file picker feels. Lower values favor the
+              next files in order.
+            </Text>
+
+            <Slider
+              value={localRandomnessValue}
+              onChange={setLocalRandomnessValue}
+              min={0}
+              max={100}
+              step={1}
+              marks={[
+                { value: 0, label: "0" },
+                { value: 25, label: "25" },
+                { value: 50, label: "50 (default)" },
+                { value: 75, label: "75" },
+                { value: 100, label: "100" },
+              ]}
             />
           </Stack>
         </Stack>

@@ -1,12 +1,12 @@
 use crate::context::windows_shell::is_context_menu_registered;
 use crate::models::settings::AppSettings;
 use crate::models::DarkModeOption;
+use base64::{engine::general_purpose, Engine as _};
 use std::fs;
 use std::path::PathBuf;
 use tauri::{AppHandle, Wry};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_dialog::FilePath;
-use base64::{engine::general_purpose, Engine as _};
 use tauri_plugin_store::StoreExt;
 
 /// Get the current settings, merging persisted store + runtime context menu status
@@ -94,5 +94,24 @@ pub fn clear_custom_background(app: AppHandle<Wry>) -> Result<AppSettings, Strin
     let mut settings = get_app_settings(app.clone())?;
     settings.custom_background = None; // clear the background
     set_app_settings(app, settings.clone())?;
+    Ok(settings)
+}
+
+/// Set the randomness level for the file randomiser (0-100)
+#[tauri::command]
+pub fn set_randomness_level(app: tauri::AppHandle<Wry>, level: u8) -> Result<AppSettings, String> {
+    if level > 100 {
+        return Err("Randomness level must be between 0 and 100".into());
+    }
+
+    // Get current settings
+    let mut settings = get_app_settings(app.clone())?;
+
+    // Update the randomness level
+    settings.file_randomiser.randomness_level = level;
+
+    // Persist updated settings
+    set_app_settings(app, settings.clone())?;
+
     Ok(settings)
 }

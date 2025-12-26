@@ -6,5 +6,6 @@ export type AppSettings = {
   fileRandomiser: {
     enable_context_menu: boolean;
     allow_process_tracking: boolean;
+    randomness_level: number;
   };
 };

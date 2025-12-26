@@ -3,6 +3,8 @@ use crate::models::{
 };
 use crate::models::{FilterAction, RandomiserPreset};
 use chrono::Utc;
+use rand::distr::weighted::WeightedIndex;
+use rand::prelude::*;
 use std::fs;
 use std::sync::Mutex;
 use tauri::Emitter;
@@ -229,7 +231,9 @@ pub fn open_file_tracked(
 pub fn pick_random_file(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
+    randomness: Option<u8>, // 0-100
 ) -> Option<FileEntry> {
+    let randomness = randomness.unwrap_or(50);
     let data = app_data.lock().unwrap();
 
     if data.files.is_empty() {
@@ -238,13 +242,23 @@ pub fn pick_random_file(
 
     let available_files: Vec<_> = data.files.iter().filter(|f| !f.excluded).cloned().collect();
 
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let index = (now % (available_files.len() as u128)) as usize;
-    let file = available_files[index].clone();
-    drop(data); // release lock before calling open_file_tracked
+    let weights: Vec<f64> = available_files
+        .iter()
+        .enumerate()
+        .map(|(i, _)| {
+            let pos = i as f64 / available_files.len() as f64;
+            // weight = 1.0 means full uniform, lower weight favors first items
+            let weight = pos * (randomness as f64 / 100.0) + (1.0 - (randomness as f64 / 100.0));
+            weight
+        })
+        .collect();
+
+    let mut rng = rand::rng();
+    let dist = WeightedIndex::new(&weights).unwrap();
+    let idx = dist.sample(&mut rng);
+
+    let file = available_files[idx].clone();
+    drop(data);
 
     let _ = open_file_tracked(
         app.clone(),
