@@ -98,6 +98,20 @@ const FileTreeNodeComponent = ({
             onExclude={() => onExclude(node.file!)}
           />
         )}
+
+        {node.children && (
+          <ItemActions
+            onOpenFolder={async () => randomiserApi.openPath(node.path)}
+            onExclude={() =>
+              onExclude({
+                id: -1,
+                path: node.path,
+                name: node.name,
+                excluded: false,
+              })
+            } // create a dummy FileEntry
+          />
+        )}
       </Group>
 
       {node.children && expanded && (
