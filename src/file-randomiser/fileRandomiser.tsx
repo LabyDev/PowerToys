@@ -1,4 +1,11 @@
-import { ActionIcon, Box, Group, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  Group,
+  LoadingOverlay,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -43,6 +50,7 @@ const FileRandomiser = () => {
   const [shuffle, setShuffle] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [tracking, setTracking] = useState(false);
+  const [isCrawling, setIsCrawling] = useState(false);
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const currentIndexRef = useRef<number | null>(null);
@@ -122,8 +130,13 @@ const FileRandomiser = () => {
   };
 
   const handleCrawl = async () => {
-    await randomiserApi.crawlPaths();
-    updateAndRefreshData();
+    setIsCrawling(true);
+    try {
+      await randomiserApi.crawlPaths();
+      await updateAndRefreshData();
+    } finally {
+      setIsCrawling(false);
+    }
   };
 
   const handlePickFile = useCallback(async () => {
@@ -249,6 +262,12 @@ const FileRandomiser = () => {
 
   return (
     <Box p="md" h="88vh">
+      <LoadingOverlay
+        visible={isCrawling}
+        zIndex={1000}
+        overlayProps={{ blur: 2 }}
+        loaderProps={{ type: "dots" }}
+      />
       <Stack h="100%" gap="md">
         <Toolbar
           shuffle={shuffle}
