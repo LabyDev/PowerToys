@@ -1,7 +1,8 @@
-import { Box, ActionIcon, Stack, Text } from "@mantine/core";
-import { PlusIcon, CaretRight, CaretDown } from "@phosphor-icons/react";
+import { Box, ActionIcon, Stack } from "@mantine/core";
+import { PlusIcon, CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { FileEntry, FileTreeNode } from "../types/filerandomiser";
+import ClampedTooltipText from "./clampedTooltipText";
 
 const FileTree = ({
   nodes,
@@ -53,26 +54,23 @@ const FileTree = ({
                   size="xs"
                 >
                   {expanded ? (
-                    <CaretDown size={16} />
+                    <CaretDownIcon size={16} />
                   ) : (
-                    <CaretRight size={16} />
+                    <CaretRightIcon size={16} />
                   )}
                 </ActionIcon>
               )}
 
-              <Text
+              <ClampedTooltipText
                 size="sm"
                 style={{
                   textDecoration: node.file?.excluded ? "line-through" : "none",
                   cursor: node.children ? "pointer" : undefined,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
                 }}
                 onClick={() => node.children && setExpanded((e) => !e)}
               >
                 {node.name}
-              </Text>
+              </ClampedTooltipText>
 
               {node.file && (
                 <ActionIcon

@@ -30,6 +30,7 @@ import * as presetApi from "../core/api/presetsApi";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
 import { arraysEqual } from "../core/utilities/deepCompare";
 import FileTree from "./fileTree";
+import ClampedTooltipText from "./clampedTooltipText";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -378,28 +379,12 @@ const FileRandomiser = () => {
                   className="path-item hoverable"
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
-                    <Text
-                      size="sm"
-                      fw={600}
-                      style={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
+                    <ClampedTooltipText size="sm" fw={600}>
                       {item.name}
-                    </Text>
-                    <Text
-                      size="xs"
-                      c="dimmed"
-                      style={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
+                    </ClampedTooltipText>
+                    <ClampedTooltipText size="xs" c="dimmed">
                       {item.path}
-                    </Text>
+                    </ClampedTooltipText>
                   </Stack>
 
                   <ActionIcon
@@ -480,27 +465,10 @@ const FileRandomiser = () => {
               data={filteredHistory}
               itemContent={(_, item) => (
                 <Box px="sm" py={6}>
-                  <Text
-                    size="sm"
-                    style={{
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {item.name}
-                  </Text>
-                  <Text
-                    size="xs"
-                    c="dimmed"
-                    style={{
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
+                  <ClampedTooltipText size="sm">{item.name}</ClampedTooltipText>
+                  <ClampedTooltipText size="xs" c="dimmed">
                     {item.path}
-                  </Text>
+                  </ClampedTooltipText>
                   <Text size="xs" c="dimmed" tt="italic">
                     Opened at: {new Date(item.openedAt).toLocaleString()}
                   </Text>
