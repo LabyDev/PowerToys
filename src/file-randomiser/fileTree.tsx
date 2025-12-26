@@ -26,10 +26,19 @@ const FileTreeNodeComponent = ({
     return node.children.some(containsCurrentFile);
   };
 
+  // check if all children (recursively) are excluded
+  const allChildrenExcluded = (node: FileTreeNode): boolean => {
+    if (node.file) return node.file.excluded ?? false;
+    if (!node.children) return false;
+    return node.children.every(allChildrenExcluded);
+  };
+
   const defaultExpanded =
     node.children && (isRoot && index === 0 ? true : containsCurrentFile(node));
   const [expanded, setExpanded] = useState(defaultExpanded);
   const ref = useRef<HTMLDivElement>(null);
+
+  const isExcluded = node.file ? node.file.excluded : allChildrenExcluded(node);
 
   useEffect(() => {
     if (node.file?.id === currentFileId && ref.current) {
@@ -50,7 +59,7 @@ const FileTreeNodeComponent = ({
             !node.children && node.file && currentFileId === node.file.id
               ? "var(--mantine-color-blue-light)"
               : undefined,
-          opacity: node.file?.excluded ? 0.5 : 1,
+          opacity: isExcluded ? 0.5 : 1,
         }}
       >
         {node.children && (
@@ -70,7 +79,7 @@ const FileTreeNodeComponent = ({
         <ClampedTooltipText
           size="sm"
           style={{
-            textDecoration: node.file?.excluded ? "line-through" : "none",
+            textDecoration: isExcluded ? "line-through" : "none",
             cursor: node.children ? "pointer" : undefined,
             flex: 1,
           }}
