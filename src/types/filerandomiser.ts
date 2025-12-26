@@ -49,3 +49,10 @@ export type PresetState = {
   name: string;
   dirty: boolean; // paths/filters changed since last save
 };
+
+export type FileTreeNode = {
+  name: string;
+  path: string;
+  children?: FileTreeNode[];
+  file?: FileEntry;
+};

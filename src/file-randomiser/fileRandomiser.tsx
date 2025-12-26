@@ -13,6 +13,8 @@ import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 
 import {
   AppStateData,
+  FileEntry,
+  FileTreeNode,
   PresetState,
   RandomiserPreset,
 } from "../types/filerandomiser";
@@ -27,6 +29,7 @@ import PresetControls from "./presetControls";
 import * as presetApi from "../core/api/presetsApi";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
 import { arraysEqual } from "../core/utilities/deepCompare";
+import FileTree from "./fileTree";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -260,6 +263,67 @@ const FileRandomiser = () => {
     );
   }, [data.history, q]);
 
+  // Tree
+  // normalize paths with forward slashes (cross-platform)
+  const normalizePath = (p: string) => p.replace(/\\/g, "/");
+
+  const buildFileTree = (files: FileEntry[]): FileTreeNode[] => {
+    const root: Record<string, any> = {};
+
+    // 1️Build a nested map first
+    files.forEach((file) => {
+      const parts = normalizePath(file.path).split("/");
+      let current = root;
+
+      parts.forEach((part, i) => {
+        if (!current[part]) {
+          current[part] = {
+            name: part,
+            path: parts.slice(0, i + 1).join("/"),
+            children: {},
+          };
+        }
+        if (i === parts.length - 1) {
+          current[part].file = file;
+        }
+        current = current[part].children;
+      });
+    });
+
+    // Flatten single-child chains recursively
+    const convert = (node: Record<string, any>): FileTreeNode[] => {
+      return Object.values(node).map((n) => {
+        let current = n;
+        const nameChain = [current.name];
+        const pathChain = [current.path];
+
+        // Flatten while there’s exactly 1 child and no file
+        while (
+          current.file === undefined &&
+          current.children &&
+          Object.keys(current.children).length === 1
+        ) {
+          const key = Object.keys(current.children)[0];
+          current = current.children[key];
+          nameChain.push(current.name);
+          pathChain.push(current.path);
+        }
+
+        return {
+          name: nameChain.join("/"),
+          path: pathChain[pathChain.length - 1],
+          file: current.file,
+          children:
+            current.children && Object.keys(current.children).length > 0
+              ? convert(current.children)
+              : undefined,
+        };
+      });
+    };
+
+    return convert(root);
+  };
+
   return (
     <Box p="md" h="88vh">
       <LoadingOverlay
@@ -362,68 +426,26 @@ const FileRandomiser = () => {
 
           {/* Files */}
           <Section title={`Files (${filteredFiles.length})`}>
-            <Virtuoso
-              data={filteredFiles}
-              ref={virtuosoRef}
-              itemContent={(_, item) => (
-                <Box
-                  px="sm"
-                  py={6}
-                  className={`file-item hoverable ${
-                    item.excluded ? "excluded" : ""
-                  }`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    backgroundColor:
-                      !shuffle &&
-                      currentIndex !== null &&
-                      data.files[currentIndex]?.id === item.id
-                        ? "var(--mantine-color-blue-light)"
-                        : undefined,
-                    opacity: item.excluded ? 0.5 : 1,
-                  }}
-                >
-                  <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
-                    <Text
-                      size="sm"
-                      lineClamp={1}
-                      style={{
-                        textDecoration: item.excluded ? "line-through" : "none",
-                      }}
-                    >
-                      {item.name}
-                    </Text>
-                    <Text size="xs" c="dimmed" lineClamp={1}>
-                      {item.path}
-                    </Text>
-                  </Stack>
-
-                  <ActionIcon
-                    color="orange"
-                    variant="subtle"
-                    className="exclude-icon"
-                    onClick={async () => {
-                      const rule = {
-                        id: crypto.randomUUID(),
-                        target: "filename" as const,
-                        action: "exclude" as const,
-                        type: "contains" as const,
-                        pattern: item.name,
-                        caseSensitive: false,
-                      };
-                      await updateAndRefreshData({
-                        ...data,
-                        filterRules: [...data.filterRules, rule],
-                      });
-                      handleCrawl();
-                    }}
-                  >
-                    <PlusIcon size={16} />
-                  </ActionIcon>
-                </Box>
-              )}
+            <FileTree
+              nodes={buildFileTree(filteredFiles)}
+              onExclude={async (file) => {
+                const rule = {
+                  id: crypto.randomUUID(),
+                  target: "filename" as const,
+                  action: "exclude" as const,
+                  type: "contains" as const,
+                  pattern: file.name,
+                  caseSensitive: false,
+                };
+                await updateAndRefreshData({
+                  ...data,
+                  filterRules: [...data.filterRules, rule],
+                });
+                handleCrawl();
+              }}
+              currentFileId={
+                currentIndex !== null ? data.files[currentIndex]?.id : null
+              }
             />
           </Section>
 
