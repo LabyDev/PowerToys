@@ -106,6 +106,11 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
             for entry in entries.flatten() {
                 let path = entry.path();
 
+                // Skip system/hidden files completely
+                if is_system_file(&path) {
+                    continue;
+                }
+
                 if path.is_file() {
                     let name = path
                         .file_name()
@@ -127,6 +132,28 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                 }
             }
         }
+    }
+
+    // Helper function to detect system/hidden files
+    fn is_system_file(path: &std::path::Path) -> bool {
+        if let Some(file_name) = path.file_name() {
+            let file_name = file_name.to_string_lossy();
+            if file_name.starts_with('.') {
+                return true;
+            }
+
+            #[cfg(windows)]
+            {
+                use std::os::windows::fs::MetadataExt;
+                if let Ok(metadata) = path.metadata() {
+                    const FILE_ATTRIBUTE_HIDDEN: u32 = 0x2;
+                    if metadata.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0 {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     }
 
     for saved_path in &paths {
@@ -336,10 +363,7 @@ pub fn save_preset(app: tauri::AppHandle, preset: RandomiserPreset) -> Result<()
 }
 
 #[tauri::command]
-pub fn open_path(
-    app: tauri::AppHandle,
-    path: tauri_plugin_dialog::FilePath,
-) -> Result<(), String> {
+pub fn open_path(app: tauri::AppHandle, path: tauri_plugin_dialog::FilePath) -> Result<(), String> {
     let folder_path = match path {
         tauri_plugin_dialog::FilePath::Path(p) => p,
         tauri_plugin_dialog::FilePath::Url(u) => {
