@@ -62,16 +62,24 @@ const FileRandomiserSettings = () => {
           </Stack>
 
           <Stack gap="sm">
-            <Title order={4}>Experimental Features</Title>
+            <Title order={4}>Process Tracking (Feature Flag)</Title>
             <Text size="sm" c="dimmed">
-              These features are unstable and may cause high CPU/RAM usage or
-              other issues. Enable at your own risk.
+              This toggle enables the process tracking feature in the main app.
+              <br />
+              Once enabled in the app itself, the File Randomiser will
+              automatically open the next file (or a random file if shuffle is
+              active) whenever a file is closed, until tracking is disabled in
+              the app.
+              <br />
+              <strong>Important:</strong> If an app closes unexpectedly, too
+              soon, or opens in an existing instance (like a browser tab), it
+              may cause the system or app to crash.
             </Text>
 
             <Checkbox
               checked={settings.fileRandomiser.allow_process_tracking}
-              label="Allow process tracking"
-              description="Enables the File Randomiser to track opened processes. May spam processes or consume significant memory depending on the program."
+              label="Enable process tracking feature"
+              description="This setting only enables the feature; tracking itself must still be toggled in the main app."
               onChange={(event) =>
                 handleProcessTrackingToggle(event.currentTarget.checked)
               }
