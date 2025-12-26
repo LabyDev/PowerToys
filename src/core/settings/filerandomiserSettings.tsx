@@ -65,7 +65,13 @@ const FileRandomiserSettings = () => {
   }, [settings.fileRandomiser.randomness_level]);
 
   return (
-    <Box p="lg">
+    <Box
+      p="lg"
+      style={{
+        height: "calc(100vh - 32px)",
+        overflowY: "auto",
+      }}
+    >
       <Paper shadow="sm" p="lg" radius="md" withBorder>
         <Stack gap="xl">
           <Title order={3}>File Randomiser Settings</Title>
