@@ -6,7 +6,7 @@ const Section = ({
   style,
   className,
 }: {
-  title: string;
+  title: string | React.ReactNode;
   children: React.ReactNode;
   style?: React.CSSProperties;
   className?: string;

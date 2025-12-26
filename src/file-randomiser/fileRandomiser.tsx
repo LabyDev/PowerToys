@@ -325,6 +325,11 @@ const FileRandomiser = () => {
     return convert(root);
   };
 
+  // counts
+  const totalFiles = filteredFiles.length;
+  const excludedFiles = filteredFiles.filter((f) => f.excluded).length;
+  const includedFiles = totalFiles - excludedFiles;
+
   return (
     <Box p="md" h="88vh">
       <LoadingOverlay
@@ -422,7 +427,22 @@ const FileRandomiser = () => {
 
           {/* Files */}
           <Section
-            title={`Files (${filteredFiles.length})`}
+            title={
+              <Group gap="xs">
+                <Text>Files</Text>
+                <Text size="sm" c="dimmed">
+                  ({totalFiles} total,{" "}
+                  <Text component="span" c="green">
+                    {includedFiles} included
+                  </Text>
+                  ,{" "}
+                  <Text component="span" c="red">
+                    {excludedFiles} excluded
+                  </Text>
+                  )
+                </Text>
+              </Group>
+            }
             className="main-panel"
           >
             <Box style={{ height: "100%", minHeight: 0, overflowY: "auto" }}>
