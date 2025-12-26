@@ -9,7 +9,6 @@ import {
 } from "@mantine/core";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
-import { AppSettings } from "../../types/settings";
 
 const FileRandomiserSettings = () => {
   const { settings, setSettings } = useAppSettings();
@@ -19,7 +18,12 @@ const FileRandomiserSettings = () => {
       const updated: boolean = await invoke("toggle_context_menu_item", {
         enable: checked,
       });
-      setSettings({ enable_context_menu: updated });
+      setSettings({
+        fileRandomiser: {
+          ...settings.fileRandomiser,
+          enable_context_menu: updated,
+        },
+      });
     } catch (err) {
       console.error("Failed to toggle context menu:", err);
     }
@@ -27,11 +31,15 @@ const FileRandomiserSettings = () => {
 
   const handleProcessTrackingToggle = async (checked: boolean) => {
     try {
-      const updatedSettings: AppSettings = await invoke(
-        "toggle_process_tracking",
-        { enable: checked },
-      );
-      setSettings(updatedSettings);
+      const updated: boolean = await invoke("toggle_process_tracking", {
+        enable: checked,
+      });
+      setSettings({
+        fileRandomiser: {
+          ...settings.fileRandomiser,
+          allow_process_tracking: updated,
+        },
+      });
     } catch (err) {
       console.error("Failed to toggle process tracking:", err);
     }
@@ -52,7 +60,7 @@ const FileRandomiserSettings = () => {
             </Text>
 
             <Checkbox
-              checked={settings.enable_context_menu}
+              checked={settings.fileRandomiser.enable_context_menu}
               label="Enable right-click context menu item (Opens a random file)"
               description="This feature allows you to right-click anywhere and quickly open a random file from your tracked paths."
               onChange={(event) =>
@@ -70,7 +78,7 @@ const FileRandomiserSettings = () => {
             </Text>
 
             <Checkbox
-              checked={settings.allow_process_tracking}
+              checked={settings.fileRandomiser.allow_process_tracking}
               label="Allow process tracking"
               description="Enables the File Randomiser to track opened processes. May spam processes or consume significant memory depending on the program."
               onChange={(event) =>

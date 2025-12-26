@@ -1,6 +1,9 @@
 use crate::context::windows_shell::is_context_menu_registered;
 use crate::models::settings::AppSettings;
+use crate::models::DarkModeOption;
 use tauri::{AppHandle, Wry};
+use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_dialog::FilePath;
 use tauri_plugin_store::StoreExt;
 
 /// Get the current settings, merging persisted store + runtime context menu status
@@ -14,7 +17,7 @@ pub fn get_app_settings(app: AppHandle<Wry>) -> Result<AppSettings, String> {
     };
 
     // Override enable_context_menu with the actual Windows state
-    settings.enable_context_menu = is_context_menu_registered();
+    settings.file_randomiser.enable_context_menu = is_context_menu_registered();
 
     Ok(settings)
 }
@@ -28,10 +31,41 @@ pub fn set_app_settings(app: AppHandle<Wry>, settings: AppSettings) -> Result<Ap
     Ok(settings)
 }
 
+/// Toggle process tracking
 #[tauri::command]
 pub fn toggle_process_tracking(app: AppHandle<Wry>, enable: bool) -> Result<AppSettings, String> {
-    let mut settings: AppSettings = get_app_settings(app.clone())?;
-    settings.allow_process_tracking = enable;
+    let mut settings = get_app_settings(app.clone())?;
+    settings.file_randomiser.allow_process_tracking = enable;
+    set_app_settings(app, settings.clone())?;
+    Ok(settings)
+}
+
+/// Set dark mode
+#[tauri::command]
+pub fn set_dark_mode(app: AppHandle<Wry>, mode: DarkModeOption) -> Result<AppSettings, String> {
+    let mut settings = get_app_settings(app.clone())?;
+    settings.dark_mode = mode;
+    set_app_settings(app, settings.clone())?;
+    Ok(settings)
+}
+
+/// Set custom background via file dialog
+#[tauri::command]
+pub fn set_custom_background(app: AppHandle<Wry>) -> Result<AppSettings, String> {
+    // Open file dialog using Tauri plugin
+    let file: FilePath = app
+        .dialog()
+        .file()
+        .blocking_pick_file()
+        .ok_or("No file selected")?;
+
+    let mut settings = get_app_settings(app.clone())?;
+    settings.custom_background = Some(
+        file.as_path()
+            .and_then(|p| p.to_str())
+            .unwrap_or_default()
+            .to_string(),
+    );
     set_app_settings(app, settings.clone())?;
     Ok(settings)
 }
