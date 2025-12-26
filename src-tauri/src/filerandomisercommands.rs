@@ -142,36 +142,12 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
 
 #[cfg(target_os = "windows")]
 fn open_and_wait(path: &str) -> std::io::Result<()> {
-    use std::ffi::OsStr;
-    use std::iter::once;
-    use std::os::windows::ffi::OsStrExt;
-    use windows::{
-        core::PCWSTR,
-        Win32::UI::{
-            Shell::{SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW},
-            WindowsAndMessaging::SW_SHOWNORMAL,
-        },
-    };
+    use std::process::Command;
 
-    let mut info: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
-    let wide_path: Vec<u16> = OsStr::new(path).encode_wide().chain(once(0)).collect();
-
-    info.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
-    info.fMask = SEE_MASK_NOCLOSEPROCESS;
-    info.lpFile = PCWSTR(wide_path.as_ptr());
-    info.nShow = SW_SHOWNORMAL.0 as i32;
-
-    unsafe {
-        use windows::Win32::{
-            Foundation::CloseHandle,
-            System::Threading::{WaitForSingleObject, INFINITE},
-            UI::Shell::ShellExecuteExW,
-        };
-
-        ShellExecuteExW(&mut info)?;
-        WaitForSingleObject(info.hProcess, INFINITE);
-        CloseHandle(info.hProcess)?;
-    }
+    // Use 'start' with '/WAIT' to block, and it usually focuses the window
+    Command::new("cmd")
+        .args(["/C", "start", "/WAIT", "", path])
+        .status()?; // blocks until program exits
 
     Ok(())
 }
