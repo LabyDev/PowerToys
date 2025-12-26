@@ -23,6 +23,7 @@ import { arraysEqual } from "../core/utilities/deepCompare";
 import FileTree from "./fileTree";
 import ClampedTooltipText from "./clampedTooltipText";
 import ItemActions from "./itemActions";
+import { sep } from "@tauri-apps/api/path";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -265,22 +266,18 @@ const FileRandomiser = () => {
   }, [data.history, q]);
 
   // Tree
-  // normalize paths with forward slashes (cross-platform)
-  const normalizePath = (p: string) => p.replace(/\\/g, "/");
-
   const buildFileTree = (files: FileEntry[]): FileTreeNode[] => {
     const root: Record<string, any> = {};
-
-    // 1️Build a nested map first
+    const seperator = sep();
     files.forEach((file) => {
-      const parts = normalizePath(file.path).split("/");
+      const parts = file.path.split(seperator);
       let current = root;
 
       parts.forEach((part, i) => {
         if (!current[part]) {
           current[part] = {
             name: part,
-            path: parts.slice(0, i + 1).join("/"),
+            path: parts.slice(0, i + 1).join(seperator),
             children: {},
           };
         }
@@ -291,14 +288,12 @@ const FileRandomiser = () => {
       });
     });
 
-    // Flatten single-child chains recursively
     const convert = (node: Record<string, any>): FileTreeNode[] => {
       return Object.values(node).map((n) => {
         let current = n;
         const nameChain = [current.name];
         const pathChain = [current.path];
 
-        // Flatten while there’s exactly 1 child and no file
         while (
           current.file === undefined &&
           current.children &&
@@ -311,7 +306,7 @@ const FileRandomiser = () => {
         }
 
         return {
-          name: nameChain.join("/"),
+          name: nameChain.join(seperator),
           path: pathChain[pathChain.length - 1],
           file: current.file,
           children:
