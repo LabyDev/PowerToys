@@ -104,14 +104,15 @@ const FileRandomiser = () => {
       preset &&
       arraysEqual(data.paths, preset.paths) &&
       arraysEqual(data.filterRules, preset.filterRules) &&
-      presetState.name === preset.name
+      presetState.name === preset.name &&
+      shuffle === preset.shuffle
     ) {
       // Matches last applied preset exactly → don't mark dirty
       return;
     }
 
     setPresetState((p) => ({ ...p, dirty: true }));
-  }, [data.paths, data.filterRules]);
+  }, [data.paths, data.filterRules, presetState.name, shuffle]);
 
   // ------------------------ Data Handling ------------------------
 
@@ -146,28 +147,35 @@ const FileRandomiser = () => {
   const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
-    const availableFiles = data.files.filter((f) => !f.excluded);
-    if (!availableFiles.length) return;
+    let file;
 
-    let index: number;
     if (shuffle) {
-      index = Math.floor(Math.random() * availableFiles.length);
+      const picked = await randomiserApi.pickRandomFile();
+      if (!picked) return;
+
+      file = picked as FileEntry;
     } else {
+      const availableFiles = data.files.filter((f) => !f.excluded);
+      if (!availableFiles.length) return;
+
       const currentId =
         currentIndexRef.current !== null
           ? data.files[currentIndexRef.current]?.id
           : null;
+
       const currentAvailableIndex = availableFiles.findIndex(
         (f) => f.id === currentId,
       );
-      index =
+
+      const index =
         currentAvailableIndex === -1
           ? 0
           : (currentAvailableIndex + 1) % availableFiles.length;
-    }
 
-    const file = availableFiles[index];
-    await randomiserApi.openFileById(file.id);
+      file = availableFiles[index];
+
+      await randomiserApi.openFileById(file.id);
+    }
 
     const originalIndex = data.files.findIndex((f) => f.id === file.id);
     setCurrentIndex(originalIndex);

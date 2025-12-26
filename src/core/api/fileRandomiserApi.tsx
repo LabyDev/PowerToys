@@ -24,3 +24,7 @@ export const crawlPaths = () => {
 export const openFileById = (id: number) => {
   return invoke("open_file_by_id", { id });
 };
+
+export const pickRandomFile = () => {
+  return invoke("pick_random_file");
+};
