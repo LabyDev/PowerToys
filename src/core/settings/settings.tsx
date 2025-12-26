@@ -8,6 +8,7 @@ import {
   Select,
   Button,
   Group,
+  Alert,
 } from "@mantine/core";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
@@ -15,7 +16,7 @@ import { DarkModeOption, AppSettings } from "../../types/settings";
 
 const AppSettingsPage = () => {
   const { settings, setSettings } = useAppSettings();
-  // Handle dark mode selection
+
   const handleDarkModeChange = async (value: DarkModeOption) => {
     try {
       const updatedSettings: AppSettings = await invoke("set_dark_mode", {
@@ -27,7 +28,6 @@ const AppSettingsPage = () => {
     }
   };
 
-  // Trigger Tauri to select a background file
   const handleBackgroundSelect = async () => {
     try {
       const updatedSettings: AppSettings = await invoke(
@@ -39,7 +39,6 @@ const AppSettingsPage = () => {
     }
   };
 
-  // Clear current background
   const handleBackgroundClear = async () => {
     try {
       const updatedSettings: AppSettings = await invoke(
@@ -65,11 +64,16 @@ const AppSettingsPage = () => {
               Control the look and feel of the application.
             </Text>
 
+            <Alert color="yellow" variant="light" mt="xs">
+              Appearance changes, including dark mode, will only apply after
+              restarting the application.
+            </Alert>
+
             {/* Dark Mode */}
             <Select
               label="Dark Mode"
               description="Choose your theme preference."
-              value={settings.darkMode} // ensure key matches
+              value={settings.darkMode}
               onChange={(val) => handleDarkModeChange(val as DarkModeOption)}
               data={[
                 { value: "light", label: "Light" },
@@ -77,23 +81,21 @@ const AppSettingsPage = () => {
                 { value: "system", label: "Follow System" },
               ]}
             />
-            <Text size="xs" c="dimmed">
-              Changing the theme will take effect after restarting the
-              application.
-            </Text>
 
             {/* Custom Background */}
             <Group gap="sm">
               <Button onClick={handleBackgroundSelect}>
                 Select Custom Background
               </Button>
-              <Button
-                color="red"
-                variant="outline"
-                onClick={handleBackgroundClear}
-              >
-                Clear Background
-              </Button>
+              {settings.customBackground && (
+                <Button
+                  color="red"
+                  variant="outline"
+                  onClick={handleBackgroundClear}
+                >
+                  Clear Background
+                </Button>
+              )}
             </Group>
           </Stack>
         </Stack>

@@ -1,4 +1,11 @@
-import { Button, Checkbox, Group, TextInput, ActionIcon } from "@mantine/core";
+import {
+  Button,
+  Checkbox,
+  Group,
+  TextInput,
+  ActionIcon,
+  Card,
+} from "@mantine/core";
 import {
   FolderPlusIcon,
   ArrowsClockwiseIcon,
@@ -35,51 +42,53 @@ const Toolbar = ({
   onQueryChange,
 }: ToolbarProps) => (
   <>
-    <Group justify="space-between" align="center" wrap="nowrap">
-      {/* Left + middle buttons */}
-      <Group gap="md" align="center" wrap="nowrap">
-        {presetControls}
+    <Card shadow="sm" padding="md" radius="md" withBorder>
+      <Group justify="space-between" align="center" wrap="nowrap">
+        {/* Left + middle buttons */}
+        <Group gap="md" align="center" wrap="nowrap">
+          {presetControls}
 
-        <Group gap="sm" ml="xl">
-          <Button
-            leftSection={<FolderPlusIcon size={16} />}
-            onClick={onAddPath}
-          >
-            Add path
-          </Button>
-          <Button
-            variant="light"
-            leftSection={<ArrowsClockwiseIcon size={16} />}
-            onClick={onCrawl}
-          >
-            Crawl
-          </Button>
-          <Button
-            variant="filled"
-            leftSection={<ShuffleIcon size={16} />}
-            onClick={onPickFile}
-          >
-            {shuffle ? "Random file" : "Next file"}
-          </Button>
+          <Group gap="sm" ml="xl">
+            <Button
+              leftSection={<FolderPlusIcon size={16} />}
+              onClick={onAddPath}
+            >
+              Add path
+            </Button>
+            <Button
+              variant="light"
+              leftSection={<ArrowsClockwiseIcon size={16} />}
+              onClick={onCrawl}
+            >
+              Crawl
+            </Button>
+            <Button
+              variant="filled"
+              leftSection={<ShuffleIcon size={16} />}
+              onClick={onPickFile}
+            >
+              {shuffle ? "Random file" : "Next file"}
+            </Button>
+          </Group>
+        </Group>
+
+        {/* Right: checkboxes */}
+        <Group gap="sm">
+          <Checkbox
+            label="Shuffle"
+            checked={shuffle}
+            onChange={(e) => onShuffleChange(e.currentTarget.checked)}
+          />
+          {allowTracking && (
+            <Checkbox
+              label="Tracking"
+              checked={tracking}
+              onChange={(e) => onTrackingChange(e.currentTarget.checked)}
+            />
+          )}
         </Group>
       </Group>
-
-      {/* Right: checkboxes */}
-      <Group gap="sm">
-        <Checkbox
-          label="Shuffle"
-          checked={shuffle}
-          onChange={(e) => onShuffleChange(e.currentTarget.checked)}
-        />
-        {allowTracking && (
-          <Checkbox
-            label="Tracking"
-            checked={tracking}
-            onChange={(e) => onTrackingChange(e.currentTarget.checked)}
-          />
-        )}
-      </Group>
-    </Group>
+    </Card>
 
     <TextInput
       placeholder="Search paths, files, and history…"

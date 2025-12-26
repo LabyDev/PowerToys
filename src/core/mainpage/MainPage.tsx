@@ -1,4 +1,4 @@
-import { Container, Title, Button, Group, Card } from "@mantine/core";
+import { Card, Title, Button, Stack, useMantineTheme } from "@mantine/core";
 import {
   ShuffleIcon,
   SortAscendingIcon,
@@ -8,11 +8,25 @@ import { NavLink } from "react-router";
 import "./MainPage.css";
 
 function App() {
+  const theme = useMantineTheme();
+
   return (
-    <Container size="xs" style={{ textAlign: "center" }} className="container">
-      <Title order={1}>PowerToys</Title>
-      <Group justify="center" mt="xl">
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
+    <div className="wrapper">
+      <Card
+        shadow="lg"
+        padding="xl"
+        radius="md"
+        withBorder
+        className="main-card"
+      >
+        <Title
+          style={{ textAlign: "center", marginBottom: theme.spacing.xl }}
+          order={1}
+        >
+          PowerToys
+        </Title>
+
+        <Stack gap="md" style={{ width: "100%" }}>
           <Button
             fullWidth
             component={NavLink}
@@ -21,8 +35,7 @@ function App() {
           >
             File Randomiser
           </Button>
-        </Card>
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
+
           <Button
             fullWidth
             component={NavLink}
@@ -31,19 +44,18 @@ function App() {
           >
             File Sorter
           </Button>
-        </Card>
-      </Group>
-      <Button
-        mt="xl"
-        variant="subtle"
-        component={NavLink}
-        to="/Settings"
-        leftSection={<GearSixIcon />}
-        style={{ alignSelf: "center" }}
-      >
-        Settings
-      </Button>
-    </Container>
+
+          <Button
+            variant="subtle"
+            component={NavLink}
+            to="/Settings"
+            leftSection={<GearSixIcon />}
+          >
+            Settings
+          </Button>
+        </Stack>
+      </Card>
+    </div>
   );
 }
 
