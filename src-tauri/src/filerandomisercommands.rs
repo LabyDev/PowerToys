@@ -350,14 +350,30 @@ pub fn save_preset(app: tauri::AppHandle, preset: RandomiserPreset) -> Result<()
     let safe_name = preset
         .name
         .replace(|c: char| !c.is_alphanumeric() && c != '-' && c != '_', "_");
-    // Shorten the GUID to first 8 characters
-    let short_id = &preset.id[..8];
 
-    // Use both id and sanitized name for the filename
-    let file_path = presets_dir.join(format!("{}_{}.json", safe_name, short_id));
+    let file_path = presets_dir.join(format!("{}.json", safe_name));
     let json_data = serde_json::to_string_pretty(&preset).map_err(|e| e.to_string())?;
 
     std::fs::write(file_path, json_data).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn open_path(
+    app: tauri::AppHandle,
+    path: tauri_plugin_dialog::FilePath,
+) -> Result<(), String> {
+    let folder_path = match path {
+        tauri_plugin_dialog::FilePath::Path(p) => p,
+        tauri_plugin_dialog::FilePath::Url(u) => {
+            return Err(format!("Cannot open URL: {}", u));
+        }
+    };
+
+    app.opener()
+        .open_path(folder_path.to_string_lossy(), None::<String>)
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }

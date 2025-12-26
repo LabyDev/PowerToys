@@ -18,30 +18,18 @@
   min-width: 0;
   overflow: hidden;
 }
-.path-item .trash-icon {
+
+/* Hide all action buttons by default */
+.item-action {
   visibility: hidden;
+  opacity: 0;
   transition:
     visibility 0.2s ease,
     opacity 0.2s ease;
-  opacity: 0;
 }
 
-.path-item:hover .trash-icon {
-  visibility: visible;
-  opacity: 1;
-}
-
-.path-item .exclude-icon,
-.file-item .exclude-icon {
-  visibility: hidden;
-  transition:
-    visibility 0.2s ease,
-    opacity 0.2s ease;
-  opacity: 0;
-}
-
-.path-item:hover .exclude-icon,
-.file-item:hover .exclude-icon {
+/* Show action buttons when the container is hovered */
+.item-actions:hover .item-action {
   visibility: visible;
   opacity: 1;
 }

@@ -1,8 +1,11 @@
-import { Box, ActionIcon, Stack } from "@mantine/core";
-import { PlusIcon, CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
+import { Box, ActionIcon, Stack, Group } from "@mantine/core";
+import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { useState, useEffect, useRef } from "react";
 import { FileEntry, FileTreeNode } from "../types/filerandomiser";
 import ClampedTooltipText from "./clampedTooltipText";
+import ItemActions from "./itemActions";
+import * as randomiserApi from "../core/api/fileRandomiserApi";
+import { dirname } from "@tauri-apps/api/path";
 
 const FileTreeNodeComponent = ({
   node,
@@ -24,7 +27,7 @@ const FileTreeNodeComponent = ({
   };
 
   const defaultExpanded =
-    node.children && (isRoot && index === 0 ? true : containsCurrentFile(node)); // first root node OR contains currentFile
+    node.children && (isRoot && index === 0 ? true : containsCurrentFile(node));
   const [expanded, setExpanded] = useState(defaultExpanded);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,11 +42,9 @@ const FileTreeNodeComponent = ({
 
   return (
     <Box pl={node.children ? 10 : 20} ref={ref}>
-      <Box
+      <Group
+        gap={8}
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
           backgroundColor:
             !node.children && node.file && currentFileId === node.file.id
               ? "var(--mantine-color-blue-light)"
@@ -70,6 +71,7 @@ const FileTreeNodeComponent = ({
           style={{
             textDecoration: node.file?.excluded ? "line-through" : "none",
             cursor: node.children ? "pointer" : undefined,
+            flex: 1,
           }}
           onClick={() => node.children && setExpanded((e) => !e)}
         >
@@ -77,15 +79,16 @@ const FileTreeNodeComponent = ({
         </ClampedTooltipText>
 
         {node.file && (
-          <ActionIcon
-            color="orange"
-            variant="subtle"
-            onClick={() => onExclude(node.file!)}
-          >
-            <PlusIcon size={16} />
-          </ActionIcon>
+          <ItemActions
+            onOpen={async () => randomiserApi.openPath(node.file!.path)}
+            onOpenFolder={async () => {
+              const folder = await dirname(node.file!.path);
+              randomiserApi.openPath(folder);
+            }}
+            onExclude={() => onExclude(node.file!)}
+          />
         )}
-      </Box>
+      </Group>
 
       {node.children && expanded && (
         <FileTree

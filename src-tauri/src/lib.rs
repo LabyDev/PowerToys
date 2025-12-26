@@ -36,6 +36,7 @@ pub fn run() {
             filerandomisercommands::open_presets_folder,
             filerandomisercommands::get_presets,
             filerandomisercommands::save_preset,
+            filerandomisercommands::open_path,
             context::toggle_context_menu_item,
         ])
         .run(tauri::generate_context!())

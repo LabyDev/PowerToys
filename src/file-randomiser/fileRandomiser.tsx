@@ -1,16 +1,9 @@
-import {
-  ActionIcon,
-  Box,
-  Group,
-  LoadingOverlay,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Box, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-
+import { dirname } from "@tauri-apps/api/path";
 import {
   AppStateData,
   FileEntry,
@@ -23,14 +16,13 @@ import Section from "./section";
 import Toolbar from "./toolbar";
 import FiltersPanel from "./filtersPanel";
 import "./fileRandomiser.css";
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import PresetControls from "./presetControls";
-
 import * as presetApi from "../core/api/presetsApi";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
 import { arraysEqual } from "../core/utilities/deepCompare";
 import FileTree from "./fileTree";
 import ClampedTooltipText from "./clampedTooltipText";
+import ItemActions from "./itemActions";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -399,11 +391,9 @@ const FileRandomiser = () => {
                     </ClampedTooltipText>
                   </Stack>
 
-                  <ActionIcon
-                    color="orange"
-                    variant="subtle"
-                    className="exclude-icon"
-                    onClick={async () => {
+                  <ItemActions
+                    onOpenFolder={() => randomiserApi.openPath(item.path)}
+                    onExclude={async () => {
                       const rule = {
                         id: crypto.randomUUID(),
                         target: "folder" as const,
@@ -418,23 +408,13 @@ const FileRandomiser = () => {
                       });
                       handleCrawl();
                     }}
-                  >
-                    <PlusIcon size={16} />
-                  </ActionIcon>
-
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    className="trash-icon"
-                    onClick={async () => {
+                    onRemove={async () => {
                       const removed = await invoke<boolean>("remove_path", {
                         id: item.id,
                       });
                       if (removed) handleCrawl();
                     }}
-                  >
-                    <TrashIcon size={16} />
-                  </ActionIcon>
+                  />
                 </Group>
               )}
             />
@@ -478,15 +458,26 @@ const FileRandomiser = () => {
             <Virtuoso
               data={filteredHistory}
               itemContent={(_, item) => (
-                <Box px="sm" py={6}>
-                  <ClampedTooltipText size="sm">{item.name}</ClampedTooltipText>
-                  <ClampedTooltipText size="xs" c="dimmed">
-                    {item.path}
-                  </ClampedTooltipText>
-                  <Text size="xs" c="dimmed" tt="italic">
-                    Opened at: {new Date(item.openedAt).toLocaleString()}
-                  </Text>
-                </Box>
+                <Group px="sm" py={6} align="center" gap={8}>
+                  <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
+                    <ClampedTooltipText size="sm">
+                      {item.name}
+                    </ClampedTooltipText>
+                    <ClampedTooltipText size="xs" c="dimmed">
+                      {item.path}
+                    </ClampedTooltipText>
+                    <Text size="xs" c="dimmed" tt="italic">
+                      Opened at: {new Date(item.openedAt).toLocaleString()}
+                    </Text>
+                  </Stack>
+                  <ItemActions
+                    onOpen={async () => randomiserApi.openPath(item.path)}
+                    onOpenFolder={async () => {
+                      const folder = await dirname(item.path);
+                      randomiserApi.openPath(folder);
+                    }}
+                  />
+                </Group>
               )}
             />
           </Section>

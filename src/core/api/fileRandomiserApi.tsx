@@ -28,3 +28,7 @@ export const openFileById = (id: number) => {
 export const pickRandomFile = () => {
   return invoke("pick_random_file");
 };
+
+export const openPath = (path: string) => {
+  return invoke("open_path", { path });
+};
