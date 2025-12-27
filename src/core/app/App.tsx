@@ -5,6 +5,7 @@ import { Routes, Route, useLocation } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import FileRandomiserSettings from "../settings/filerandomiserSettings";
 import Settings from "../settings/settings";
+import { FileRandomiserProvider } from "../hooks/fileRandomiserStateProvider";
 
 export function App() {
   const location = useLocation();
@@ -25,45 +26,47 @@ export function App() {
 
   return (
     <>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={location.pathname} style={{ height: "100%" }}>
-          {!isAtRoot && <NavBar />}
-          <Routes location={location} key={location.pathname}>
-            <Route
-              path="/"
-              element={
-                <PageWrapper>
-                  <MainPage />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/FileRandomiser"
-              element={
-                <PageWrapper>
-                  <FileRandomiser />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/FileRandomiserSettings"
-              element={
-                <PageWrapper>
-                  <FileRandomiserSettings />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/Settings"
-              element={
-                <PageWrapper>
-                  <Settings />
-                </PageWrapper>
-              }
-            />
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
+      <FileRandomiserProvider>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={location.pathname} style={{ height: "100%" }}>
+            {!isAtRoot && <NavBar />}
+            <Routes location={location} key={location.pathname}>
+              <Route
+                path="/"
+                element={
+                  <PageWrapper>
+                    <MainPage />
+                  </PageWrapper>
+                }
+              />
+              <Route
+                path="/FileRandomiser"
+                element={
+                  <PageWrapper>
+                    <FileRandomiser />
+                  </PageWrapper>
+                }
+              />
+              <Route
+                path="/FileRandomiserSettings"
+                element={
+                  <PageWrapper>
+                    <FileRandomiserSettings />
+                  </PageWrapper>
+                }
+              />
+              <Route
+                path="/Settings"
+                element={
+                  <PageWrapper>
+                    <Settings />
+                  </PageWrapper>
+                }
+              />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+      </FileRandomiserProvider>
     </>
   );
 }

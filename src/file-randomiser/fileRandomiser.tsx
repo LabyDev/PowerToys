@@ -1,5 +1,5 @@
 import { Box, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
@@ -8,7 +8,6 @@ import {
   AppStateData,
   FileEntry,
   FileTreeNode,
-  PresetState,
   RandomiserPreset,
 } from "../types/filerandomiser";
 import { useAppSettings } from "../core/hooks/useAppSettings";
@@ -24,33 +23,33 @@ import FileTree from "./fileTree";
 import ClampedTooltipText from "./clampedTooltipText";
 import ItemActions from "./itemActions";
 import { sep } from "@tauri-apps/api/path";
+import { useFileRandomiser } from "../core/hooks/fileRandomiserStateProvider";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
 
-  const [data, setData] = useState<AppStateData>({
-    paths: [],
-    files: [],
-    history: [],
-    filterRules: [],
-  });
-
-  const lastAppliedPresetRef = useRef<RandomiserPreset | null>(null);
-  const [presets, setPresets] = useState<RandomiserPreset[]>([]);
-  const [presetState, setPresetState] = useState<PresetState>({
-    currentId: null,
-    name: "Untitled",
-    dirty: false,
-  });
-
-  const [query, setQuery] = useState("");
-  const [shuffle, setShuffle] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
-  const [tracking, setTracking] = useState(false);
-  const [isCrawling, setIsCrawling] = useState(false);
+  const {
+    data,
+    setData,
+    presets,
+    setPresets,
+    presetState,
+    setPresetState,
+    lastAppliedPresetRef,
+    query,
+    setQuery,
+    shuffle,
+    setShuffle,
+    currentIndex,
+    setCurrentIndex,
+    currentIndexRef,
+    tracking,
+    setTracking,
+    isCrawling,
+    setIsCrawling,
+  } = useFileRandomiser();
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const currentIndexRef = useRef<number | null>(null);
 
   // ------------------------ Effects ------------------------
   useEffect(() => {
@@ -108,11 +107,8 @@ const FileRandomiser = () => {
   }, [data.paths, data.filterRules, presetState.name, shuffle]);
 
   // ------------------------ Data Handling ------------------------
-
   const updateAndRefreshData = async (updatedData?: AppStateData) => {
-    if (updatedData) {
-      await randomiserApi.updateAppState(updatedData);
-    }
+    if (updatedData) await randomiserApi.updateAppState(updatedData);
     const latest = await randomiserApi.getAppState();
     setData(latest);
   };
@@ -145,7 +141,6 @@ const FileRandomiser = () => {
     if (shuffle) {
       const picked = await randomiserApi.pickRandomFile();
       if (!picked) return;
-
       file = picked as FileEntry;
     } else {
       const availableFiles = data.files.filter((f) => !f.excluded);
@@ -166,7 +161,6 @@ const FileRandomiser = () => {
           : (currentAvailableIndex + 1) % availableFiles.length;
 
       file = availableFiles[index];
-
       await randomiserApi.openFileById(file.id);
     }
 
@@ -178,13 +172,12 @@ const FileRandomiser = () => {
   }, [data.files, shuffle]);
 
   // ------------------------ Preset Handling ------------------------
-
   const handleNameChange = (newName: string) => {
     setPresetState((p) => ({
       ...p,
       name: newName,
       dirty:
-        !lastAppliedPresetRef.current || // no preset yet
+        !lastAppliedPresetRef.current ||
         newName !== lastAppliedPresetRef.current.name ||
         !arraysEqual(data.paths, lastAppliedPresetRef.current.paths) ||
         !arraysEqual(
@@ -233,7 +226,6 @@ const FileRandomiser = () => {
   };
 
   // ------------------------ Filtering ------------------------
-
   const q = query.toLowerCase();
 
   const filteredPaths = useMemo(() => {
@@ -265,7 +257,7 @@ const FileRandomiser = () => {
     );
   }, [data.history, q]);
 
-  // Tree
+  // ------------------------ Tree Builder ------------------------
   const buildFileTree = (files: FileEntry[]): FileTreeNode[] => {
     const root: Record<string, any> = {};
     const seperator = sep();
@@ -281,9 +273,7 @@ const FileRandomiser = () => {
             children: {},
           };
         }
-        if (i === parts.length - 1) {
-          current[part].file = file;
-        }
+        if (i === parts.length - 1) current[part].file = file;
         current = current[part].children;
       });
     });
@@ -320,7 +310,7 @@ const FileRandomiser = () => {
     return convert(root);
   };
 
-  // counts
+  // ------------------------ Counts ------------------------
   const totalFiles = filteredFiles.length;
   const excludedFiles = filteredFiles.filter((f) => f.excluded).length;
   const includedFiles = totalFiles - excludedFiles;
