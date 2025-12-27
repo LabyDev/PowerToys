@@ -37,6 +37,7 @@ impl Default for DarkModeOption {
 pub enum LanguageOption {
     En,
     Nl,
+    Bs,
     De,
     Pl,
 }
@@ -50,6 +51,8 @@ impl Default for LanguageOption {
 
         if locale.starts_with("nl") {
             LanguageOption::Nl
+        } else if locale.starts_with("bs") {
+            LanguageOption::Bs
         } else if locale.starts_with("de") {
             LanguageOption::De
         } else if locale.starts_with("pl") {

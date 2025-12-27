@@ -1,1 +1,135 @@
-{}
+{
+  "mainPage": {
+    "appTitle": "PowerToys",
+    "fileRandomiserButton": "Bestanden Randomiseren",
+    "fileSorterButton": "Bestanden Sorteren",
+    "settingsButton": "Instellingen"
+  },
+  "fileRandomiser": {
+    "title": "Bestanden Randomiseren",
+    "description": "Selecteer bestanden om te randomiseren",
+    "paths": "Paden",
+    "files": "Bestanden",
+    "total": "totaal",
+    "included": "inbegrepen",
+    "excluded": "uitgesloten",
+    "expandAll": "Alles Uitklappen",
+    "collapseAll": "Alles Inklappen",
+    "history": "Geschiedenis",
+    "openedAt": "Geopend op",
+    "filtersPanel": {
+      "title": "Filters & Uitsluitingen",
+      "show": "Toon",
+      "hide": "Verberg",
+      "addRule": "Regel Toevoegen",
+      "patternPlaceholder": "Patroon",
+      "includeLabel": "Inclusief",
+      "caseSensitiveLabel": "Hoofdlettergevoelig",
+      "noRules": "Geen regels",
+      "ruleTypes": {
+        "contains": "Bevat",
+        "startsWith": "Begint met",
+        "endsWith": "Eindigt met",
+        "regex": "Regex"
+      },
+      "ruleBadge": {
+        "includeSymbol": "+",
+        "excludeSymbol": "−",
+        "caseSensitiveLabel": "Aa"
+      }
+    },
+    "itemActions": {
+      "openFolder": "Open in map",
+      "openFile": "Bestand openen",
+      "exclude": "Uitsluiten",
+      "remove": "Verwijderen"
+    },
+    "presetControls": {
+      "presetNamePlaceholder": "Naam preset",
+      "savePreset": "Preset opslaan",
+      "presetsButton": "Presets",
+      "noPresetsFound": "Geen presets gevonden",
+      "openPresetsFolder": "Presets map openen"
+    },
+    "toolbar": {
+      "addPath": "Pad toevoegen",
+      "crawl": "Doorzoeken",
+      "nextFile": "Volgend bestand",
+      "randomFile": "Willekeurig bestand",
+      "shuffle": "Shuffle",
+      "tracking": "Tracking",
+      "searchPlaceholder": "Zoek paden, bestanden en geschiedenis…"
+    }
+  },
+  "fileSorter": {
+    "title": "Bestanden Sorteren",
+    "description": "Kies sorteercriteria"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "language": "Taal",
+    "theme": "Thema"
+  },
+  "navbar": {
+    "goBack": "Ga Terug",
+    "home": "Start",
+    "settings": "Instellingen"
+  },
+  "errorBoundary": {
+    "title": "Oeps! Er is iets misgegaan.",
+    "description": "De app is een onverwachte fout tegengekomen. U kunt ons helpen dit te verhelpen door het te melden op GitHub.",
+    "reportButton": "Meld op GitHub",
+    "copyButton": "Foutdetails kopiëren",
+    "copiedTooltip": "Gekopieerd!",
+    "copyTooltip": "Kopieer foutdetails"
+  },
+  "settingsPage": {
+    "title": "Applicatie-instellingen",
+    "appearance": {
+      "title": "Weergave",
+      "description": "Beheer het uiterlijk van de applicatie.",
+      "alert": "Wijzigingen in de weergave, inclusief donkere modus, worden pas na het herstarten van de applicatie toegepast.",
+      "darkMode": "Donkere modus",
+      "darkModeDescription": "Kies uw voorkeur voor het thema.",
+      "options": {
+        "light": "Licht",
+        "dark": "Donker",
+        "system": "Volg systeem"
+      },
+      "customBackgroundSelect": "Selecteer aangepaste achtergrond",
+      "customBackgroundClear": "Achtergrond wissen",
+      "restartRequired": "Herstart vereist",
+      "restartDescription": "Sommige wijzigingen vereisen een herstart om van kracht te worden.",
+      "restartButton": "Nu herstarten",
+      "language": "Taal",
+      "languageDescription": "Selecteer uw voorkeurstaal.",
+      "languages": {
+        "en": "Engels",
+        "nl": "Nederlands",
+        "bs": "Bosnisch",
+        "de": "Duits",
+        "pl": "Pools"
+      }
+    }
+  },
+  "fileRandomiserSettings": {
+    "title": "Bestanden Randomiseren Instellingen",
+    "processTracking": {
+      "title": "Proces Tracking (Feature Flag)",
+      "description": "Deze schakelaar activeert de proces-trackingfunctie in de hoofdapp.\nEenmaal ingeschakeld, opent de Bestanden Randomiseren automatisch het volgende bestand (of een willekeurig bestand als shuffle actief is) telkens wanneer een bestand wordt gesloten, totdat tracking wordt uitgeschakeld.\nBelangrijk: Als een app onverwacht sluit, te snel, of in een bestaande instantie opent, kan dit crashes veroorzaken.",
+      "checkboxLabel": "Proces-trackingfunctie inschakelen",
+      "checkboxDescription": "Deze instelling activeert alleen de functie; tracking zelf moet nog steeds worden ingeschakeld in de hoofdapp."
+    },
+    "randomness": {
+      "title": "Willekeur",
+      "description": "Beheer hoe willekeurig de bestandkiezer aanvoelt. Lagere waarden geven de voorkeur aan de volgende bestanden op volgorde.",
+      "sliderMarks": {
+        "0": "0",
+        "25": "25",
+        "50": "50 (standaard)",
+        "75": "75",
+        "100": "100"
+      }
+    }
+  }
+}

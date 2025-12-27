@@ -1,0 +1,135 @@
+{
+  "mainPage": {
+    "appTitle": "PowerToys",
+    "fileRandomiserButton": "Nasumični Fajlovi",
+    "fileSorterButton": "Sortiranje Fajlova",
+    "settingsButton": "Postavke"
+  },
+  "fileRandomiser": {
+    "title": "Nasumično Fajlovi",
+    "description": "Odaberite fajlove za nasumično sortiranje",
+    "paths": "Putanje",
+    "files": "Fajlovi",
+    "total": "ukupno",
+    "included": "uključeno",
+    "excluded": "isključeno",
+    "expandAll": "Proširi sve",
+    "collapseAll": "Sakrij sve",
+    "history": "Historija",
+    "openedAt": "Otvoreno u",
+    "filtersPanel": {
+      "title": "Filteri & Isključenja",
+      "show": "Prikaži",
+      "hide": "Sakrij",
+      "addRule": "Dodaj pravilo",
+      "patternPlaceholder": "Šablon",
+      "includeLabel": "Uključi",
+      "caseSensitiveLabel": "Osjetljivo na velika/mala slova",
+      "noRules": "Nema pravila",
+      "ruleTypes": {
+        "contains": "Sadrži",
+        "startsWith": "Počinje sa",
+        "endsWith": "Završava sa",
+        "regex": "Regex"
+      },
+      "ruleBadge": {
+        "includeSymbol": "+",
+        "excludeSymbol": "−",
+        "caseSensitiveLabel": "Aa"
+      }
+    },
+    "itemActions": {
+      "openFolder": "Otvori u fascikli",
+      "openFile": "Otvori fajl",
+      "exclude": "Isključi",
+      "remove": "Ukloni"
+    },
+    "presetControls": {
+      "presetNamePlaceholder": "Ime preseta",
+      "savePreset": "Sačuvaj preset",
+      "presetsButton": "Presets",
+      "noPresetsFound": "Nema pronađenih preseta",
+      "openPresetsFolder": "Otvori fasciklu preseta"
+    },
+    "toolbar": {
+      "addPath": "Dodaj putanju",
+      "crawl": "Pretraži",
+      "nextFile": "Sljedeći fajl",
+      "randomFile": "Nasumični fajl",
+      "shuffle": "Promiješaj",
+      "tracking": "Praćenje",
+      "searchPlaceholder": "Pretraži putanje, fajlove i historiju…"
+    }
+  },
+  "fileSorter": {
+    "title": "Sortiranje Fajlova",
+    "description": "Odaberite kriterije sortiranja"
+  },
+  "settings": {
+    "title": "Postavke",
+    "language": "Jezik",
+    "theme": "Tema"
+  },
+  "navbar": {
+    "goBack": "Nazad",
+    "home": "Početna",
+    "settings": "Postavke"
+  },
+  "errorBoundary": {
+    "title": "Ups! Nešto je pošlo po zlu.",
+    "description": "Aplikacija je naišla na neočekivanu grešku. Možete nam pomoći da je popravimo prijavom na GitHub.",
+    "reportButton": "Prijavi na GitHub",
+    "copyButton": "Kopiraj detalje greške",
+    "copiedTooltip": "Kopirano!",
+    "copyTooltip": "Kopiraj detalje greške"
+  },
+  "settingsPage": {
+    "title": "Postavke aplikacije",
+    "appearance": {
+      "title": "Izgled",
+      "description": "Kontrolišite izgled i osjećaj aplikacije.",
+      "alert": "Promjene izgleda, uključujući tamni režim, će se primijeniti tek nakon ponovnog pokretanja aplikacije.",
+      "darkMode": "Tamni režim",
+      "darkModeDescription": "Odaberite preferiranu temu.",
+      "options": {
+        "light": "Svijetla",
+        "dark": "Tamna",
+        "system": "Prati sistem"
+      },
+      "customBackgroundSelect": "Odaberite prilagođenu pozadinu",
+      "customBackgroundClear": "Obriši pozadinu",
+      "restartRequired": "Potrebno ponovno pokretanje",
+      "restartDescription": "Neke promjene zahtijevaju ponovno pokretanje da bi se primijenile.",
+      "restartButton": "Pokreni ponovo",
+      "language": "Jezik",
+      "languageDescription": "Odaberite željeni jezik.",
+      "languages": {
+        "en": "Engleski",
+        "nl": "Holandski",
+        "bs": "Bosanski",
+        "de": "Njemački",
+        "pl": "Poljski"
+      }
+    }
+  },
+  "fileRandomiserSettings": {
+    "title": "Postavke nasumičnog fajla",
+    "processTracking": {
+      "title": "Praćenje procesa (Feature Flag)",
+      "description": "Ovaj prekidač omogućava funkciju praćenja procesa u glavnoj aplikaciji.\nKada je omogućeno, Nasumični Fajlovi će automatski otvoriti sljedeći fajl (ili nasumični ako je aktiviran shuffle) kad god se fajl zatvori, dokle god praćenje nije isključeno.\nVažno: Ako aplikacija neočekivano zatvori, prerano, ili se otvori u postojećoj instanci, može izazvati padove.",
+      "checkboxLabel": "Omogući funkciju praćenja procesa",
+      "checkboxDescription": "Ova postavka samo omogućava funkciju; praćenje se i dalje mora aktivirati u glavnoj aplikaciji."
+    },
+    "randomness": {
+      "title": "Nasumičnost",
+      "description": "Kontrolišite koliko nasumično odabiranje fajlova djeluje. Niže vrijednosti favorizuju sljedeće fajlove po redu.",
+      "sliderMarks": {
+        "0": "0",
+        "25": "25",
+        "50": "50 (defaultno)",
+        "75": "75",
+        "100": "100"
+      }
+    }
+  }
+}

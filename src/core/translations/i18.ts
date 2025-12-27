@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 
 import en from "./locales/en.json";
 import nl from "./locales/nl.json";
+import bs from "./locales/bs.json";
 import de from "./locales/de.json";
 import pl from "./locales/pl.json";
 
@@ -13,6 +14,7 @@ i18n
     resources: {
       en: { translation: en },
       nl: { translation: nl },
+      bs: { translation: bs },
       de: { translation: de },
       pl: { translation: pl },
     },

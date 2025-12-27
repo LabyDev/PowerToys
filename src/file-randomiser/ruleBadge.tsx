@@ -30,7 +30,7 @@ function RuleBadge({
 
         {/* Match type */}
         <Text size="xs" c="dimmed">
-          {rule.type}
+          {t(`fileRandomiser.filtersPanel.ruleTypes.${rule.type}`)}
         </Text>
 
         {/* Pattern */}

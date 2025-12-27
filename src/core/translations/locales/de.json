@@ -1,1 +1,135 @@
-{}
+{
+  "mainPage": {
+    "appTitle": "PowerToys",
+    "fileRandomiserButton": "Dateien zufällig auswählen",
+    "fileSorterButton": "Dateien sortieren",
+    "settingsButton": "Einstellungen"
+  },
+  "fileRandomiser": {
+    "title": "Dateien zufällig auswählen",
+    "description": "Wählen Sie Dateien aus, um sie zu randomisieren",
+    "paths": "Pfad(e)",
+    "files": "Dateien",
+    "total": "insgesamt",
+    "included": "inklusive",
+    "excluded": "ausgeschlossen",
+    "expandAll": "Alle erweitern",
+    "collapseAll": "Alle reduzieren",
+    "history": "Verlauf",
+    "openedAt": "Geöffnet am",
+    "filtersPanel": {
+      "title": "Filter & Ausschlüsse",
+      "show": "Anzeigen",
+      "hide": "Ausblenden",
+      "addRule": "Regel hinzufügen",
+      "patternPlaceholder": "Muster",
+      "includeLabel": "Einschließen",
+      "caseSensitiveLabel": "Groß-/Kleinschreibung beachten",
+      "noRules": "Keine Regeln",
+      "ruleTypes": {
+        "contains": "Enthält",
+        "startsWith": "Beginnt mit",
+        "endsWith": "Endet mit",
+        "regex": "Regex"
+      },
+      "ruleBadge": {
+        "includeSymbol": "+",
+        "excludeSymbol": "−",
+        "caseSensitiveLabel": "Aa"
+      }
+    },
+    "itemActions": {
+      "openFolder": "Im Ordner öffnen",
+      "openFile": "Datei öffnen",
+      "exclude": "Ausschließen",
+      "remove": "Entfernen"
+    },
+    "presetControls": {
+      "presetNamePlaceholder": "Preset-Name",
+      "savePreset": "Preset speichern",
+      "presetsButton": "Presets",
+      "noPresetsFound": "Keine Presets gefunden",
+      "openPresetsFolder": "Presets-Ordner öffnen"
+    },
+    "toolbar": {
+      "addPath": "Pfad hinzufügen",
+      "crawl": "Durchsuchen",
+      "nextFile": "Nächste Datei",
+      "randomFile": "Zufällige Datei",
+      "shuffle": "Mischen",
+      "tracking": "Verfolgung",
+      "searchPlaceholder": "Suche nach Pfaden, Dateien und Verlauf…"
+    }
+  },
+  "fileSorter": {
+    "title": "Dateien sortieren",
+    "description": "Wählen Sie die Sortierkriterien"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "theme": "Thema"
+  },
+  "navbar": {
+    "goBack": "Zurück",
+    "home": "Startseite",
+    "settings": "Einstellungen"
+  },
+  "errorBoundary": {
+    "title": "Hoppla! Etwas ist schiefgelaufen.",
+    "description": "Die App ist auf einen unerwarteten Fehler gestoßen. Sie können uns helfen, indem Sie ihn auf GitHub melden.",
+    "reportButton": "Auf GitHub melden",
+    "copyButton": "Fehlerdetails kopieren",
+    "copiedTooltip": "Kopiert!",
+    "copyTooltip": "Fehlerdetails kopieren"
+  },
+  "settingsPage": {
+    "title": "Anwendungseinstellungen",
+    "appearance": {
+      "title": "Darstellung",
+      "description": "Steuern Sie das Aussehen und Verhalten der Anwendung.",
+      "alert": "Änderungen an der Darstellung, einschließlich des Dunkelmodus, werden erst nach einem Neustart der Anwendung übernommen.",
+      "darkMode": "Dunkelmodus",
+      "darkModeDescription": "Wählen Sie Ihre bevorzugte Darstellung.",
+      "options": {
+        "light": "Hell",
+        "dark": "Dunkel",
+        "system": "Systemeinstellung folgen"
+      },
+      "customBackgroundSelect": "Eigenen Hintergrund auswählen",
+      "customBackgroundClear": "Hintergrund entfernen",
+      "restartRequired": "Neustart erforderlich",
+      "restartDescription": "Einige Änderungen erfordern einen Neustart, um wirksam zu werden.",
+      "restartButton": "Jetzt neu starten",
+      "language": "Sprache",
+      "languageDescription": "Wählen Sie Ihre bevorzugte Sprache.",
+      "languages": {
+        "en": "Englisch",
+        "nl": "Niederländisch",
+        "bs": "Bosnisch",
+        "de": "Deutsch",
+        "pl": "Polnisch"
+      }
+    }
+  },
+  "fileRandomiserSettings": {
+    "title": "Einstellungen für Dateien zufällig auswählen",
+    "processTracking": {
+      "title": "Prozessverfolgung (Feature-Flag)",
+      "description": "Dieser Schalter aktiviert die Prozessverfolgungsfunktion in der Hauptanwendung.\nSobald aktiviert, öffnet der Dateizufallsgenerator automatisch die nächste Datei (oder eine zufällige Datei, wenn Shuffle aktiviert ist), sobald eine Datei geschlossen wird, bis die Verfolgung deaktiviert wird.\nWichtig: Wenn eine App unerwartet schließt, zu früh startet oder in einer bestehenden Instanz geöffnet wird, kann dies zu Abstürzen führen.",
+      "checkboxLabel": "Prozessverfolgungsfunktion aktivieren",
+      "checkboxDescription": "Diese Einstellung aktiviert nur die Funktion; die Verfolgung selbst muss weiterhin in der Hauptanwendung umgeschaltet werden."
+    },
+    "randomness": {
+      "title": "Zufälligkeit",
+      "description": "Steuern Sie, wie zufällig der Dateiauswahlprozess ist. Niedrigere Werte bevorzugen die nächsten Dateien in der Reihenfolge.",
+      "sliderMarks": {
+        "0": "0",
+        "25": "25",
+        "50": "50 (Standard)",
+        "75": "75",
+        "100": "100"
+      }
+    }
+  }
+}

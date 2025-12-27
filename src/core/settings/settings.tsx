@@ -102,7 +102,7 @@ const AppSettingsPage = () => {
               description={t("settingsPage.appearance.languageDescription")}
               value={settings.language}
               onChange={(val) => handleLanguageChange(val as LanguageOption)}
-              data={["en", "nl", "de", "pl"].map((lang) => ({
+              data={["en", "nl", "bs", "de", "pl"].map((lang) => ({
                 value: lang,
                 label: t(`settingsPage.appearance.languages.${lang}`),
               }))}

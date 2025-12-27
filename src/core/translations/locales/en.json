@@ -105,9 +105,10 @@
       "languageDescription": "Select your preferred language.",
       "languages": {
         "en": "English",
-        "nl": "Nederlands",
-        "de": "Deutsch",
-        "pl": "Polski"
+        "nl": "Dutch",
+        "bs": "Bosnian",
+        "de": "German",
+        "pl": "Polish"
       }
     }
   },

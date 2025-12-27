@@ -1,1 +1,135 @@
-{}
+{
+  "mainPage": {
+    "appTitle": "PowerToys",
+    "fileRandomiserButton": "Losowanie Plików",
+    "fileSorterButton": "Sortowanie Plików",
+    "settingsButton": "Ustawienia"
+  },
+  "fileRandomiser": {
+    "title": "Losuj Pliki",
+    "description": "Wybierz pliki do losowania",
+    "paths": "Ścieżki",
+    "files": "Pliki",
+    "total": "łącznie",
+    "included": "uwzględnione",
+    "excluded": "wykluczone",
+    "expandAll": "Rozwiń wszystko",
+    "collapseAll": "Zwiń wszystko",
+    "history": "Historia",
+    "openedAt": "Otwarto o",
+    "filtersPanel": {
+      "title": "Filtry i Wykluczenia",
+      "show": "Pokaż",
+      "hide": "Ukryj",
+      "addRule": "Dodaj regułę",
+      "patternPlaceholder": "Wzorzec",
+      "includeLabel": "Uwzględnij",
+      "caseSensitiveLabel": "Rozróżnia wielkość liter",
+      "noRules": "Brak reguł",
+      "ruleTypes": {
+        "contains": "Zawiera",
+        "startsWith": "Zaczyna się od",
+        "endsWith": "Kończy się na",
+        "regex": "Regex"
+      },
+      "ruleBadge": {
+        "includeSymbol": "+",
+        "excludeSymbol": "−",
+        "caseSensitiveLabel": "Aa"
+      }
+    },
+    "itemActions": {
+      "openFolder": "Otwórz w folderze",
+      "openFile": "Otwórz plik",
+      "exclude": "Wyklucz",
+      "remove": "Usuń"
+    },
+    "presetControls": {
+      "presetNamePlaceholder": "Nazwa presetu",
+      "savePreset": "Zapisz preset",
+      "presetsButton": "Presety",
+      "noPresetsFound": "Nie znaleziono presetów",
+      "openPresetsFolder": "Otwórz folder presetów"
+    },
+    "toolbar": {
+      "addPath": "Dodaj ścieżkę",
+      "crawl": "Przeskanuj",
+      "nextFile": "Następny plik",
+      "randomFile": "Losowy plik",
+      "shuffle": "Tasuj",
+      "tracking": "Śledzenie",
+      "searchPlaceholder": "Szukaj ścieżek, plików i historii…"
+    }
+  },
+  "fileSorter": {
+    "title": "Sortuj Pliki",
+    "description": "Wybierz kryteria sortowania"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "language": "Język",
+    "theme": "Motyw"
+  },
+  "navbar": {
+    "goBack": "Wróć",
+    "home": "Strona główna",
+    "settings": "Ustawienia"
+  },
+  "errorBoundary": {
+    "title": "Ups! Coś poszło nie tak.",
+    "description": "Aplikacja napotkała nieoczekiwany błąd. Możesz nam pomóc go naprawić, zgłaszając go na GitHub.",
+    "reportButton": "Zgłoś na GitHub",
+    "copyButton": "Kopiuj szczegóły błędu",
+    "copiedTooltip": "Skopiowano!",
+    "copyTooltip": "Kopiuj szczegóły błędu"
+  },
+  "settingsPage": {
+    "title": "Ustawienia aplikacji",
+    "appearance": {
+      "title": "Wygląd",
+      "description": "Kontroluj wygląd i styl aplikacji.",
+      "alert": "Zmiany wyglądu, w tym tryb ciemny, będą widoczne dopiero po ponownym uruchomieniu aplikacji.",
+      "darkMode": "Tryb ciemny",
+      "darkModeDescription": "Wybierz preferowany motyw.",
+      "options": {
+        "light": "Jasny",
+        "dark": "Ciemny",
+        "system": "Zgodnie z systemem"
+      },
+      "customBackgroundSelect": "Wybierz niestandardowe tło",
+      "customBackgroundClear": "Wyczyść tło",
+      "restartRequired": "Wymagane ponowne uruchomienie",
+      "restartDescription": "Niektóre zmiany wymagają ponownego uruchomienia, aby zaczęły działać.",
+      "restartButton": "Uruchom ponownie teraz",
+      "language": "Język",
+      "languageDescription": "Wybierz preferowany język.",
+      "languages": {
+        "en": "Angielski",
+        "nl": "Holenderski",
+        "bs": "Bośniacki",
+        "de": "Niemiecki",
+        "pl": "Polski"
+      }
+    }
+  },
+  "fileRandomiserSettings": {
+    "title": "Ustawienia Losowania Plików",
+    "processTracking": {
+      "title": "Śledzenie procesów (flaga funkcji)",
+      "description": "Ten przełącznik włącza funkcję śledzenia procesów w głównej aplikacji.\nPo włączeniu, Losowanie Plików automatycznie otworzy następny plik (lub losowy, jeśli aktywne jest tasowanie) po zamknięciu pliku, aż śledzenie zostanie wyłączone.\nWażne: Jeśli aplikacja zamknie się nieoczekiwanie, zbyt wcześnie lub otworzy istniejącą instancję, może to spowodować awarie.",
+      "checkboxLabel": "Włącz funkcję śledzenia procesów",
+      "checkboxDescription": "To ustawienie tylko włącza funkcję; samo śledzenie nadal musi być aktywowane w głównej aplikacji."
+    },
+    "randomness": {
+      "title": "Losowość",
+      "description": "Kontroluj, jak losowy jest wybór plików. Niższe wartości faworyzują kolejne pliki w kolejności.",
+      "sliderMarks": {
+        "0": "0",
+        "25": "25",
+        "50": "50 (domyślnie)",
+        "75": "75",
+        "100": "100"
+      }
+    }
+  }
+}

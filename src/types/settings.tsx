@@ -1,4 +1,4 @@
-export type LanguageOption = "en" | "nl" | "de" | "pl";
+export type LanguageOption = "en" | "nl" | "bs" | "de" | "pl";
 
 export type DarkModeOption = "light" | "dark" | "system";
 
