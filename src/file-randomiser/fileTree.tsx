@@ -36,19 +36,27 @@ const FileTreeNodeComponent = ({
     return node.children.every(allChildrenExcluded);
   };
 
-  const defaultExpanded =
-    node.children && (containsCurrentFile(node) || (freshCrawl && isRoot));
+  const [expanded, setExpanded] = useState(() => {
+    if (treeCollapsed === true) return false;
+    if (treeCollapsed === false) return true;
+    return node.children ? (isRoot ? true : containsCurrentFile(node)) : false;
+  });
 
-  const [expanded, setExpanded] = useState(defaultExpanded);
   const ref = useRef<HTMLDivElement>(null);
 
   const isExcluded = node.file ? node.file.excluded : allChildrenExcluded(node);
 
-  // Sync with treeCollapsed
   useEffect(() => {
-    if (treeCollapsed === true) setExpanded(false);
-    if (treeCollapsed === false) setExpanded(true);
-  }, [treeCollapsed]);
+    if (node.children) {
+      if (treeCollapsed === true) {
+        setExpanded(false);
+      } else if (treeCollapsed === false) {
+        setExpanded(true);
+      } else {
+        setExpanded(isRoot || containsCurrentFile(node));
+      }
+    }
+  }, [treeCollapsed, currentFileId, node.children, isRoot]);
 
   return (
     <Box
@@ -121,12 +129,12 @@ const FileTreeNodeComponent = ({
 
       {node.children && expanded && (
         <FileTree
-          nodes={node.children}
+          nodes={node.children.map((child) => ({ ...child, parent: node }))}
           onExclude={onExclude}
           currentFileId={currentFileId}
           isRoot={false}
           freshCrawl={freshCrawl}
-          treeCollapsed={treeCollapsed} // <- pass down
+          treeCollapsed={treeCollapsed}
         />
       )}
     </Box>
@@ -139,7 +147,7 @@ interface FileTreeProps {
   currentFileId: number | null;
   isRoot?: boolean;
   freshCrawl?: boolean;
-  treeCollapsed?: boolean; // <- added
+  treeCollapsed?: boolean;
 }
 
 const FileTree = ({
