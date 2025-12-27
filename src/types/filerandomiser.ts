@@ -55,4 +55,5 @@ export type FileTreeNode = {
   path: string;
   children?: FileTreeNode[];
   file?: FileEntry;
+  depth: number;
 };

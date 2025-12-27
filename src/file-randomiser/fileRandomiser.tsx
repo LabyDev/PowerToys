@@ -306,7 +306,10 @@ const FileRandomiser = () => {
       });
     });
 
-    const convert = (node: Record<string, any>): FileTreeNode[] => {
+    const convert = (
+      node: Record<string, any>,
+      depth: number,
+    ): FileTreeNode[] => {
       return Object.values(node).map((n) => {
         let current = n;
         const nameChain = [current.name];
@@ -327,15 +330,16 @@ const FileRandomiser = () => {
           name: nameChain.join(seperator),
           path: pathChain[pathChain.length - 1],
           file: current.file,
+          depth,
           children:
             current.children && Object.keys(current.children).length > 0
-              ? convert(current.children)
+              ? convert(current.children, depth + 1)
               : undefined,
         };
       });
     };
 
-    return convert(root);
+    return convert(root, 0);
   };
 
   // ------------------------ Counts ------------------------

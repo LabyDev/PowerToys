@@ -36,11 +36,7 @@ const FileTreeNodeComponent = ({
     return node.children.every(allChildrenExcluded);
   };
 
-  const [expanded, setExpanded] = useState(() => {
-    if (treeCollapsed === true) return false;
-    if (treeCollapsed === false) return true;
-    return node.children ? (isRoot ? true : containsCurrentFile(node)) : false;
-  });
+  const [expanded, setExpanded] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -48,15 +44,22 @@ const FileTreeNodeComponent = ({
 
   useEffect(() => {
     if (node.children) {
+      const shouldExpand = isRoot || containsCurrentFile(node);
+      if (shouldExpand) setExpanded(shouldExpand);
+    }
+  }, [currentFileId]);
+
+  useEffect(() => {
+    if (node.children) {
       if (treeCollapsed === true) {
         setExpanded(false);
-      } else if (treeCollapsed === false) {
+      } else if (treeCollapsed === false && freshCrawl && node.depth <= 1) {
         setExpanded(true);
-      } else {
-        setExpanded(isRoot || containsCurrentFile(node));
+      } else if (treeCollapsed === false && !freshCrawl) {
+        setExpanded(true);
       }
     }
-  }, [treeCollapsed, currentFileId, node.children, isRoot]);
+  }, [treeCollapsed]);
 
   return (
     <Box
