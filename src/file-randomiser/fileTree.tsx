@@ -18,7 +18,6 @@ interface FileTreeProps {
   currentFileId: number | null;
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
-  isRoot?: boolean;
   virtuosoRef?: React.RefObject<VirtuosoHandle>;
 }
 
@@ -28,7 +27,6 @@ const FileTree = ({
   currentFileId,
   freshCrawl = false,
   treeCollapsed = false,
-  isRoot = true,
   virtuosoRef,
 }: FileTreeProps) => {
   // ------------------- Helpers -------------------
@@ -58,20 +56,23 @@ const FileTree = ({
   // ------------------- Effects from original code -------------------
   // Auto-expand nodes containing current file or root
   useEffect(() => {
-    const map: Record<string, boolean> = {};
+    setExpandedMap((prev) => {
+      const map = { ...prev };
 
-    const init = (node: FileTreeNode) => {
-      const id = getNodeId(node);
-      if (node.children) {
-        const shouldExpand = isRoot || containsCurrentFile(node);
-        map[id] = shouldExpand;
-        node.children.forEach(init);
-      }
-    };
+      const init = (node: FileTreeNode) => {
+        const id = getNodeId(node);
+        if (node.children) {
+          if (containsCurrentFile(node)) {
+            map[id] = true; // expand nodes containing current file
+          }
+          node.children.forEach(init);
+        }
+      };
 
-    nodes.forEach(init);
-    setExpandedMap(map);
-  }, [currentFileId]);
+      nodes.forEach(init);
+      return map;
+    });
+  }, [currentFileId, nodes]);
 
   // Handle treeCollapsed / freshCrawl updates
   useEffect(() => {
@@ -95,7 +96,7 @@ const FileTree = ({
 
     nodes.forEach(update);
     setExpandedMap(map);
-  }, [treeCollapsed]);
+  }, [treeCollapsed, freshCrawl]);
 
   // ------------------- Flatten tree for Virtuoso -------------------
   const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
