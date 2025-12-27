@@ -1,5 +1,4 @@
 use std::sync::Mutex;
-pub mod context;
 mod filerandomisercommands;
 pub mod models;
 pub mod setting_commands;
@@ -38,7 +37,6 @@ pub fn run() {
             filerandomisercommands::get_presets,
             filerandomisercommands::save_preset,
             filerandomisercommands::open_path,
-            context::toggle_context_menu_item,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

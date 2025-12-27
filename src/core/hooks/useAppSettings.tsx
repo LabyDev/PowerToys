@@ -9,7 +9,6 @@ export function useAppSettings() {
     darkMode: "system",
     customBackground: undefined,
     fileRandomiser: {
-      enable_context_menu: false,
       allow_process_tracking: false,
       randomness_level: 50,
     },

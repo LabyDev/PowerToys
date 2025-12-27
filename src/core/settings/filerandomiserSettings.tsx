@@ -19,17 +19,6 @@ const FileRandomiserSettings = () => {
     settings.fileRandomiser.randomness_level ?? 50,
   );
 
-  const handleContextMenuToggle = async (checked: boolean) => {
-    try {
-      const updated: AppSettings = await invoke("toggle_context_menu_item", {
-        enable: checked,
-      });
-      setSettings(updated);
-    } catch (err) {
-      console.error("Failed to toggle context menu:", err);
-    }
-  };
-
   const handleProcessTrackingToggle = async (checked: boolean) => {
     try {
       const updated: AppSettings = await invoke("toggle_process_tracking", {
@@ -76,25 +65,6 @@ const FileRandomiserSettings = () => {
         <Stack gap="xl">
           <Title order={3}>File Randomiser Settings</Title>
           <Divider />
-
-          {/* Integrations */}
-          <Stack gap="sm">
-            <Title order={4}>Integrations</Title>
-            <Text size="sm" c="dimmed">
-              Control how the app integrates with your system&apos;s right-click
-              menus.
-            </Text>
-
-            <Checkbox
-              checked={settings.fileRandomiser.enable_context_menu}
-              label="Enable right-click context menu item (Opens a random file)"
-              description="This feature allows you to right-click anywhere and quickly open a random file from your tracked paths."
-              onChange={(event) =>
-                handleContextMenuToggle(event.currentTarget.checked)
-              }
-              size="md"
-            />
-          </Stack>
 
           {/* Process Tracking */}
           <Stack gap="sm">

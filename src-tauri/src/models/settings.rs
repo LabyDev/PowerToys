@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FileRandomiserSettings {
-    pub enable_context_menu: bool,
     pub allow_process_tracking: bool,
     pub randomness_level: u8,
 }
@@ -10,7 +9,6 @@ pub struct FileRandomiserSettings {
 impl Default for FileRandomiserSettings {
     fn default() -> Self {
         FileRandomiserSettings {
-            enable_context_menu: false,
             allow_process_tracking: false,
             randomness_level: 50,
         }

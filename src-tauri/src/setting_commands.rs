@@ -1,4 +1,3 @@
-use crate::context::windows_shell::is_context_menu_registered;
 use crate::models::settings::AppSettings;
 use crate::models::DarkModeOption;
 use base64::{engine::general_purpose, Engine as _};
@@ -14,13 +13,10 @@ use tauri_plugin_store::StoreExt;
 pub fn get_app_settings(app: AppHandle<Wry>) -> Result<AppSettings, String> {
     let store = app.store("store.json").map_err(|e| e.to_string())?;
 
-    let mut settings: AppSettings = match store.get("settings") {
+    let settings: AppSettings = match store.get("settings") {
         Some(value) => serde_json::from_value(value).unwrap_or_default(),
         None => AppSettings::default(),
     };
-
-    // Override enable_context_menu with the actual Windows state
-    settings.file_randomiser.enable_context_menu = is_context_menu_registered();
 
     Ok(settings)
 }
