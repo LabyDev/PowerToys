@@ -7,26 +7,27 @@ import ItemActions from "./itemActions";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
 import { dirname } from "@tauri-apps/api/path";
 
+interface FileTreeNodeComponentProps {
+  node: FileTreeNode;
+  onExclude: (file: FileEntry) => void;
+  currentFileId: number | null;
+  isRoot?: boolean;
+  freshCrawl?: boolean;
+}
+
 const FileTreeNodeComponent = ({
   node,
   onExclude,
   currentFileId,
   isRoot = false,
-  index = 0,
-}: {
-  node: FileTreeNode;
-  onExclude: (file: FileEntry) => void;
-  currentFileId: number | null;
-  isRoot?: boolean;
-  index?: number;
-}) => {
+  freshCrawl = false,
+}: FileTreeNodeComponentProps) => {
   const containsCurrentFile = (node: FileTreeNode): boolean => {
     if (node.file && node.file.id === currentFileId) return true;
     if (!node.children) return false;
     return node.children.some(containsCurrentFile);
   };
 
-  // check if all children (recursively) are excluded
   const allChildrenExcluded = (node: FileTreeNode): boolean => {
     if (node.file) return node.file.excluded ?? false;
     if (!node.children) return false;
@@ -34,7 +35,8 @@ const FileTreeNodeComponent = ({
   };
 
   const defaultExpanded =
-    node.children && (isRoot && index === 0 ? true : containsCurrentFile(node));
+    node.children && (containsCurrentFile(node) || (freshCrawl && isRoot));
+
   const [expanded, setExpanded] = useState(defaultExpanded);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -44,6 +46,7 @@ const FileTreeNodeComponent = ({
     if (node.file?.id === currentFileId && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+
     if (node.children && containsCurrentFile(node)) {
       setExpanded(true);
     }
@@ -109,7 +112,7 @@ const FileTreeNodeComponent = ({
                 name: node.name,
                 excluded: false,
               })
-            } // create a dummy FileEntry
+            }
           />
         )}
       </Group>
@@ -119,33 +122,39 @@ const FileTreeNodeComponent = ({
           nodes={node.children}
           onExclude={onExclude}
           currentFileId={currentFileId}
+          isRoot={false}
+          freshCrawl={freshCrawl}
         />
       )}
     </Box>
   );
 };
 
+interface FileTreeProps {
+  nodes: FileTreeNode[];
+  onExclude: (file: FileEntry) => void;
+  currentFileId: number | null;
+  isRoot?: boolean;
+  freshCrawl?: boolean;
+}
+
 const FileTree = ({
   nodes,
   onExclude,
   currentFileId,
   isRoot = true,
-}: {
-  nodes: FileTreeNode[];
-  onExclude: (file: FileEntry) => void;
-  currentFileId: number | null;
-  isRoot?: boolean;
-}) => {
+  freshCrawl = false,
+}: FileTreeProps) => {
   return (
     <Stack gap={2}>
-      {nodes.map((node, idx) => (
+      {nodes.map((node) => (
         <FileTreeNodeComponent
           key={node.path}
           node={node}
           onExclude={onExclude}
           currentFileId={currentFileId}
           isRoot={isRoot}
-          index={idx}
+          freshCrawl={freshCrawl}
         />
       ))}
     </Stack>

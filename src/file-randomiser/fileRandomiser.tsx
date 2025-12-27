@@ -47,6 +47,8 @@ const FileRandomiser = () => {
     setTracking,
     isCrawling,
     setIsCrawling,
+    freshCrawl,
+    setFreshCrawl,
   } = useFileRandomiser();
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -127,7 +129,18 @@ const FileRandomiser = () => {
     setIsCrawling(true);
     try {
       await randomiserApi.crawlPaths();
-      await updateAndRefreshData();
+      const latest = await randomiserApi.getAppState();
+
+      // Check if data changed
+      const changed =
+        !arraysEqual(latest.files, data.files) ||
+        !arraysEqual(latest.paths, data.paths);
+
+      setData(latest);
+
+      if (changed) {
+        setFreshCrawl(true); // mark for auto-expansion
+      }
     } finally {
       setIsCrawling(false);
     }
@@ -451,6 +464,7 @@ const FileRandomiser = () => {
                 currentFileId={
                   currentIndex !== null ? data.files[currentIndex]?.id : null
                 }
+                freshCrawl={freshCrawl}
               />
             </Box>
           </Section>

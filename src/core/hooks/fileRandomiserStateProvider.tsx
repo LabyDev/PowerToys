@@ -24,6 +24,8 @@ interface FileRandomiserContextValue {
   setTracking: (t: boolean) => void;
   isCrawling: boolean;
   setIsCrawling: (c: boolean) => void;
+  freshCrawl: boolean;
+  setFreshCrawl: (fc: boolean) => void;
 }
 
 const FileRandomiserContext = createContext<
@@ -65,6 +67,7 @@ export const FileRandomiserProvider = ({
   const currentIndexRef = useRef<number | null>(null);
   const [tracking, setTracking] = useState(false);
   const [isCrawling, setIsCrawling] = useState(false);
+  const [freshCrawl, setFreshCrawl] = useState(false);
 
   return (
     <FileRandomiserContext.Provider
@@ -87,6 +90,8 @@ export const FileRandomiserProvider = ({
         setTracking,
         isCrawling,
         setIsCrawling,
+        freshCrawl,
+        setFreshCrawl,
       }}
     >
       {children}
