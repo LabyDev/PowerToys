@@ -1,3 +1,4 @@
+use crate::models::LanguageOption;
 use crate::models::settings::AppSettings;
 use crate::models::DarkModeOption;
 use base64::{engine::general_purpose, Engine as _};
@@ -35,6 +36,15 @@ pub fn set_app_settings(app: AppHandle<Wry>, settings: AppSettings) -> Result<Ap
 pub fn toggle_process_tracking(app: AppHandle<Wry>, enable: bool) -> Result<AppSettings, String> {
     let mut settings = get_app_settings(app.clone())?;
     settings.file_randomiser.allow_process_tracking = enable;
+    set_app_settings(app, settings.clone())?;
+    Ok(settings)
+}
+
+/// Set language
+#[tauri::command]
+pub fn set_language(app: AppHandle<Wry>, language: LanguageOption) -> Result<AppSettings, String> {
+    let mut settings = get_app_settings(app.clone())?;
+    settings.language = language;
     set_app_settings(app, settings.clone())?;
     Ok(settings)
 }

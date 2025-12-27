@@ -1,6 +1,9 @@
+export type LanguageOption = "en" | "nl" | "de" | "pl";
+
 export type DarkModeOption = "light" | "dark" | "system";
 
 export type AppSettings = {
+  language: LanguageOption;
   darkMode: DarkModeOption;
   customBackground?: string;
   fileRandomiser: {

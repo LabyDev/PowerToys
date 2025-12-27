@@ -8,10 +8,11 @@ import { App } from "./core/app/App";
 import { ErrorBoundary } from "./core/app/ErrorBoundary";
 import { useAppSettings } from "./core/hooks/useAppSettings";
 import BackgroundManager from "./core/utilities/backgroundManager";
-import "./core/translations/i18";
+import i18n from "./core/translations/i18";
 
 function Root() {
-  const { isDarkMode } = useAppSettings();
+  const { settings, isDarkMode } = useAppSettings();
+  i18n.changeLanguage(settings.language);
   return (
     <>
       {/* Prevent flash of wrong color scheme on load */}

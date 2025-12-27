@@ -16,7 +16,7 @@ i18n
       de: { translation: de },
       pl: { translation: pl },
     },
-    lng: "en", // default language
+    lng: navigator.language.split("-")[0], // default language
     fallbackLng: "en", // fallback if translation is missing
     interpolation: {
       escapeValue: false, // react already safes from XSS

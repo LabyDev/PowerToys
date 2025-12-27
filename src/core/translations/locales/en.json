@@ -100,7 +100,15 @@
       "customBackgroundClear": "Clear Background",
       "restartRequired": "Restart required",
       "restartDescription": "Some changes require a restart to take effect.",
-      "restartButton": "Restart Now"
+      "restartButton": "Restart Now",
+      "language": "Language",
+      "languageDescription": "Select your preferred language.",
+      "languages": {
+        "en": "English",
+        "nl": "Nederlands",
+        "de": "Deutsch",
+        "pl": "Polski"
+      }
     }
   },
   "fileRandomiserSettings": {

@@ -13,8 +13,13 @@ import {
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
-import { DarkModeOption, AppSettings } from "../../types/settings";
+import {
+  DarkModeOption,
+  AppSettings,
+  LanguageOption,
+} from "../../types/settings";
 import { useTranslation } from "react-i18next";
+import i18n from "../translations/i18";
 
 const AppSettingsPage = () => {
   const { t } = useTranslation();
@@ -30,6 +35,18 @@ const AppSettingsPage = () => {
       setPendingChange(true);
     } catch (err) {
       console.error("Failed to update dark mode:", err);
+    }
+  };
+
+  const handleLanguageChange = async (value: LanguageOption) => {
+    try {
+      const updatedSettings: AppSettings = await invoke("set_language", {
+        language: value,
+      });
+      setSettings(updatedSettings);
+      i18n.changeLanguage(value); // update i18next language
+    } catch (err) {
+      console.error("Failed to update language:", err);
     }
   };
 
@@ -79,6 +96,19 @@ const AppSettingsPage = () => {
               {t("settingsPage.appearance.description")}
             </Text>
 
+            {/* Language Selection */}
+            <Select
+              label={t("settingsPage.appearance.language")}
+              description={t("settingsPage.appearance.languageDescription")}
+              value={settings.language}
+              onChange={(val) => handleLanguageChange(val as LanguageOption)}
+              data={["en", "nl", "de", "pl"].map((lang) => ({
+                value: lang,
+                label: t(`settingsPage.appearance.languages.${lang}`),
+              }))}
+              mt="sm"
+            />
+
             <Alert color="yellow" variant="light" mt="xs">
               {t("settingsPage.appearance.alert")}
             </Alert>
@@ -106,7 +136,7 @@ const AppSettingsPage = () => {
             />
 
             {/* Custom Background */}
-            <Group gap="sm">
+            <Group gap="sm" mt="sm">
               <Button onClick={handleBackgroundSelect}>
                 {t("settingsPage.appearance.customBackgroundSelect")}
               </Button>

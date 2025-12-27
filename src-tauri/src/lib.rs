@@ -27,6 +27,7 @@ pub fn run() {
             setting_commands::clear_custom_background,
             setting_commands::set_randomness_level,
             setting_commands::restart_app,
+            setting_commands::set_language,
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
             filerandomisercommands::remove_path,
