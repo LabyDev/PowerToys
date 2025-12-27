@@ -23,7 +23,11 @@ pub fn add_path_via_dialog(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
 ) -> Option<SavedPath> {
-    let folder = app.dialog().file().blocking_pick_folder().unwrap();
+    // Try picking a folder; return None if user cancels
+    let folder = match app.dialog().file().blocking_pick_folder() {
+        Some(f) => f,
+        None => return None, // user cancelled
+    };
 
     let mut data = app_data.lock().unwrap();
 
