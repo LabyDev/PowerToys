@@ -146,6 +146,7 @@ const FileTree = ({
 
             <ClampedTooltipText
               size="sm"
+              fw={node.children ? 600 : 400}
               style={{
                 flex: 1,
                 cursor: node.children ? "pointer" : undefined,
@@ -153,7 +154,11 @@ const FileTree = ({
               }}
               onClick={() => node.children && toggleNode(node)}
             >
-              {node.name}
+              {node.children
+                ? isExpanded
+                  ? "📂 " + node.name // open folder
+                  : "📁 " + node.name // closed folder
+                : "📄 " + node.name}
             </ClampedTooltipText>
 
             {node.file && (

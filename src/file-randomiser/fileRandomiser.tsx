@@ -342,7 +342,12 @@ const FileRandomiser = () => {
           Object.keys(current.children).length === 1
         ) {
           const key = Object.keys(current.children)[0];
-          current = current.children[key];
+          const child = current.children[key];
+
+          // STOP flattening if the only child has a file
+          if (child.file) break;
+
+          current = child;
           nameChain.push(current.name);
           pathChain.push(current.path);
         }
