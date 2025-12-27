@@ -133,6 +133,7 @@ const FileTree = ({
                 : undefined,
               opacity: isExcluded ? 0.5 : 1,
             }}
+            className="item-actions"
           >
             {node.children && (
               <ActionIcon size="xs" onClick={() => toggleNode(node)}>
