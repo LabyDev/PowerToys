@@ -1,5 +1,5 @@
 import { Text, Tooltip } from "@mantine/core";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
 interface ClampedTooltipTextProps {
   children: string;
@@ -21,11 +21,18 @@ const ClampedTooltipText = ({
   const ref = useRef<HTMLDivElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
 
-  useEffect(() => {
+  const checkOverflow = useCallback(() => {
     const el = ref.current;
     if (!el) return;
     setIsOverflowing(el.scrollWidth > el.clientWidth);
-  }, [children]);
+  }, []);
+
+  // Check overflow on mount, children change, and window resize
+  useEffect(() => {
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [children, checkOverflow]);
 
   const text = (
     <Text
@@ -52,7 +59,7 @@ const ClampedTooltipText = ({
         position="bottom-start"
         styles={(theme) => ({
           tooltip: {
-            fontSize: theme.fontSizes.xs, // smaller text
+            fontSize: theme.fontSizes.xs,
           },
         })}
       >
