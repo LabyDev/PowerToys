@@ -13,6 +13,7 @@ interface FileTreeNodeComponentProps {
   currentFileId: number | null;
   isRoot?: boolean;
   freshCrawl?: boolean;
+  treeCollapsed?: boolean;
 }
 
 const FileTreeNodeComponent = ({
@@ -21,6 +22,7 @@ const FileTreeNodeComponent = ({
   currentFileId,
   isRoot = false,
   freshCrawl = false,
+  treeCollapsed,
 }: FileTreeNodeComponentProps) => {
   const containsCurrentFile = (node: FileTreeNode): boolean => {
     if (node.file && node.file.id === currentFileId) return true;
@@ -42,6 +44,7 @@ const FileTreeNodeComponent = ({
 
   const isExcluded = node.file ? node.file.excluded : allChildrenExcluded(node);
 
+  // Scroll to current file
   useEffect(() => {
     if (node.file?.id === currentFileId && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -51,6 +54,12 @@ const FileTreeNodeComponent = ({
       setExpanded(true);
     }
   }, [currentFileId]);
+
+  // Sync with treeCollapsed
+  useEffect(() => {
+    if (treeCollapsed === true) setExpanded(false);
+    if (treeCollapsed === false) setExpanded(true);
+  }, [treeCollapsed]);
 
   return (
     <Box pl={node.children ? 10 : 20} ref={ref}>
@@ -124,6 +133,7 @@ const FileTreeNodeComponent = ({
           currentFileId={currentFileId}
           isRoot={false}
           freshCrawl={freshCrawl}
+          treeCollapsed={treeCollapsed} // <- pass down
         />
       )}
     </Box>
@@ -136,6 +146,7 @@ interface FileTreeProps {
   currentFileId: number | null;
   isRoot?: boolean;
   freshCrawl?: boolean;
+  treeCollapsed?: boolean; // <- added
 }
 
 const FileTree = ({
@@ -144,6 +155,7 @@ const FileTree = ({
   currentFileId,
   isRoot = true,
   freshCrawl = false,
+  treeCollapsed = false,
 }: FileTreeProps) => {
   return (
     <Stack gap={2}>
@@ -155,6 +167,7 @@ const FileTree = ({
           currentFileId={currentFileId}
           isRoot={isRoot}
           freshCrawl={freshCrawl}
+          treeCollapsed={treeCollapsed}
         />
       ))}
     </Stack>

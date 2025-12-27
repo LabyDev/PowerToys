@@ -1,4 +1,4 @@
-import { Box, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
+import { Box, Button, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -49,6 +49,8 @@ const FileRandomiser = () => {
     setIsCrawling,
     freshCrawl,
     setFreshCrawl,
+    treeCollapsed,
+    setTreeCollapsed,
   } = useFileRandomiser();
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -183,6 +185,10 @@ const FileRandomiser = () => {
 
     updateAndRefreshData();
   }, [data.files, shuffle]);
+
+  const toggleTreeCollapsed = () => {
+    setTreeCollapsed(!treeCollapsed);
+  };
 
   // ------------------------ Preset Handling ------------------------
   const handleNameChange = (newName: string) => {
@@ -439,6 +445,13 @@ const FileRandomiser = () => {
                   </Text>
                   )
                 </Text>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={toggleTreeCollapsed}
+                >
+                  {treeCollapsed ? "Expand All" : "Collapse All"}
+                </Button>
               </Group>
             }
             className="main-panel"
@@ -465,6 +478,7 @@ const FileRandomiser = () => {
                   currentIndex !== null ? data.files[currentIndex]?.id : null
                 }
                 freshCrawl={freshCrawl}
+                treeCollapsed={treeCollapsed}
               />
             </Box>
           </Section>
