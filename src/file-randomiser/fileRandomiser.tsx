@@ -347,6 +347,11 @@ const FileRandomiser = () => {
   const excludedFiles = filteredFiles.filter((f) => f.excluded).length;
   const includedFiles = totalFiles - excludedFiles;
 
+  const fileTreeNodes = useMemo(
+    () => buildFileTree(filteredFiles),
+    [filteredFiles],
+  );
+
   return (
     <Box p="md" h="88vh">
       <LoadingOverlay
@@ -471,7 +476,7 @@ const FileRandomiser = () => {
           >
             <Box style={{ height: "100%", minHeight: 0, overflowY: "auto" }}>
               <FileTree
-                nodes={buildFileTree(filteredFiles)}
+                nodes={fileTreeNodes}
                 onExclude={async (file) => {
                   const rule = {
                     id: crypto.randomUUID(),
