@@ -59,37 +59,43 @@ const FileTree = ({
   // Auto-expand nodes containing current file or root
   useEffect(() => {
     const map: Record<string, boolean> = {};
-    const init = (node: FileTreeNode, depth = 0) => {
+
+    const init = (node: FileTreeNode) => {
       const id = getNodeId(node);
       if (node.children) {
         const shouldExpand = isRoot || containsCurrentFile(node);
         map[id] = shouldExpand;
-        node.children.forEach((child) => init(child, depth + 1));
+        node.children.forEach(init);
       }
     };
-    nodes.forEach((n) => init(n));
+
+    nodes.forEach(init);
     setExpandedMap(map);
-  }, [nodes, currentFileId]);
+  }, [currentFileId]);
 
   // Handle treeCollapsed / freshCrawl updates
   useEffect(() => {
     const map: Record<string, boolean> = { ...expandedMap };
+
     const update = (node: FileTreeNode) => {
       const id = getNodeId(node);
       if (node.children) {
         if (treeCollapsed === true) {
           map[id] = false;
-        } else if (treeCollapsed === false && freshCrawl && node.depth <= 1) {
-          map[id] = true;
-        } else if (treeCollapsed === false && !freshCrawl) {
-          map[id] = true;
+        } else if (treeCollapsed === false) {
+          if (freshCrawl) {
+            if (node.depth <= 1) map[id] = true;
+          } else {
+            map[id] = true;
+          }
         }
         node.children.forEach(update);
       }
     };
+
     nodes.forEach(update);
     setExpandedMap(map);
-  }, [treeCollapsed, freshCrawl]);
+  }, [treeCollapsed]);
 
   // ------------------- Flatten tree for Virtuoso -------------------
   const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
