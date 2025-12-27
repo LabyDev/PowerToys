@@ -44,17 +44,6 @@ const FileTreeNodeComponent = ({
 
   const isExcluded = node.file ? node.file.excluded : allChildrenExcluded(node);
 
-  // Scroll to current file
-  useEffect(() => {
-    if (node.file?.id === currentFileId && ref.current) {
-      ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
-    if (node.children && containsCurrentFile(node)) {
-      setExpanded(true);
-    }
-  }, [currentFileId]);
-
   // Sync with treeCollapsed
   useEffect(() => {
     if (treeCollapsed === true) setExpanded(false);
@@ -62,7 +51,11 @@ const FileTreeNodeComponent = ({
   }, [treeCollapsed]);
 
   return (
-    <Box pl={node.children ? 10 : 20} ref={ref}>
+    <Box
+      id={node.file ? `file-${node.file.id}` : undefined}
+      pl={node.children ? 10 : 20}
+      ref={ref}
+    >
       <Group
         gap={8}
         className="item-actions"

@@ -148,6 +148,13 @@ const FileRandomiser = () => {
     }
   };
 
+  const scrollToCurrentFile = (fileId: number) => {
+    const element = document.getElementById(`file-${fileId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
   const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
@@ -184,6 +191,8 @@ const FileRandomiser = () => {
     currentIndexRef.current = originalIndex;
 
     updateAndRefreshData();
+
+    if (file.id) scrollToCurrentFile(file.id);
   }, [data.files, shuffle]);
 
   const toggleTreeCollapsed = () => {
