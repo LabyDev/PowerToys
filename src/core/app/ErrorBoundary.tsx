@@ -9,6 +9,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { WarningCircleIcon, CopyIcon } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -44,65 +45,82 @@ export class ErrorBoundary extends React.Component<
       const errorDetails = `${this.state.error?.toString()}\n\n${
         this.state.errorInfo?.componentStack
       }`;
-
       const githubIssuesLink = "https://github.com/LabyDev/PowerToys/issues";
 
       return (
-        <Card shadow="sm" padding="lg" style={{ margin: 20 }}>
-          <Stack gap="md" align="center" style={{ width: "100%" }}>
-            <WarningCircleIcon size={48} color="red" weight="bold" />
-            <Title order={2} style={{ color: "red" }}>
-              Oops! Something went wrong.
-            </Title>
-            <Text style={{ textAlign: "center" }}>
-              The app encountered an unexpected error. You can help us fix it by
-              reporting it on GitHub.
-            </Text>
-
-            <Button
-              component="a"
-              href={githubIssuesLink}
-              color="red"
-              variant="outline"
-              target="_blank"
-            >
-              Report on GitHub
-            </Button>
-
-            <CopyButton value={errorDetails}>
-              {({ copied, copy }) => (
-                <Tooltip label={copied ? "Copied!" : "Copy error details"}>
-                  <Button
-                    variant="light"
-                    onClick={copy}
-                    leftSection={<CopyIcon />}
-                  >
-                    Copy Error Details
-                  </Button>
-                </Tooltip>
-              )}
-            </CopyButton>
-
-            {/* Show error details in scrollable box */}
-            <pre
-              style={{
-                marginTop: 20,
-                maxHeight: 300,
-                overflow: "auto",
-                width: "100%",
-                backgroundColor: "#f8f8f8",
-                padding: 10,
-                borderRadius: 6,
-                fontSize: 12,
-              }}
-            >
-              {errorDetails}
-            </pre>
-          </Stack>
-        </Card>
+        <ErrorBoundaryInner
+          errorDetails={errorDetails}
+          githubIssuesLink={githubIssuesLink}
+        />
       );
     }
 
     return this.props.children;
   }
+}
+
+// Functional wrapper to use hooks inside class component
+function ErrorBoundaryInner({
+  errorDetails,
+  githubIssuesLink,
+}: {
+  errorDetails: string;
+  githubIssuesLink: string;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Card shadow="sm" padding="lg" style={{ margin: 20 }}>
+      <Stack gap="md" align="center" style={{ width: "100%" }}>
+        <WarningCircleIcon size={48} color="red" weight="bold" />
+        <Title order={2} style={{ color: "red" }}>
+          {t("errorBoundary.title")}
+        </Title>
+        <Text style={{ textAlign: "center" }}>
+          {t("errorBoundary.description")}
+        </Text>
+
+        <Button
+          component="a"
+          href={githubIssuesLink}
+          color="red"
+          variant="outline"
+          target="_blank"
+        >
+          {t("errorBoundary.reportButton")}
+        </Button>
+
+        <CopyButton value={errorDetails}>
+          {({ copied, copy }) => (
+            <Tooltip
+              label={
+                copied
+                  ? t("errorBoundary.copiedTooltip")
+                  : t("errorBoundary.copyTooltip")
+              }
+            >
+              <Button variant="light" onClick={copy} leftSection={<CopyIcon />}>
+                {t("errorBoundary.copyButton")}
+              </Button>
+            </Tooltip>
+          )}
+        </CopyButton>
+
+        <pre
+          style={{
+            marginTop: 20,
+            maxHeight: 300,
+            overflow: "auto",
+            width: "100%",
+            backgroundColor: "#f8f8f8",
+            padding: 10,
+            borderRadius: 6,
+            fontSize: 12,
+          }}
+        >
+          {errorDetails}
+        </pre>
+      </Stack>
+    </Card>
+  );
 }

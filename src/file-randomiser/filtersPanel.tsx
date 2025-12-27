@@ -35,42 +35,16 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const RULE_TYPES: { value: FilterMatchType; label: string }[] = [
-  { value: "contains", label: "Contains" },
-  { value: "startsWith", label: "Starts with" },
-  { value: "endsWith", label: "Ends with" },
-  { value: "regex", label: "Regex" },
-];
+import { useTranslation } from "react-i18next";
 
-// Wrap RuleBadge for sortable
-function SortableRuleBadge({
-  rule,
-  onRemove,
+const FiltersPanel = ({
+  data,
+  updateData,
 }: {
-  rule: FilterRule;
-  onRemove: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: rule.id });
-
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <RuleBadge rule={rule} onRemove={onRemove} />
-    </div>
-  );
-}
-
-interface FiltersPanelProps {
   data: AppStateData;
   updateData: (updated: AppStateData) => Promise<void>;
-}
-
-const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
+}) => {
+  const { t } = useTranslation();
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [newRule, setNewRule] = useState<Omit<FilterRule, "id">>({
@@ -82,18 +56,28 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
+  const RULE_TYPES: { value: FilterMatchType; label: string }[] = [
+    {
+      value: "contains",
+      label: t("fileRandomiser.filtersPanel.ruleTypes.contains"),
+    },
+    {
+      value: "startsWith",
+      label: t("fileRandomiser.filtersPanel.ruleTypes.startsWith"),
+    },
+    {
+      value: "endsWith",
+      label: t("fileRandomiser.filtersPanel.ruleTypes.endsWith"),
+    },
+    { value: "regex", label: t("fileRandomiser.filtersPanel.ruleTypes.regex") },
+  ];
+
   const addRule = async () => {
     if (!newRule.pattern.trim()) return;
 
-    const rule: FilterRule = {
-      ...newRule,
-      id: crypto.randomUUID(),
-    };
+    const rule: FilterRule = { ...newRule, id: crypto.randomUUID() };
 
-    await updateData({
-      ...data,
-      filterRules: [...data.filterRules, rule],
-    });
+    await updateData({ ...data, filterRules: [...data.filterRules, rule] });
 
     setNewRule({
       action: "exclude",
@@ -123,6 +107,27 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
     });
   };
 
+  // Sortable wrapper for RuleBadge
+  function SortableRuleBadge({
+    rule,
+    onRemove,
+  }: {
+    rule: FilterRule;
+    onRemove: () => void;
+  }) {
+    const { attributes, listeners, setNodeRef, transform, transition } =
+      useSortable({ id: rule.id });
+    const style: React.CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <RuleBadge rule={rule} onRemove={onRemove} />
+      </div>
+    );
+  }
+
   return (
     <Paper withBorder radius="md" p="sm">
       <Group
@@ -132,10 +137,12 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
       >
         <Group gap="xs">
           <FunnelIcon size={16} />
-          <Text fw={600}>Filters & Exclusions</Text>
+          <Text fw={600}>{t("fileRandomiser.filtersPanel.title")}</Text>
         </Group>
         <Text size="xs" c="dimmed">
-          {filtersOpen ? "Hide" : "Show"}
+          {filtersOpen
+            ? t("fileRandomiser.filtersPanel.hide")
+            : t("fileRandomiser.filtersPanel.show")}
         </Text>
       </Group>
 
@@ -144,7 +151,7 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
           {/* Add new rule */}
           <Stack gap={6}>
             <Text size="sm" fw={600}>
-              Add Rule
+              {t("fileRandomiser.filtersPanel.addRule")}
             </Text>
             <Group gap="xs" align="flex-start">
               <Select
@@ -155,22 +162,19 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                 }
                 style={{ width: 120 }}
               />
-
               <TextInput
-                placeholder="Pattern"
+                placeholder={t(
+                  "fileRandomiser.filtersPanel.patternPlaceholder",
+                )}
                 value={newRule.pattern}
                 onChange={(e) =>
-                  setNewRule((r) => ({
-                    ...r,
-                    pattern: e.currentTarget.value,
-                  }))
+                  setNewRule((r) => ({ ...r, pattern: e.currentTarget.value }))
                 }
                 onKeyDown={(e) => e.key === "Enter" && addRule()}
                 style={{ flex: 1 }}
               />
-
               <Checkbox
-                label="Include"
+                label={t("fileRandomiser.filtersPanel.includeLabel")}
                 checked={newRule.action === "include"}
                 onChange={(e) =>
                   setNewRule((r) => ({
@@ -179,9 +183,8 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                   }))
                 }
               />
-
               <Checkbox
-                label="Case-sensitive"
+                label={t("fileRandomiser.filtersPanel.caseSensitiveLabel")}
                 checked={newRule.caseSensitive}
                 onChange={(e) =>
                   setNewRule((r) => ({
@@ -190,7 +193,6 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
                   }))
                 }
               />
-
               <ActionIcon variant="light" onClick={addRule}>
                 <PlusIcon size={16} />
               </ActionIcon>
@@ -211,7 +213,7 @@ const FiltersPanel = ({ data, updateData }: FiltersPanelProps) => {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {data.filterRules.length === 0 ? (
                   <Text size="xs" c="dimmed">
-                    No rules
+                    {t("fileRandomiser.filtersPanel.noRules")}
                   </Text>
                 ) : (
                   data.filterRules.map((r) => (

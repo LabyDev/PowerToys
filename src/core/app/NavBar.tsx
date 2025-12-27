@@ -4,18 +4,20 @@ import {
   Group,
   Button,
   useMantineColorScheme,
+  NavLink,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { NavLink } from "@mantine/core";
 import { CaretLeftIcon, GearSixIcon } from "@phosphor-icons/react";
 import classes from "./NavBar.module.css";
+import { useTranslation } from "react-i18next";
 
 export function NavBar() {
   const [opened, { toggle }] = useDisclosure(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { colorScheme } = useMantineColorScheme();
+  const { t } = useTranslation();
 
   const handleGoBack = () => {
     navigate(-1);
@@ -33,7 +35,7 @@ export function NavBar() {
             leftSection={<CaretLeftIcon size={20} weight="bold" />}
             onClick={handleGoBack}
           >
-            Go Back
+            {t("navbar.goBack")}
           </Button>
 
           {/* Home NavLink */}
@@ -41,7 +43,7 @@ export function NavBar() {
             className={classes.link}
             component={Link}
             to="/"
-            label="Home"
+            label={t("navbar.home")}
             active
           />
 
@@ -54,7 +56,7 @@ export function NavBar() {
               to="/FileRandomiserSettings"
               className="nav-settings-btn"
             >
-              Settings
+              {t("navbar.settings")}
             </Button>
           )}
         </Group>

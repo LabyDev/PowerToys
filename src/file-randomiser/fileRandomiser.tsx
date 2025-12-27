@@ -25,9 +25,11 @@ import ClampedTooltipText from "./clampedTooltipText";
 import ItemActions from "./itemActions";
 import { sep } from "@tauri-apps/api/path";
 import { useFileRandomiser } from "../core/hooks/fileRandomiserStateProvider";
+import { useTranslation } from "react-i18next";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
+  const { t } = useTranslation();
 
   const {
     data,
@@ -422,7 +424,7 @@ const FileRandomiser = () => {
         >
           {/* Paths */}
           <Section
-            title={`Paths (${filteredPaths.length})`}
+            title={t("fileRandomiser.paths") + ` (${filteredPaths.length})`}
             className="side-panel"
           >
             <Virtuoso
@@ -477,15 +479,15 @@ const FileRandomiser = () => {
           <Section
             title={
               <Group gap="xs">
-                <Text>Files</Text>
+                <Text>{t("fileRandomiser.files")}</Text>
                 <Text size="sm" c="dimmed">
-                  ({totalFiles} total,{" "}
+                  ({totalFiles} {t("fileRandomiser.total")},{" "}
                   <Text component="span" c="green">
-                    {includedFiles} included
+                    {includedFiles} {t("fileRandomiser.included")}
                   </Text>
                   ,{" "}
                   <Text component="span" c="red">
-                    {excludedFiles} excluded
+                    {excludedFiles} {t("fileRandomiser.excluded")}
                   </Text>
                   )
                 </Text>
@@ -494,7 +496,9 @@ const FileRandomiser = () => {
                   variant="outline"
                   onClick={toggleTreeCollapsed}
                 >
-                  {treeCollapsed ? "Expand All" : "Collapse All"}
+                  {treeCollapsed
+                    ? t("fileRandomiser.expandAll")
+                    : t("fileRandomiser.collapseAll")}
                 </Button>
               </Group>
             }
@@ -530,7 +534,7 @@ const FileRandomiser = () => {
 
           {/* History */}
           <Section
-            title={`History (${filteredHistory.length})`}
+            title={t("fileRandomiser.history") + ` (${filteredHistory.length})`}
             className="side-panel"
           >
             <Virtuoso

@@ -13,6 +13,7 @@ import {
   MagnifyingGlassIcon,
   XCircleIcon,
 } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 
 interface ToolbarProps {
   shuffle: boolean;
@@ -40,70 +41,76 @@ const Toolbar = ({
   onShuffleChange,
   onTrackingChange,
   onQueryChange,
-}: ToolbarProps) => (
-  <>
-    <Paper withBorder radius="md" p="md">
-      <Group justify="space-between" align="center" wrap="nowrap">
-        {/* Left + middle buttons */}
-        <Group gap="md" align="center" wrap="nowrap">
-          {presetControls}
+}: ToolbarProps) => {
+  const { t } = useTranslation();
 
-          <Group gap="sm" ml="xl">
-            <Button
-              leftSection={<FolderPlusIcon size={16} />}
-              onClick={onAddPath}
-            >
-              Add path
-            </Button>
-            <Button
-              variant="light"
-              leftSection={<ArrowsClockwiseIcon size={16} />}
-              onClick={onCrawl}
-            >
-              Crawl
-            </Button>
-            <Button
-              variant="filled"
-              leftSection={<ShuffleIcon size={16} />}
-              onClick={onPickFile}
-            >
-              {shuffle ? "Random file" : "Next file"}
-            </Button>
+  return (
+    <>
+      <Paper withBorder radius="md" p="md">
+        <Group justify="space-between" align="center" wrap="nowrap">
+          {/* Left + middle buttons */}
+          <Group gap="md" align="center" wrap="nowrap">
+            {presetControls}
+
+            <Group gap="sm" ml="xl">
+              <Button
+                leftSection={<FolderPlusIcon size={16} />}
+                onClick={onAddPath}
+              >
+                {t("fileRandomiser.toolbar.addPath")}
+              </Button>
+              <Button
+                variant="light"
+                leftSection={<ArrowsClockwiseIcon size={16} />}
+                onClick={onCrawl}
+              >
+                {t("fileRandomiser.toolbar.crawl")}
+              </Button>
+              <Button
+                variant="filled"
+                leftSection={<ShuffleIcon size={16} />}
+                onClick={onPickFile}
+              >
+                {shuffle
+                  ? t("fileRandomiser.toolbar.randomFile")
+                  : t("fileRandomiser.toolbar.nextFile")}
+              </Button>
+            </Group>
+          </Group>
+
+          {/* Right: checkboxes */}
+          <Group gap="sm">
+            <Checkbox
+              label={t("fileRandomiser.toolbar.shuffle")}
+              checked={shuffle}
+              onChange={(e) => onShuffleChange(e.currentTarget.checked)}
+            />
+            {allowTracking && (
+              <Checkbox
+                label={t("fileRandomiser.toolbar.tracking")}
+                checked={tracking}
+                onChange={(e) => onTrackingChange(e.currentTarget.checked)}
+              />
+            )}
           </Group>
         </Group>
+      </Paper>
 
-        {/* Right: checkboxes */}
-        <Group gap="sm">
-          <Checkbox
-            label="Shuffle"
-            checked={shuffle}
-            onChange={(e) => onShuffleChange(e.currentTarget.checked)}
-          />
-          {allowTracking && (
-            <Checkbox
-              label="Tracking"
-              checked={tracking}
-              onChange={(e) => onTrackingChange(e.currentTarget.checked)}
-            />
-          )}
-        </Group>
-      </Group>
-    </Paper>
-
-    <TextInput
-      placeholder="Search paths, files, and history…"
-      leftSection={<MagnifyingGlassIcon size={16} />}
-      rightSection={
-        query && (
-          <ActionIcon onClick={() => onQueryChange("")}>
-            <XCircleIcon size={16} />
-          </ActionIcon>
-        )
-      }
-      value={query}
-      onChange={(e) => onQueryChange(e.currentTarget.value)}
-    />
-  </>
-);
+      <TextInput
+        placeholder={t("fileRandomiser.toolbar.searchPlaceholder")}
+        leftSection={<MagnifyingGlassIcon size={16} />}
+        rightSection={
+          query && (
+            <ActionIcon onClick={() => onQueryChange("")}>
+              <XCircleIcon size={16} />
+            </ActionIcon>
+          )
+        }
+        value={query}
+        onChange={(e) => onQueryChange(e.currentTarget.value)}
+      />
+    </>
+  );
+};
 
 export default Toolbar;

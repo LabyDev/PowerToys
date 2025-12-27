@@ -5,10 +5,12 @@ import {
   GearSixIcon,
 } from "@phosphor-icons/react";
 import { NavLink } from "react-router";
+import { useTranslation } from "react-i18next";
 import "./MainPage.css";
 
 function App() {
   const theme = useMantineTheme();
+  const { t } = useTranslation();
 
   return (
     <div className="wrapper">
@@ -23,7 +25,7 @@ function App() {
           style={{ textAlign: "center", marginBottom: theme.spacing.xl }}
           order={1}
         >
-          PowerToys
+          {t("mainPage.appTitle")}
         </Title>
 
         <Stack gap="md" style={{ width: "100%" }}>
@@ -33,7 +35,7 @@ function App() {
             to="/FileRandomiser"
             leftSection={<ShuffleIcon />}
           >
-            File Randomiser
+            {t("mainPage.fileRandomiserButton")}
           </Button>
 
           <Button
@@ -42,7 +44,7 @@ function App() {
             to="/sorter"
             leftSection={<SortAscendingIcon />}
           >
-            File Sorter
+            {t("mainPage.fileSorterButton")}
           </Button>
 
           <Button
@@ -51,7 +53,7 @@ function App() {
             to="/Settings"
             leftSection={<GearSixIcon />}
           >
-            Settings
+            {t("mainPage.settingsButton")}
           </Button>
         </Stack>
       </Card>

@@ -8,6 +8,7 @@ import {
 } from "@mantine/core";
 import { FloppyDiskIcon, FolderOpenIcon } from "@phosphor-icons/react";
 import { RandomiserPreset } from "../types/filerandomiser";
+import { useTranslation } from "react-i18next";
 
 interface PresetControlsProps {
   presets: RandomiserPreset[];
@@ -27,67 +28,73 @@ const PresetControls = ({
   onSelect,
   onSave,
   onOpenFolder,
-}: PresetControlsProps) => (
-  <Group gap="xs" align="center">
-    {/* Preset Name Input + Save button */}
-    <TextInput
-      size="sm"
-      value={name}
-      onChange={(e) => onNameChange(e.currentTarget.value)}
-      placeholder="Preset name"
-      styles={{
-        input: {
-          width: 220, // ← tad longer
-          fontWeight: 500,
-          paddingRight: dirty ? 36 : undefined, // space for icon
-        },
-      }}
-      rightSection={
-        dirty ? (
-          <Tooltip label="Save preset">
-            <ActionIcon
-              size="sm"
-              color="blue"
-              variant="filled"
-              onClick={onSave}
-            >
-              <FloppyDiskIcon size={14} />
-            </ActionIcon>
-          </Tooltip>
-        ) : null
-      }
-    />
+}: PresetControlsProps) => {
+  const { t } = useTranslation();
 
-    {/* Preset Dropdown */}
-    <Menu withinPortal>
-      <Menu.Target>
-        <Button size="sm" variant="light">
-          Presets
-        </Button>
-      </Menu.Target>
+  return (
+    <Group gap="xs" align="center">
+      {/* Preset Name Input + Save button */}
+      <TextInput
+        size="sm"
+        value={name}
+        onChange={(e) => onNameChange(e.currentTarget.value)}
+        placeholder={t("fileRandomiser.presetControls.presetNamePlaceholder")}
+        styles={{
+          input: {
+            width: 220,
+            fontWeight: 500,
+            paddingRight: dirty ? 36 : undefined,
+          },
+        }}
+        rightSection={
+          dirty ? (
+            <Tooltip label={t("fileRandomiser.presetControls.savePreset")}>
+              <ActionIcon
+                size="sm"
+                color="blue"
+                variant="filled"
+                onClick={onSave}
+              >
+                <FloppyDiskIcon size={14} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null
+        }
+      />
 
-      <Menu.Dropdown>
-        {presets.length > 0 ? (
-          presets.map((p) => (
-            <Menu.Item key={p.id} onClick={() => onSelect(p)}>
-              {p.name}
+      {/* Preset Dropdown */}
+      <Menu withinPortal>
+        <Menu.Target>
+          <Button size="sm" variant="light">
+            {t("fileRandomiser.presetControls.presetsButton")}
+          </Button>
+        </Menu.Target>
+
+        <Menu.Dropdown>
+          {presets.length > 0 ? (
+            presets.map((p) => (
+              <Menu.Item key={p.id} onClick={() => onSelect(p)}>
+                {p.name}
+              </Menu.Item>
+            ))
+          ) : (
+            <Menu.Item disabled>
+              {t("fileRandomiser.presetControls.noPresetsFound")}
             </Menu.Item>
-          ))
-        ) : (
-          <Menu.Item disabled>No presets found</Menu.Item>
-        )}
+          )}
 
-        <Menu.Divider />
+          <Menu.Divider />
 
-        <Menu.Item
-          leftSection={<FolderOpenIcon size={14} />}
-          onClick={onOpenFolder}
-        >
-          Open presets folder
-        </Menu.Item>
-      </Menu.Dropdown>
-    </Menu>
-  </Group>
-);
+          <Menu.Item
+            leftSection={<FolderOpenIcon size={14} />}
+            onClick={onOpenFolder}
+          >
+            {t("fileRandomiser.presetControls.openPresetsFolder")}
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    </Group>
+  );
+};
 
 export default PresetControls;

@@ -8,6 +8,7 @@ import { App } from "./core/app/App";
 import { ErrorBoundary } from "./core/app/ErrorBoundary";
 import { useAppSettings } from "./core/hooks/useAppSettings";
 import BackgroundManager from "./core/utilities/backgroundManager";
+import "./core/translations/i18";
 
 function Root() {
   const { isDarkMode } = useAppSettings();

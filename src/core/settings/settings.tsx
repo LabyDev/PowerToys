@@ -14,8 +14,10 @@ import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
 import { DarkModeOption, AppSettings } from "../../types/settings";
+import { useTranslation } from "react-i18next";
 
 const AppSettingsPage = () => {
+  const { t } = useTranslation();
   const { settings, setSettings } = useAppSettings();
   const [pendingChange, setPendingChange] = useState(false);
 
@@ -64,47 +66,49 @@ const AppSettingsPage = () => {
   };
 
   return (
-    <Box
-      p="lg"
-      style={{
-        height: "calc(100vh - 32px)",
-        overflowY: "auto",
-      }}
-    >
+    <Box p="lg" style={{ height: "calc(100vh - 32px)", overflowY: "auto" }}>
       <Paper shadow="sm" p="lg" radius="md" withBorder>
         <Stack gap="xl">
-          <Title order={3}>Application Settings</Title>
+          <Title order={3}>{t("settingsPage.title")}</Title>
           <Divider />
 
           {/* Appearance */}
           <Stack gap="sm">
-            <Title order={4}>Appearance</Title>
+            <Title order={4}>{t("settingsPage.appearance.title")}</Title>
             <Text size="sm" c="dimmed">
-              Control the look and feel of the application.
+              {t("settingsPage.appearance.description")}
             </Text>
 
             <Alert color="yellow" variant="light" mt="xs">
-              Appearance changes, including dark mode, will only apply after
-              restarting the application.
+              {t("settingsPage.appearance.alert")}
             </Alert>
 
             {/* Dark Mode */}
             <Select
-              label="Dark Mode"
-              description="Choose your theme preference."
+              label={t("settingsPage.appearance.darkMode")}
+              description={t("settingsPage.appearance.darkModeDescription")}
               value={settings.darkMode}
               onChange={(val) => handleDarkModeChange(val as DarkModeOption)}
               data={[
-                { value: "light", label: "Light" },
-                { value: "dark", label: "Dark" },
-                { value: "system", label: "Follow System" },
+                {
+                  value: "light",
+                  label: t("settingsPage.appearance.options.light"),
+                },
+                {
+                  value: "dark",
+                  label: t("settingsPage.appearance.options.dark"),
+                },
+                {
+                  value: "system",
+                  label: t("settingsPage.appearance.options.system"),
+                },
               ]}
             />
 
             {/* Custom Background */}
             <Group gap="sm">
               <Button onClick={handleBackgroundSelect}>
-                Select Custom Background
+                {t("settingsPage.appearance.customBackgroundSelect")}
               </Button>
               {settings.customBackground && (
                 <Button
@@ -112,7 +116,7 @@ const AppSettingsPage = () => {
                   variant="outline"
                   onClick={handleBackgroundClear}
                 >
-                  Clear Background
+                  {t("settingsPage.appearance.customBackgroundClear")}
                 </Button>
               )}
             </Group>
@@ -122,23 +126,19 @@ const AppSettingsPage = () => {
               <Alert
                 color="gray.0"
                 variant="outline"
-                title="Restart required"
+                title={t("settingsPage.appearance.restartRequired")}
                 styles={{
                   root: {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                   },
-                  title: {
-                    color: "white",
-                  },
-                  message: {
-                    color: "white",
-                  },
+                  title: { color: "white" },
+                  message: { color: "white" },
                 }}
               >
                 <Text size="sm" c="white">
-                  Some changes require a restart to take effect.
+                  {t("settingsPage.appearance.restartDescription")}
                 </Text>
                 <Button
                   size="xs"
@@ -147,7 +147,7 @@ const AppSettingsPage = () => {
                   mt="sm"
                   onClick={handleRestartApp}
                 >
-                  Restart Now
+                  {t("settingsPage.appearance.restartButton")}
                 </Button>
               </Alert>
             )}

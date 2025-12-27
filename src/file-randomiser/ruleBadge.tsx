@@ -1,6 +1,7 @@
 import { Badge, Group, Text, ActionIcon } from "@mantine/core";
 import { TrashIcon } from "@phosphor-icons/react";
 import { FilterRule } from "../types/filerandomiser";
+import { useTranslation } from "react-i18next";
 
 function RuleBadge({
   rule,
@@ -9,6 +10,7 @@ function RuleBadge({
   rule: FilterRule;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const isExclude = rule.action === "exclude";
 
   return (
@@ -21,7 +23,9 @@ function RuleBadge({
       <Group gap={6} wrap="nowrap">
         {/* Include / Exclude symbol */}
         <Text size="xs" fw={700}>
-          {isExclude ? "−" : "+"}
+          {isExclude
+            ? t("fileRandomiser.filtersPanel.ruleBadge.excludeSymbol")
+            : t("fileRandomiser.filtersPanel.ruleBadge.includeSymbol")}
         </Text>
 
         {/* Match type */}
@@ -37,7 +41,7 @@ function RuleBadge({
         {/* Case-sensitive flag */}
         {rule.caseSensitive && (
           <Text size="xs" fw={600}>
-            Aa
+            {t("fileRandomiser.filtersPanel.ruleBadge.caseSensitiveLabel")}
           </Text>
         )}
 

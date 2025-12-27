@@ -1,0 +1,126 @@
+{
+  "mainPage": {
+    "appTitle": "PowerToys",
+    "fileRandomiserButton": "File Randomiser",
+    "fileSorterButton": "File Sorter",
+    "settingsButton": "Settings"
+  },
+  "fileRandomiser": {
+    "title": "Randomise Files",
+    "description": "Select files to randomise",
+    "paths": "Paths",
+    "files": "Files",
+    "total": "total",
+    "included": "included",
+    "excluded": "excluded",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
+    "history": "History",
+    "openedAt": "Opened at",
+    "filtersPanel": {
+      "title": "Filters & Exclusions",
+      "show": "Show",
+      "hide": "Hide",
+      "addRule": "Add Rule",
+      "patternPlaceholder": "Pattern",
+      "includeLabel": "Include",
+      "caseSensitiveLabel": "Case-sensitive",
+      "noRules": "No rules",
+      "ruleTypes": {
+        "contains": "Contains",
+        "startsWith": "Starts with",
+        "endsWith": "Ends with",
+        "regex": "Regex"
+      },
+      "ruleBadge": {
+        "includeSymbol": "+",
+        "excludeSymbol": "−",
+        "caseSensitiveLabel": "Aa"
+      }
+    },
+    "itemActions": {
+      "openFolder": "Open in folder",
+      "openFile": "Open file",
+      "exclude": "Exclude",
+      "remove": "Remove"
+    },
+    "presetControls": {
+      "presetNamePlaceholder": "Preset name",
+      "savePreset": "Save preset",
+      "presetsButton": "Presets",
+      "noPresetsFound": "No presets found",
+      "openPresetsFolder": "Open presets folder"
+    },
+    "toolbar": {
+      "addPath": "Add path",
+      "crawl": "Crawl",
+      "nextFile": "Next file",
+      "randomFile": "Random file",
+      "shuffle": "Shuffle",
+      "tracking": "Tracking",
+      "searchPlaceholder": "Search paths, files, and history…"
+    }
+  },
+  "fileSorter": {
+    "title": "Sort Files",
+    "description": "Choose sorting criteria"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  "navbar": {
+    "goBack": "Go Back",
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "errorBoundary": {
+    "title": "Oops! Something went wrong.",
+    "description": "The app encountered an unexpected error. You can help us fix it by reporting it on GitHub.",
+    "reportButton": "Report on GitHub",
+    "copyButton": "Copy Error Details",
+    "copiedTooltip": "Copied!",
+    "copyTooltip": "Copy error details"
+  },
+  "settingsPage": {
+    "title": "Application Settings",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Control the look and feel of the application.",
+      "alert": "Appearance changes, including dark mode, will only apply after restarting the application.",
+      "darkMode": "Dark Mode",
+      "darkModeDescription": "Choose your theme preference.",
+      "options": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "Follow System"
+      },
+      "customBackgroundSelect": "Select Custom Background",
+      "customBackgroundClear": "Clear Background",
+      "restartRequired": "Restart required",
+      "restartDescription": "Some changes require a restart to take effect.",
+      "restartButton": "Restart Now"
+    }
+  },
+  "fileRandomiserSettings": {
+    "title": "File Randomiser Settings",
+    "processTracking": {
+      "title": "Process Tracking (Feature Flag)",
+      "description": "This toggle enables the process tracking feature in the main app.\nOnce enabled, the File Randomiser will automatically open the next file (or a random file if shuffle is active) whenever a file is closed, until tracking is disabled.\nImportant: If an app closes unexpectedly, too soon, or opens in an existing instance, it may cause crashes.",
+      "checkboxLabel": "Enable process tracking feature",
+      "checkboxDescription": "This setting only enables the feature; tracking itself must still be toggled in the main app."
+    },
+    "randomness": {
+      "title": "Randomness",
+      "description": "Control how random the file picker feels. Lower values favor the next files in order.",
+      "sliderMarks": {
+        "0": "0",
+        "25": "25",
+        "50": "50 (default)",
+        "75": "75",
+        "100": "100"
+      }
+    }
+  }
+}
