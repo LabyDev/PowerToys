@@ -10,12 +10,14 @@ import {
   Group,
   Alert,
 } from "@mantine/core";
+import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
 import { DarkModeOption, AppSettings } from "../../types/settings";
 
 const AppSettingsPage = () => {
   const { settings, setSettings } = useAppSettings();
+  const [pendingChange, setPendingChange] = useState(false);
 
   const handleDarkModeChange = async (value: DarkModeOption) => {
     try {
@@ -23,6 +25,7 @@ const AppSettingsPage = () => {
         mode: value,
       });
       setSettings(updatedSettings);
+      setPendingChange(true);
     } catch (err) {
       console.error("Failed to update dark mode:", err);
     }
@@ -34,6 +37,7 @@ const AppSettingsPage = () => {
         "set_custom_background",
       );
       setSettings(updatedSettings);
+      setPendingChange(true);
     } catch (err) {
       console.error("Failed to select background:", err);
     }
@@ -45,8 +49,17 @@ const AppSettingsPage = () => {
         "clear_custom_background",
       );
       setSettings(updatedSettings);
+      setPendingChange(true);
     } catch (err) {
       console.error("Failed to clear background:", err);
+    }
+  };
+
+  const handleRestartApp = async () => {
+    try {
+      await invoke("restart_app");
+    } catch (err) {
+      console.error("Failed to restart app:", err);
     }
   };
 
@@ -103,6 +116,41 @@ const AppSettingsPage = () => {
                 </Button>
               )}
             </Group>
+
+            {/* Restart App - only show if there’s a pending change */}
+            {pendingChange && (
+              <Alert
+                color="gray.0"
+                variant="outline"
+                title="Restart required"
+                styles={{
+                  root: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  },
+                  title: {
+                    color: "white",
+                  },
+                  message: {
+                    color: "white",
+                  },
+                }}
+              >
+                <Text size="sm" c="white">
+                  Some changes require a restart to take effect.
+                </Text>
+                <Button
+                  size="xs"
+                  color="white"
+                  variant="outline"
+                  mt="sm"
+                  onClick={handleRestartApp}
+                >
+                  Restart Now
+                </Button>
+              </Alert>
+            )}
           </Stack>
         </Stack>
       </Paper>

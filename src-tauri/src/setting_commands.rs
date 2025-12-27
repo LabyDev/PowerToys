@@ -111,3 +111,9 @@ pub fn set_randomness_level(app: tauri::AppHandle<Wry>, level: u8) -> Result<App
 
     Ok(settings)
 }
+
+#[tauri::command]
+pub fn restart_app(app_handle: tauri::AppHandle) {
+    // Relaunch the app
+    app_handle.restart();
+}
