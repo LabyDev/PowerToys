@@ -1,9 +1,13 @@
 import { ActionIcon, Group } from "@mantine/core";
 import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { useState, useMemo, useEffect } from "react";
-import { Virtuoso } from "react-virtuoso";
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
-import { FileEntry, FileTreeNode } from "../types/filerandomiser";
+import {
+  FileEntry,
+  FileTreeNode,
+  FlattenedNode,
+} from "../types/filerandomiser";
 import ClampedTooltipText from "./clampedTooltipText";
 import ItemActions from "./itemActions";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
@@ -15,12 +19,7 @@ interface FileTreeProps {
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
   isRoot?: boolean;
-}
-
-// Flattened node for Virtuoso
-interface FlattenedNode {
-  node: FileTreeNode;
-  depth: number;
+  virtuosoRef?: React.RefObject<VirtuosoHandle>;
 }
 
 const FileTree = ({
@@ -30,6 +29,7 @@ const FileTree = ({
   freshCrawl = false,
   treeCollapsed = false,
   isRoot = true,
+  virtuosoRef,
 }: FileTreeProps) => {
   // ------------------- Helpers -------------------
   const containsCurrentFile = (node: FileTreeNode): boolean => {
@@ -110,6 +110,7 @@ const FileTree = ({
   // ------------------- Render -------------------
   return (
     <Virtuoso
+      ref={virtuosoRef}
       style={{ height: "100%" }}
       data={flatNodes}
       itemContent={(_, { node, depth }) => {

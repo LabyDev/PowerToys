@@ -57,3 +57,9 @@ export type FileTreeNode = {
   file?: FileEntry;
   depth: number;
 };
+
+// Flattened node for Virtuoso
+export type FlattenedNode = {
+  node: FileTreeNode;
+  depth: number;
+};

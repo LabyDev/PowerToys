@@ -8,6 +8,7 @@ import {
   AppStateData,
   FileEntry,
   FileTreeNode,
+  FlattenedNode,
   RandomiserPreset,
 } from "../types/filerandomiser";
 import { useAppSettings } from "../core/hooks/useAppSettings";
@@ -54,6 +55,7 @@ const FileRandomiser = () => {
   } = useFileRandomiser();
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const fileTreeVirtuosoRef = useRef<VirtuosoHandle>(null);
 
   // ------------------------ Effects ------------------------
   useEffect(() => {
@@ -149,9 +151,28 @@ const FileRandomiser = () => {
   };
 
   const scrollToCurrentFile = (fileId: number) => {
-    const element = document.getElementById(`file-${fileId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    const flatNodes = fileTreeNodes.flatMap((node) => {
+      const flatten = (n: FileTreeNode, d: number): FlattenedNode[] => {
+        const arr: FlattenedNode[] = [{ node: n, depth: d }];
+        const isExpanded = fileTreeVirtuosoRef.current ? true : false; // assume all expanded for index calculation
+        if (n.children && isExpanded) {
+          n.children.forEach((child) => arr.push(...flatten(child, d + 1)));
+        }
+        return arr;
+      };
+      return flatten(node, 0);
+    });
+
+    const index = flatNodes.findIndex(
+      (n) => n.node.file && n.node.file.id === fileId,
+    );
+
+    if (index !== -1) {
+      fileTreeVirtuosoRef.current?.scrollToIndex({
+        index,
+        align: "center",
+        behavior: "smooth",
+      });
     }
   };
 
@@ -476,6 +497,7 @@ const FileRandomiser = () => {
           >
             <Box style={{ height: "100%", minHeight: 0, overflowY: "auto" }}>
               <FileTree
+                virtuosoRef={fileTreeVirtuosoRef}
                 nodes={fileTreeNodes}
                 onExclude={async (file) => {
                   const rule = {
