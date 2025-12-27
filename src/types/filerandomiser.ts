@@ -9,6 +9,7 @@ export type FileEntry = {
   name: string;
   path: string;
   excluded: boolean;
+  bookmarkColor?: string | null;
 };
 
 export type HistoryEntry = {
@@ -42,6 +43,7 @@ export type RandomiserPreset = {
   paths: SavedPath[];
   filterRules: FilterRule[];
   shuffle?: boolean;
+  bookmarks: Bookmark[];
 };
 
 export type PresetState = {
@@ -62,4 +64,10 @@ export type FileTreeNode = {
 export type FlattenedNode = {
   node: FileTreeNode;
   depth: number;
+};
+
+export type Bookmark = {
+  path: string; // absolute path (primary key)
+  color?: string | null;
+  nameOverride?: string; // optional future-proofing
 };

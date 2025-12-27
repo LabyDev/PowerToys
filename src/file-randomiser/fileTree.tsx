@@ -15,6 +15,7 @@ import * as randomiserApi from "../core/api/fileRandomiserApi";
 interface FileTreeProps {
   nodes: FileTreeNode[];
   onExclude: (file: FileEntry) => void;
+  onBookmarkChange: (file: FileEntry, color: string | null) => void;
   currentFileId: number | null;
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
@@ -24,6 +25,7 @@ interface FileTreeProps {
 const FileTree = ({
   nodes,
   onExclude,
+  onBookmarkChange,
   currentFileId,
   freshCrawl = false,
   treeCollapsed = false,
@@ -177,6 +179,10 @@ const FileTree = ({
                   randomiserApi.openPath(folder);
                 }}
                 onExclude={() => onExclude(node.file!)}
+                onBookmarkChange={(color) =>
+                  onBookmarkChange(node.file!, color)
+                }
+                currentBookmarkColor={node.file.bookmarkColor || null}
               />
             )}
 

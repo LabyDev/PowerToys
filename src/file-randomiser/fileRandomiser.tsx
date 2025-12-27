@@ -118,8 +118,66 @@ const FileRandomiser = () => {
   const updateAndRefreshData = async (updatedData?: AppStateData) => {
     if (updatedData) await randomiserApi.updateAppState(updatedData);
     const latest = await randomiserApi.getAppState();
-    setData(latest);
+
+    const activePreset = lastAppliedPresetRef.current;
+
+    const filesWithBookmarks = applyBookmarks(
+      latest.files,
+      activePreset?.bookmarks,
+    );
+
+    setData({
+      ...latest,
+      files: filesWithBookmarks,
+    });
   };
+
+  const handleBookmarkChange = useCallback(
+    (file: FileEntry, color: string | null) => {
+      let preset = lastAppliedPresetRef.current;
+
+      if (!preset) {
+        // No preset applied yet — create a temporary one in memory
+        preset = {
+          id: Date.now().toString(), // unique temporary ID
+          name: "Untitled",
+          paths: [],
+          filterRules: [],
+          bookmarks: [],
+        };
+      }
+
+      const existing = preset?.bookmarks ?? [];
+
+      const nextBookmarks =
+        color === null
+          ? existing.filter((b) => b.path !== file.path)
+          : [
+              ...existing.filter((b) => b.path !== file.path),
+              { path: file.path, color },
+            ];
+
+      // Update the ref (source of truth)
+      lastAppliedPresetRef.current = {
+        ...preset,
+        bookmarks: nextBookmarks,
+      };
+
+      // Update preset state and file data
+      setPresetState(() => ({
+        currentId: preset?.id.toString() ?? null,
+        name: preset?.name ?? "Untitled",
+        dirty: true,
+      }));
+      setData({
+        ...data,
+        files: data.files.map((f) =>
+          f.id === file.id ? { ...f, bookmarkColor: color } : f,
+        ),
+      });
+    },
+    [setPresetState],
+  );
 
   const updateFiltersAndCrawl = async (updatedData: AppStateData) => {
     await updateAndRefreshData(updatedData);
@@ -223,6 +281,20 @@ const FileRandomiser = () => {
   };
 
   // ------------------------ Preset Handling ------------------------
+  const applyBookmarks = (
+    files: FileEntry[],
+    bookmarks: RandomiserPreset["bookmarks"] | undefined,
+  ): FileEntry[] => {
+    if (!bookmarks?.length) return files;
+
+    const map = new Map(bookmarks.map((b) => [b.path, b]));
+
+    return files.map((file) => {
+      const bm = map.get(file.path);
+      return bm ? { ...file, bookmarkColor: bm.color ?? null } : file;
+    });
+  };
+
   const handleNameChange = (newName: string) => {
     setPresetState((p) => ({
       ...p,
@@ -523,6 +595,7 @@ const FileRandomiser = () => {
                   });
                   handleCrawl();
                 }}
+                onBookmarkChange={handleBookmarkChange}
                 currentFileId={
                   currentIndex !== null ? data.files[currentIndex]?.id : null
                 }
