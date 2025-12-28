@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { AppSettings } from "../../types/settings";
+import { AppSettings, LanguageOption } from "../../types/settings";
 
 export type DarkModeOption = true | false | "system";
 
 export function useAppSettings() {
   const [settings, setSettingsState] = useState<AppSettings>({
+    language: navigator.language.split("-")[0] as LanguageOption,
     darkMode: "system",
     customBackground: undefined,
     fileRandomiser: {
