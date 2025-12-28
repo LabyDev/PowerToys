@@ -68,18 +68,24 @@ const PresetControls = ({
       />
 
       {/* Clear Preset Button (only if the current name matches a preset) */}
-      {isPresetApplied && (
-        <Tooltip label={t("fileRandomiser.presetControls.clearPreset")}>
-          <ActionIcon
-            size="sm"
-            color="red"
-            variant="filled"
-            onClick={onPresetClear}
-          >
-            ✕
-          </ActionIcon>
-        </Tooltip>
-      )}
+      <Tooltip
+        label={
+          isPresetApplied ? t("fileRandomiser.presetControls.clearPreset") : ""
+        }
+      >
+        <ActionIcon
+          size="sm"
+          color="red"
+          variant="filled"
+          onClick={onPresetClear}
+          disabled={!isPresetApplied}
+          style={{
+            visibility: isPresetApplied ? "visible" : "hidden",
+          }}
+        >
+          ✕
+        </ActionIcon>
+      </Tooltip>
 
       {/* Preset Dropdown */}
       <Menu withinPortal>
