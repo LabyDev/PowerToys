@@ -4,7 +4,7 @@ import {
   PlusIcon,
   TrashIcon,
   FileArrowUpIcon,
-  StarIcon,
+  BookmarkIcon,
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 
@@ -63,7 +63,8 @@ const ItemActions = ({
       {onOpenFolder && (
         <Tooltip
           label={t("fileRandomiser.itemActions.openFolder")}
-          className="item-action"
+          withArrow
+          position="top"
         >
           <ActionIcon
             variant="subtle"
@@ -78,7 +79,8 @@ const ItemActions = ({
       {onOpen && (
         <Tooltip
           label={t("fileRandomiser.itemActions.openFile")}
-          className="item-action"
+          withArrow
+          position="top"
         >
           <ActionIcon variant="subtle" onClick={onOpen} className="item-action">
             <FileArrowUpIcon size={16} />
@@ -89,7 +91,8 @@ const ItemActions = ({
       {onExclude && (
         <Tooltip
           label={t("fileRandomiser.itemActions.exclude")}
-          className="item-action"
+          withArrow
+          position="top"
         >
           <ActionIcon
             color="orange"
@@ -105,7 +108,8 @@ const ItemActions = ({
       {onRemove && (
         <Tooltip
           label={t("fileRandomiser.itemActions.remove")}
-          className="item-action"
+          withArrow
+          position="top"
         >
           <ActionIcon
             color="red"
@@ -121,17 +125,19 @@ const ItemActions = ({
       {onBookmarkChange && (
         <Tooltip
           label={t("fileRandomiser.itemActions.bookmark")}
-          className="item-action"
+          withArrow
+          position="top"
         >
           <ActionIcon
             variant="subtle"
             onClick={cycleBookmark}
-            style={{
-              backgroundColor: currentBookmarkColor ?? undefined,
-            }}
             className="item-action"
+            color={currentBookmarkColor ?? "var(--mantine-color-gray-6)"}
           >
-            <StarIcon size={16} />
+            <BookmarkIcon
+              weight={currentBookmarkColor ? "fill" : "regular"}
+              size={18}
+            />
           </ActionIcon>
         </Tooltip>
       )}

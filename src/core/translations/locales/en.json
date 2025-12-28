@@ -42,7 +42,8 @@
       "openFolder": "Open in folder",
       "openFile": "Open file",
       "exclude": "Exclude",
-      "remove": "Remove"
+      "remove": "Remove",
+      "bookmark": "Bookmark"
     },
     "presetControls": {
       "presetNamePlaceholder": "Preset name",

@@ -42,7 +42,8 @@
       "openFolder": "Otvori u fascikli",
       "openFile": "Otvori fajl",
       "exclude": "Isključi",
-      "remove": "Ukloni"
+      "remove": "Ukloni",
+      "bookmark": "Oznaka"
     },
     "presetControls": {
       "presetNamePlaceholder": "Ime preseta",

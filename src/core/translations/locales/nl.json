@@ -42,7 +42,8 @@
       "openFolder": "Open in map",
       "openFile": "Bestand openen",
       "exclude": "Uitsluiten",
-      "remove": "Verwijderen"
+      "remove": "Verwijderen",
+      "bookmark": "Bladwijzer"
     },
     "presetControls": {
       "presetNamePlaceholder": "Naam preset",
