@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "@mantine/core/styles.css";
 import { MantineProvider } from "@mantine/core";
@@ -12,7 +12,11 @@ import i18n from "./core/translations/i18";
 
 function Root() {
   const { settings, isDarkMode } = useAppSettings();
-  i18n.changeLanguage(settings.language);
+
+  useEffect(() => {
+    i18n.changeLanguage(settings.language);
+  }, [settings.language]);
+
   return (
     <>
       {/* Prevent flash of wrong color scheme on load */}
