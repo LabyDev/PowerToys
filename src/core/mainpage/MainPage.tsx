@@ -41,7 +41,7 @@ function App() {
           <Button
             fullWidth
             component={NavLink}
-            to="/sorter"
+            to="/FileSorter"
             leftSection={<SortAscendingIcon />}
           >
             {t("mainPage.fileSorterButton")}

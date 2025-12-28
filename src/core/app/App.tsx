@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import FileRandomiserSettings from "../settings/filerandomiserSettings";
 import Settings from "../settings/settings";
 import { FileRandomiserProvider } from "../hooks/fileRandomiserStateProvider";
+import FileSorter from "../../file-sorter/fileSorter";
 
 export function App() {
   const location = useLocation();
@@ -52,6 +53,15 @@ export function App() {
                 element={
                   <PageWrapper>
                     <FileRandomiserSettings />
+                  </PageWrapper>
+                }
+              />
+
+              <Route
+                path="/FileSorter"
+                element={
+                  <PageWrapper>
+                    <FileSorter />
                   </PageWrapper>
                 }
               />
