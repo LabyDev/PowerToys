@@ -501,8 +501,14 @@ const FileRandomiser = () => {
           pathChain.push(current.path);
         }
 
+        // Add leading separator for folders
+        const joinedName =
+          !current.file && depth > 0
+            ? sep() + nameChain.join(sep())
+            : nameChain.join(sep());
+
         return {
-          name: nameChain.join(seperator),
+          name: joinedName,
           path: pathChain[pathChain.length - 1],
           file: current.file,
           depth,
