@@ -82,7 +82,7 @@ const FileRandomiser = () => {
     let unlisten: (() => void) | null = null;
 
     listen("file-closed", () => {
-      handlePickFile();
+      if (tracking) handlePickFile();
     }).then((fn) => {
       unlisten = fn;
     });
