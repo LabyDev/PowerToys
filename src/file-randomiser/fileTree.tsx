@@ -6,6 +6,7 @@ import {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useRef,
 } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
@@ -46,10 +47,24 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     ref,
   ) => {
     // ------------------- Helpers -------------------
-    const containsCurrentFile = (node: FileTreeNode): boolean => {
-      if (node.file && node.file.id === currentFileId) return true;
-      if (!node.children) return false;
-      return node.children.some(containsCurrentFile);
+    const expandParents = (
+      targetId: number,
+      nodes: FileTreeNode[],
+      map: Record<string, boolean>,
+    ) => {
+      const expandRecursively = (nodes: FileTreeNode[]): boolean => {
+        for (const node of nodes) {
+          if (node.file?.id === targetId) return true;
+          if (node.children && expandRecursively(node.children)) {
+            const id = getNodeId(node);
+            map[id] = true; // expand parent
+            return true;
+          }
+        }
+        return false;
+      };
+
+      expandRecursively(nodes);
     };
 
     const allChildrenExcluded = (node: FileTreeNode): boolean => {
@@ -74,18 +89,9 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     useEffect(() => {
       setExpandedMap((prev) => {
         const map = { ...prev };
-
-        const init = (node: FileTreeNode) => {
-          const id = getNodeId(node);
-          if (node.children) {
-            if (containsCurrentFile(node)) {
-              map[id] = true; // expand nodes containing current file
-            }
-            node.children.forEach(init);
-          }
-        };
-
-        nodes.forEach(init);
+        if (currentFileId != null) {
+          expandParents(currentFileId, nodes, map);
+        }
         return map;
       });
     }, [currentFileId, nodes]);
@@ -130,17 +136,39 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
 
     const flatNodes = useMemo(() => flattenTree(nodes), [nodes, expandedMap]);
 
+    const pendingScrollId = useRef<number | null>(null);
+
+    useEffect(() => {
+      const targetId = pendingScrollId.current;
+      if (targetId === null) return;
+
+      const index = flatNodes.findIndex((n) => n.node.file?.id === targetId);
+
+      if (index !== -1) {
+        // Double requestAnimationFrame ensures the DOM has
+        // painted the new rows so Virtuoso can calculate height.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            virtuosoRef?.current?.scrollToIndex({
+              index,
+              align: "center",
+              behavior: "smooth",
+            });
+            pendingScrollId.current = null;
+          });
+        });
+      }
+    }, [flatNodes]); // Triggers every time the list grows/shrinks
+
     // --- Expose scrollToFile method ---
     useImperativeHandle(ref, () => ({
-      scrollToFile(fileId: number) {
-        const index = flatNodes.findIndex((n) => n.node.file?.id === fileId);
-        if (index !== -1) {
-          virtuosoRef?.current?.scrollToIndex({
-            index,
-            align: "center",
-            behavior: "smooth",
-          });
-        }
+      scrollToFile: (fileId: number) => {
+        pendingScrollId.current = fileId;
+        setExpandedMap((prev) => {
+          const map = { ...prev };
+          expandParents(fileId, nodes, map);
+          return map;
+        });
       },
     }));
 
