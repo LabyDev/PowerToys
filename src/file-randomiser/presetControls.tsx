@@ -18,6 +18,7 @@ interface PresetControlsProps {
   onSelect: (preset: RandomiserPreset) => void;
   onSave: () => void;
   onOpenFolder: () => void;
+  onPresetClear: () => void;
 }
 
 const PresetControls = ({
@@ -28,12 +29,16 @@ const PresetControls = ({
   onSelect,
   onSave,
   onOpenFolder,
+  onPresetClear,
 }: PresetControlsProps) => {
   const { t } = useTranslation();
 
+  // Check if the current name matches any preset
+  const isPresetApplied = presets.some((p) => p.name === name);
+
   return (
     <Group gap="xs" align="center">
-      {/* Preset Name Input + Save button */}
+      {/* Preset Name Input */}
       <TextInput
         size="sm"
         value={name}
@@ -43,7 +48,7 @@ const PresetControls = ({
           input: {
             width: 220,
             fontWeight: 500,
-            paddingRight: dirty ? 36 : undefined,
+            paddingRight: 36, // space for save button only
           },
         }}
         rightSection={
@@ -61,6 +66,20 @@ const PresetControls = ({
           ) : null
         }
       />
+
+      {/* Clear Preset Button (only if the current name matches a preset) */}
+      {isPresetApplied && (
+        <Tooltip label={t("fileRandomiser.presetControls.clearPreset")}>
+          <ActionIcon
+            size="sm"
+            color="red"
+            variant="filled"
+            onClick={onPresetClear}
+          >
+            ✕
+          </ActionIcon>
+        </Tooltip>
+      )}
 
       {/* Preset Dropdown */}
       <Menu withinPortal>

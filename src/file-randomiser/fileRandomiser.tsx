@@ -367,6 +367,23 @@ const FileRandomiser = () => {
     presetApi.getPresets().then(setPresets);
   };
 
+  const handleClearPreset = async () => {
+    lastAppliedPresetRef.current = null;
+
+    setPresetState({
+      currentId: null,
+      name: "Untitled",
+      dirty: false,
+      bookmarks: [],
+    });
+
+    await updateFiltersAndCrawl({
+      ...data,
+      paths: [],
+      filterRules: [],
+    });
+  };
+
   const openPresetsFolder = () => {
     presetApi.openPresetsFolder();
   };
@@ -504,6 +521,7 @@ const FileRandomiser = () => {
               onSelect={applyPreset}
               onSave={savePreset}
               onOpenFolder={openPresetsFolder}
+              onPresetClear={handleClearPreset}
             />
           }
         />
