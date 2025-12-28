@@ -1,5 +1,5 @@
 import { Box, Button, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
@@ -59,6 +59,9 @@ const FileRandomiser = () => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const fileTreeVirtuosoRef = useRef<VirtuosoHandle>(null);
 
+  const [showLoading, setShowLoading] = useState(false);
+  const loadingTimeoutRef = useRef<number | null>(null);
+
   // ------------------------ Effects ------------------------
   useEffect(() => {
     updateAndRefreshData();
@@ -113,6 +116,35 @@ const FileRandomiser = () => {
 
     setPresetState((p) => ({ ...p, dirty: true }));
   }, [data.paths, data.filterRules, presetState.name, shuffle]);
+
+  useEffect(() => {
+    if (isCrawling) {
+      // Set a timeout to show loading after 300ms
+      loadingTimeoutRef.current = setTimeout(() => setShowLoading(true), 300);
+    } else {
+      // Clear timeout and hide loading if finished early
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+      setShowLoading(false);
+    }
+
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    };
+  }, [isCrawling]);
+
+  // Then use `showLoading` for the overlay:
+  <LoadingOverlay
+    visible={showLoading}
+    zIndex={1000}
+    overlayProps={{ blur: 2 }}
+    loaderProps={{ type: "dots" }}
+  />;
 
   // ------------------------ Data Handling ------------------------
   const updateAndRefreshData = async (updatedData?: AppStateData) => {
@@ -495,7 +527,7 @@ const FileRandomiser = () => {
   return (
     <Box p="md" h="94vh">
       <LoadingOverlay
-        visible={isCrawling}
+        visible={showLoading}
         zIndex={1000}
         overlayProps={{ blur: 2 }}
         loaderProps={{ type: "dots" }}
