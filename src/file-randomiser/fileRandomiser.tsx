@@ -361,9 +361,12 @@ const FileRandomiser = () => {
   };
 
   const savePreset = async () => {
-    if (!presetState.currentId) return savePresetAs();
-
     const preset = lastAppliedPresetRef.current;
+
+    // If no current ID or the name has changed, create a new preset
+    if (!presetState.currentId || presetState.name !== preset?.name) {
+      return savePresetAs();
+    }
 
     await presetApi.savePreset({
       id: presetState.currentId,

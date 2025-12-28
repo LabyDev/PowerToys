@@ -67,7 +67,6 @@ const PresetControls = ({
         }
       />
 
-      {/* Clear Preset Button (only if the current name matches a preset) */}
       {/* Clear Preset Button (space reserved, tooltip only when applied) */}
       <div style={{ width: 28, display: "flex", justifyContent: "center" }}>
         {isPresetApplied ? (
