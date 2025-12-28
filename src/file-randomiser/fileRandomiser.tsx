@@ -624,6 +624,7 @@ const FileRandomiser = () => {
                 ref={fileTreeRef}
                 virtuosoRef={fileTreeVirtuosoRef}
                 nodes={fileTreeNodes}
+                setFreshCrawl={setFreshCrawl}
                 onExclude={async (file) => {
                   const rule = {
                     id: crypto.randomUUID(),

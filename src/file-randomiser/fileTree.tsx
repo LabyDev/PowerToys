@@ -23,6 +23,7 @@ interface FileTreeProps {
   nodes: FileTreeNode[];
   onExclude: (file: FileEntry) => void;
   onBookmarkChange: (file: FileEntry, color: string | null) => void;
+  setFreshCrawl: (fc: boolean) => void;
   currentFileId: number | null;
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
@@ -39,6 +40,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       nodes,
       onExclude,
       onBookmarkChange,
+      setFreshCrawl,
       currentFileId,
       freshCrawl = false,
       treeCollapsed = false,
@@ -96,29 +98,40 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       });
     }, [currentFileId, nodes]);
 
-    // Handle treeCollapsed / freshCrawl updates
+    // ------------------- Handle treeCollapsed -------------------
     useEffect(() => {
       const map: Record<string, boolean> = { ...expandedMap };
 
       const update = (node: FileTreeNode) => {
         const id = getNodeId(node);
         if (node.children) {
-          if (treeCollapsed === true) {
-            map[id] = false;
-          } else if (treeCollapsed === false) {
-            if (freshCrawl) {
-              if (node.depth <= 1) map[id] = true;
-            } else {
-              map[id] = true;
-            }
-          }
+          map[id] = !treeCollapsed; // collapse = false, expand = true
           node.children.forEach(update);
         }
       };
 
       nodes.forEach(update);
       setExpandedMap(map);
-    }, [treeCollapsed, freshCrawl]);
+    }, [treeCollapsed]);
+
+    // ------------------- Handle freshCrawl -------------------
+    useEffect(() => {
+      if (!freshCrawl) return;
+
+      const map: Record<string, boolean> = { ...expandedMap };
+
+      const update = (node: FileTreeNode) => {
+        const id = getNodeId(node);
+        if (node.children) {
+          if (node.depth <= 1) map[id] = true; // auto-expand shallow nodes
+          node.children.forEach(update);
+        }
+      };
+
+      nodes.forEach(update);
+      setExpandedMap(map);
+      setFreshCrawl(false); // reset only after applying
+    }, [freshCrawl]);
 
     // ------------------- Flatten tree for Virtuoso -------------------
     const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
