@@ -1,6 +1,12 @@
 import { ActionIcon, Group } from "@mantine/core";
 import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
-import { useState, useMemo, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
 import {
@@ -22,188 +28,213 @@ interface FileTreeProps {
   virtuosoRef?: React.RefObject<VirtuosoHandle>;
 }
 
-const FileTree = ({
-  nodes,
-  onExclude,
-  onBookmarkChange,
-  currentFileId,
-  freshCrawl = false,
-  treeCollapsed = false,
-  virtuosoRef,
-}: FileTreeProps) => {
-  // ------------------- Helpers -------------------
-  const containsCurrentFile = (node: FileTreeNode): boolean => {
-    if (node.file && node.file.id === currentFileId) return true;
-    if (!node.children) return false;
-    return node.children.some(containsCurrentFile);
-  };
+export interface FileTreeHandle {
+  scrollToFile: (fileId: number) => void;
+}
 
-  const allChildrenExcluded = (node: FileTreeNode): boolean => {
-    if (node.file) return node.file.excluded ?? false;
-    if (!node.children) return false;
-    return node.children.every(allChildrenExcluded);
-  };
+const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
+  (
+    {
+      nodes,
+      onExclude,
+      onBookmarkChange,
+      currentFileId,
+      freshCrawl = false,
+      treeCollapsed = false,
+      virtuosoRef,
+    },
+    ref,
+  ) => {
+    // ------------------- Helpers -------------------
+    const containsCurrentFile = (node: FileTreeNode): boolean => {
+      if (node.file && node.file.id === currentFileId) return true;
+      if (!node.children) return false;
+      return node.children.some(containsCurrentFile);
+    };
 
-  const getNodeId = (node: FileTreeNode) =>
-    node.file ? `file-${node.file.id}` : node.path;
+    const allChildrenExcluded = (node: FileTreeNode): boolean => {
+      if (node.file) return node.file.excluded ?? false;
+      if (!node.children) return false;
+      return node.children.every(allChildrenExcluded);
+    };
 
-  // ------------------- Expanded state -------------------
-  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+    const getNodeId = (node: FileTreeNode) =>
+      node.file ? `file-${node.file.id}` : node.path;
 
-  const toggleNode = (node: FileTreeNode) => {
-    const id = getNodeId(node);
-    setExpandedMap((m) => ({ ...m, [id]: !m[id] }));
-  };
+    // ------------------- Expanded state -------------------
+    const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
 
-  // ------------------- Effects from original code -------------------
-  // Auto-expand nodes containing current file or root
-  useEffect(() => {
-    setExpandedMap((prev) => {
-      const map = { ...prev };
+    const toggleNode = (node: FileTreeNode) => {
+      const id = getNodeId(node);
+      setExpandedMap((m) => ({ ...m, [id]: !m[id] }));
+    };
 
-      const init = (node: FileTreeNode) => {
+    // ------------------- Effects from original code -------------------
+    // Auto-expand nodes containing current file or root
+    useEffect(() => {
+      setExpandedMap((prev) => {
+        const map = { ...prev };
+
+        const init = (node: FileTreeNode) => {
+          const id = getNodeId(node);
+          if (node.children) {
+            if (containsCurrentFile(node)) {
+              map[id] = true; // expand nodes containing current file
+            }
+            node.children.forEach(init);
+          }
+        };
+
+        nodes.forEach(init);
+        return map;
+      });
+    }, [currentFileId, nodes]);
+
+    // Handle treeCollapsed / freshCrawl updates
+    useEffect(() => {
+      const map: Record<string, boolean> = { ...expandedMap };
+
+      const update = (node: FileTreeNode) => {
         const id = getNodeId(node);
         if (node.children) {
-          if (containsCurrentFile(node)) {
-            map[id] = true; // expand nodes containing current file
+          if (treeCollapsed === true) {
+            map[id] = false;
+          } else if (treeCollapsed === false) {
+            if (freshCrawl) {
+              if (node.depth <= 1) map[id] = true;
+            } else {
+              map[id] = true;
+            }
           }
-          node.children.forEach(init);
+          node.children.forEach(update);
         }
       };
 
-      nodes.forEach(init);
-      return map;
-    });
-  }, [currentFileId, nodes]);
+      nodes.forEach(update);
+      setExpandedMap(map);
+    }, [treeCollapsed, freshCrawl]);
 
-  // Handle treeCollapsed / freshCrawl updates
-  useEffect(() => {
-    const map: Record<string, boolean> = { ...expandedMap };
-
-    const update = (node: FileTreeNode) => {
-      const id = getNodeId(node);
-      if (node.children) {
-        if (treeCollapsed === true) {
-          map[id] = false;
-        } else if (treeCollapsed === false) {
-          if (freshCrawl) {
-            if (node.depth <= 1) map[id] = true;
-          } else {
-            map[id] = true;
-          }
-        }
-        node.children.forEach(update);
-      }
-    };
-
-    nodes.forEach(update);
-    setExpandedMap(map);
-  }, [treeCollapsed, freshCrawl]);
-
-  // ------------------- Flatten tree for Virtuoso -------------------
-  const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
-    const flat: FlattenedNode[] = [];
-    for (const node of nodes) {
-      flat.push({ node, depth });
-      const id = getNodeId(node);
-      const isExpanded = expandedMap[id] ?? false;
-      if (node.children && isExpanded) {
-        flat.push(...flattenTree(node.children, depth + 1));
-      }
-    }
-    return flat;
-  };
-
-  const flatNodes = useMemo(() => flattenTree(nodes), [nodes, expandedMap]);
-
-  // ------------------- Render -------------------
-  return (
-    <Virtuoso
-      ref={virtuosoRef}
-      style={{ height: "100%" }}
-      data={flatNodes}
-      itemContent={(_, { node, depth }) => {
+    // ------------------- Flatten tree for Virtuoso -------------------
+    const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
+      const flat: FlattenedNode[] = [];
+      for (const node of nodes) {
+        flat.push({ node, depth });
         const id = getNodeId(node);
         const isExpanded = expandedMap[id] ?? false;
-        const isExcluded = node.file
-          ? node.file.excluded
-          : allChildrenExcluded(node);
-        const isCurrent = node.file && currentFileId === node.file.id;
+        if (node.children && isExpanded) {
+          flat.push(...flattenTree(node.children, depth + 1));
+        }
+      }
+      return flat;
+    };
 
-        return (
-          <Group
-            key={id}
-            style={{
-              paddingLeft: depth * 16,
-              alignItems: "center",
-              gap: 8,
-              backgroundColor: isCurrent
-                ? "var(--mantine-color-blue-light)"
-                : undefined,
-              opacity: isExcluded ? 0.5 : 1,
-            }}
-            className="item-actions"
-          >
-            {node.children && (
-              <ActionIcon size="xs" onClick={() => toggleNode(node)}>
-                {isExpanded ? (
-                  <CaretDownIcon size={16} />
-                ) : (
-                  <CaretRightIcon size={16} />
-                )}
-              </ActionIcon>
-            )}
+    const flatNodes = useMemo(() => flattenTree(nodes), [nodes, expandedMap]);
 
-            <ClampedTooltipText
-              size="sm"
-              fw={node.children ? 600 : 400}
+    // --- Expose scrollToFile method ---
+    useImperativeHandle(ref, () => ({
+      scrollToFile(fileId: number) {
+        const index = flatNodes.findIndex((n) => n.node.file?.id === fileId);
+        if (index !== -1) {
+          virtuosoRef?.current?.scrollToIndex({
+            index,
+            align: "center",
+            behavior: "smooth",
+          });
+        }
+      },
+    }));
+
+    // ------------------- Render -------------------
+    return (
+      <Virtuoso
+        ref={virtuosoRef}
+        style={{ height: "100%" }}
+        data={flatNodes}
+        itemContent={(_, { node, depth }) => {
+          const id = getNodeId(node);
+          const isExpanded = expandedMap[id] ?? false;
+          const isExcluded = node.file
+            ? node.file.excluded
+            : allChildrenExcluded(node);
+          const isCurrent = node.file && currentFileId === node.file.id;
+
+          return (
+            <Group
+              key={id}
               style={{
-                flex: 1,
-                cursor: node.children ? "pointer" : undefined,
-                textDecoration: isExcluded ? "line-through" : undefined,
+                paddingLeft: depth * 16,
+                alignItems: "center",
+                gap: 8,
+                backgroundColor: isCurrent
+                  ? "var(--mantine-color-blue-light)"
+                  : undefined,
+                opacity: isExcluded ? 0.5 : 1,
               }}
-              onClick={() => node.children && toggleNode(node)}
+              className="item-actions"
             >
-              {node.children
-                ? isExpanded
-                  ? "📂 " + node.name // open folder
-                  : "📁 " + node.name // closed folder
-                : "📄 " + node.name}
-            </ClampedTooltipText>
+              {node.children && (
+                <ActionIcon size="xs" onClick={() => toggleNode(node)}>
+                  {isExpanded ? (
+                    <CaretDownIcon size={16} />
+                  ) : (
+                    <CaretRightIcon size={16} />
+                  )}
+                </ActionIcon>
+              )}
 
-            {node.file && (
-              <ItemActions
-                onOpen={async () => randomiserApi.openPath(node.file!.path)}
-                onOpenFolder={async () => {
-                  const folder = await dirname(node.file!.path);
-                  randomiserApi.openPath(folder);
+              <ClampedTooltipText
+                size="sm"
+                fw={node.children ? 600 : 400}
+                style={{
+                  flex: 1,
+                  cursor: node.children ? "pointer" : undefined,
+                  textDecoration: isExcluded ? "line-through" : undefined,
                 }}
-                onExclude={() => onExclude(node.file!)}
-                onBookmarkChange={(color) =>
-                  onBookmarkChange(node.file!, color)
-                }
-                currentBookmarkColor={node.file.bookmarkColor || null}
-              />
-            )}
+                onClick={() => node.children && toggleNode(node)}
+              >
+                {node.children
+                  ? isExpanded
+                    ? "📂 " + node.name // open folder
+                    : "📁 " + node.name // closed folder
+                  : "📄 " + node.name}
+              </ClampedTooltipText>
 
-            {node.children && (
-              <ItemActions
-                onOpenFolder={async () => randomiserApi.openPath(node.path)}
-                onExclude={() =>
-                  onExclude({
-                    id: -1,
-                    path: node.path,
-                    name: node.name,
-                    excluded: false,
-                  })
-                }
-              />
-            )}
-          </Group>
-        );
-      }}
-    />
-  );
-};
+              {node.file && (
+                <ItemActions
+                  onOpen={async () => randomiserApi.openPath(node.file!.path)}
+                  onOpenFolder={async () => {
+                    const folder = await dirname(node.file!.path);
+                    randomiserApi.openPath(folder);
+                  }}
+                  onExclude={() => onExclude(node.file!)}
+                  onBookmarkChange={(color) =>
+                    onBookmarkChange(node.file!, color)
+                  }
+                  currentBookmarkColor={node.file.bookmarkColor || null}
+                />
+              )}
+
+              {node.children && (
+                <ItemActions
+                  onOpenFolder={async () => randomiserApi.openPath(node.path)}
+                  onExclude={() =>
+                    onExclude({
+                      id: -1,
+                      path: node.path,
+                      name: node.name,
+                      excluded: false,
+                    })
+                  }
+                />
+              )}
+            </Group>
+          );
+        }}
+      />
+    );
+  },
+);
+
+FileTree.displayName = "FileTree";
 
 export default FileTree;

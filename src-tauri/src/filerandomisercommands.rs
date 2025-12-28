@@ -31,13 +31,17 @@ pub fn add_path_via_dialog(
 
     let mut data = app_data.lock().unwrap();
 
+    let name = folder
+        .as_path()
+        .iter()
+        .last()
+        .and_then(|s| s.to_str())
+        .unwrap_or("unknown")
+        .to_string();
+
     let new_path = SavedPath {
         id: data.paths.len() as u64 + 1,
-        name: folder
-            .as_path()
-            .and_then(|p| p.file_name())
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_else(|| "unknown".to_string()),
+        name: name,
         path: folder,
     };
 
