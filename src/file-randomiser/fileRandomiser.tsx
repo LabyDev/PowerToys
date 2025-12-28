@@ -169,12 +169,12 @@ const FileRandomiser = () => {
         name: preset?.name ?? "Untitled",
         dirty: true,
       }));
-      setData({
-        ...data,
-        files: data.files.map((f) =>
+      setData((prev) => ({
+        ...prev,
+        files: prev.files.map((f) =>
           f.id === file.id ? { ...f, bookmarkColor: color } : f,
         ),
-      });
+      }));
     },
     [setPresetState],
   );

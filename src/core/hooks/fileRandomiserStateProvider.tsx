@@ -7,7 +7,7 @@ import {
 
 interface FileRandomiserContextValue {
   data: AppStateData;
-  setData: (d: AppStateData) => void;
+  setData: React.Dispatch<React.SetStateAction<AppStateData>>;
   lastAppliedPresetRef: React.MutableRefObject<RandomiserPreset | null>;
   presets: RandomiserPreset[];
   setPresets: (p: RandomiserPreset[]) => void;
