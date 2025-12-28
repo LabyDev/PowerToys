@@ -123,7 +123,15 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     // ------------------- Flatten tree for Virtuoso -------------------
     const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
       const flat: FlattenedNode[] = [];
-      for (const node of nodes) {
+
+      // Sort nodes: folders first, then files
+      const sortedNodes = [...nodes].sort((a, b) => {
+        if (a.children && !b.children) return -1; // a folder, b file → a first
+        if (!a.children && b.children) return 1; // a file, b folder → b first
+        return 0; // otherwise keep order
+      });
+
+      for (const node of sortedNodes) {
         flat.push({ node, depth });
         const id = getNodeId(node);
         const isExpanded = expandedMap[id] ?? false;
@@ -131,6 +139,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           flat.push(...flattenTree(node.children, depth + 1));
         }
       }
+
       return flat;
     };
 
