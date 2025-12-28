@@ -75,4 +75,14 @@ pub struct RandomiserPreset {
     pub paths: Vec<SavedPath>,
     pub filter_rules: Vec<FilterRule>,
     pub shuffle: Option<bool>,
+    #[serde(default)]
+    pub bookmarks: Vec<Bookmark>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Bookmark {
+    pub path: FilePath, // absolute path (primary key)
+    #[serde(default)]
+    pub color: Option<String>,
 }

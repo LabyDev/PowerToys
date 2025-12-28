@@ -61,6 +61,7 @@ export const FileRandomiserProvider = ({
     currentId: null,
     name: "Untitled",
     dirty: false,
+    bookmarks: [],
   });
 
   const [query, setQuery] = useState("");

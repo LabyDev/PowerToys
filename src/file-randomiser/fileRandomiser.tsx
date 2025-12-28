@@ -164,11 +164,9 @@ const FileRandomiser = () => {
       };
 
       // Update preset state and file data
-      setPresetState(() => ({
-        currentId: preset?.id.toString() ?? null,
-        name: preset?.name ?? "Untitled",
-        dirty: true,
-      }));
+
+      setPresetState((p) => ({ ...p, dirty: true, bookmarks: nextBookmarks }));
+
       setData((prev) => ({
         ...prev,
         files: prev.files.map((f) =>
@@ -200,7 +198,12 @@ const FileRandomiser = () => {
         !arraysEqual(latest.files, data.files) ||
         !arraysEqual(latest.paths, data.paths);
 
-      setData(latest);
+      const preset = lastAppliedPresetRef.current;
+
+      setData({
+        ...latest,
+        files: applyBookmarks(latest.files, preset?.bookmarks),
+      });
 
       if (changed) {
         setFreshCrawl(true); // mark for auto-expansion
@@ -312,7 +315,12 @@ const FileRandomiser = () => {
 
   const applyPreset = async (preset: RandomiserPreset) => {
     lastAppliedPresetRef.current = preset;
-    setPresetState({ currentId: preset.id, name: preset.name, dirty: false });
+    setPresetState({
+      currentId: preset.id,
+      name: preset.name,
+      dirty: false,
+      bookmarks: preset.bookmarks,
+    });
     await updateFiltersAndCrawl({
       ...data,
       paths: preset.paths,
@@ -322,25 +330,40 @@ const FileRandomiser = () => {
 
   const savePreset = async () => {
     if (!presetState.currentId) return savePresetAs();
+
+    const preset = lastAppliedPresetRef.current;
+
     await presetApi.savePreset({
       id: presetState.currentId,
       name: presetState.name,
       paths: data.paths,
       filterRules: data.filterRules,
+      bookmarks: preset?.bookmarks ?? [],
+      shuffle,
     } as RandomiserPreset);
+
     setPresetState((p) => ({ ...p, dirty: false }));
     presetApi.getPresets().then(setPresets);
   };
 
   const savePresetAs = async () => {
     const id = crypto.randomUUID();
+
     await presetApi.savePreset({
       id,
       name: presetState.name || "New preset",
       paths: data.paths,
       filterRules: data.filterRules,
+      bookmarks: presetState?.bookmarks ?? [],
+      shuffle,
     } as RandomiserPreset);
-    setPresetState({ currentId: id, name: presetState.name, dirty: false });
+
+    setPresetState({
+      currentId: id,
+      name: presetState.name,
+      dirty: false,
+      bookmarks: presetState?.bookmarks,
+    });
     presetApi.getPresets().then(setPresets);
   };
 

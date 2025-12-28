@@ -49,6 +49,7 @@ export type RandomiserPreset = {
 export type PresetState = {
   currentId: string | null;
   name: string;
+  bookmarks: Bookmark[];
   dirty: boolean; // paths/filters changed since last save
 };
 
