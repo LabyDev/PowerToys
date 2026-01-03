@@ -8,11 +8,10 @@ use ignore::WalkBuilder;
 use rand::distr::weighted::WeightedIndex;
 use rand::prelude::*;
 use rayon::prelude::*;
-use std::io::Read;
-use std::path::PathBuf;
+use std::hash::Hasher;
+use std::collections::hash_map::DefaultHasher;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::SystemTime;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
@@ -76,10 +75,10 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let filter_rules = data.filter_rules.clone();
     let next_id = AtomicU64::new(1);
 
-    // Replace Mutex<HashMap> with DashMap for lock-free concurrent access
-    let hash_cache: Arc<DashMap<PathBuf, (SystemTime, u64, String)>> = Arc::new(DashMap::new());
+    // Lock-free hash cache
+    let hash_cache: Arc<DashMap<std::path::PathBuf, (std::time::SystemTime, u64, u64)>> =
+        Arc::new(DashMap::new());
 
-    // === Utility functions ===
     fn matches_rule(path: &str, rule: &FilterRule) -> bool {
         let text = if rule.case_sensitive {
             path.to_string()
@@ -101,25 +100,24 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         }
     }
 
-    fn should_exclude(path: &std::path::Path, filter_rules: &[FilterRule]) -> bool {
-        let path_str = path.to_string_lossy();
-        filter_rules.iter().any(|rule| {
-            matches_rule(&path_str, rule) && matches!(rule.action, FilterAction::Exclude)
-        })
+    fn should_exclude(path: &std::path::Path, rules: &[FilterRule]) -> bool {
+        let s = path.to_string_lossy();
+        rules
+            .iter()
+            .any(|r| matches_rule(&s, r) && matches!(r.action, FilterAction::Exclude))
     }
 
     fn is_system_file(path: &std::path::Path) -> bool {
-        if let Some(file_name) = path.file_name() {
-            let file_name = file_name.to_string_lossy();
-            if file_name.starts_with('.') {
+        if let Some(name) = path.file_name() {
+            let name = name.to_string_lossy();
+            if name.starts_with('.') {
                 return true;
             }
             #[cfg(windows)]
             {
                 use std::os::windows::fs::MetadataExt;
-                if let Ok(metadata) = path.metadata() {
-                    const FILE_ATTRIBUTE_HIDDEN: u32 = 0x2;
-                    if metadata.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0 {
+                if let Ok(meta) = path.metadata() {
+                    if meta.file_attributes() & 0x2 != 0 {
                         return true;
                     }
                 }
@@ -128,41 +126,40 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         false
     }
 
-    // Buffered file hashing with DashMap
-    let hash_file = |path: &PathBuf| -> String {
-        if let Ok(metadata) = path.metadata() {
-            let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
-            let size = metadata.len();
+    // Fast non-cryptographic hash for bookmarks
+    let hash_file = |path: &std::path::Path| -> u64 {
+        if let Ok(meta) = path.metadata() {
+            let modified = meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+            let size = meta.len();
 
-            // Try DashMap cache
             if let Some(entry) = hash_cache.get(path) {
                 if entry.0 == modified && entry.1 == size {
-                    return entry.2.clone();
+                    return entry.2;
                 }
             }
 
-            if let Ok(file) = std::fs::File::open(path) {
-                let mut reader = std::io::BufReader::new(file);
-                let mut hasher = Sha256::new();
-                let mut buffer = [0u8; 8192];
-                loop {
-                    let n = reader.read(&mut buffer).unwrap_or(0);
+            let mut hasher = DefaultHasher::new();
+            std::fs::File::open(path).ok().and_then(|mut f| {
+                use std::io::Read;
+                let mut buf = [0u8; 8192];
+                while let Ok(n) = f.read(&mut buf) {
                     if n == 0 {
                         break;
                     }
-                    hasher.update(&buffer[..n]);
+                    hasher.write(&buf[..n]);
                 }
-                let hash = format!("{:x}", hasher.finalize());
-                hash_cache.insert(path.clone(), (modified, size, hash.clone()));
-                return hash;
-            }
+                Some(())
+            });
+            let h = hasher.finish();
+            hash_cache.insert(path.to_path_buf(), (modified, size, h));
+            h
+        } else {
+            0
         }
-        "".to_string()
     };
 
-    // === Collect all files in parallel using ignore::Walk ===
-    let mut all_files: Vec<PathBuf> = Vec::new();
-
+    // Collect all files
+    let mut all_files: Vec<std::path::PathBuf> = Vec::new();
     for saved_path in &paths {
         if let Some(p) = saved_path.path.as_path() {
             if p.is_dir() {
@@ -170,18 +167,17 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                     .hidden(false)
                     .filter_entry(|e| !is_system_file(e.path()))
                     .build();
-
                 all_files.extend(
                     walker
                         .filter_map(|r| r.ok())
-                        .filter(|entry| entry.path().is_file())
-                        .map(|entry| entry.path().to_path_buf()),
+                        .filter(|e| e.path().is_file())
+                        .map(|e| e.path().to_path_buf()),
                 );
             }
         }
     }
 
-    // === Parallel hashing and FileEntry construction ===
+    // Parallel hashing & FileEntry construction
     let file_entries: Vec<FileEntry> = all_files
         .into_par_iter()
         .map(|path| {
@@ -189,19 +185,15 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
             let name = path
                 .file_name()
                 .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_else(|| "unknown".to_string());
+                .unwrap_or("unknown".to_string());
             let excluded = should_exclude(&path, &filter_rules);
-            let hash = if excluded {
-                String::new()
-            } else {
-                hash_file(&path)
-            };
+            let hash = if excluded { 0 } else { hash_file(&path) };
             FileEntry {
                 id,
                 name,
                 path: FilePath::Path(path),
                 excluded,
-                hash: Some(hash),
+                hash: Some(format!("{:x}", hash)), // convert u64 to hex string
             }
         })
         .collect();
@@ -494,5 +486,3 @@ pub fn open_path(app: tauri::AppHandle, path: tauri_plugin_dialog::FilePath) -> 
 
     Ok(())
 }
-
-use sha2::{Digest, Sha256};
