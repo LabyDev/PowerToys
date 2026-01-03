@@ -67,6 +67,10 @@ const FileRandomiser = () => {
     presetState.dirty || bookmarksDirty,
     100, // 100ms delay for visual updates
   );
+  const [debouncedAppliedPreset] = useDebouncedValue(
+    lastAppliedPresetRef.current,
+    100,
+  );
 
   // ------------------------ Effects ------------------------
   useEffect(() => {
@@ -571,6 +575,7 @@ const FileRandomiser = () => {
               onSave={savePreset}
               onOpenFolder={openPresetsFolder}
               onPresetClear={handleClearPreset}
+              appliedPreset={debouncedAppliedPreset}
             />
           }
         />

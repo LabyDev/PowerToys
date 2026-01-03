@@ -14,6 +14,7 @@ interface PresetControlsProps {
   presets: RandomiserPreset[];
   name: string;
   dirty: boolean;
+  appliedPreset: RandomiserPreset | null;
   onNameChange: (name: string) => void;
   onSelect: (preset: RandomiserPreset) => void;
   onSave: () => void;
@@ -25,6 +26,7 @@ const PresetControls = ({
   presets,
   name,
   dirty,
+  appliedPreset,
   onNameChange,
   onSelect,
   onSave,
@@ -32,9 +34,6 @@ const PresetControls = ({
   onPresetClear,
 }: PresetControlsProps) => {
   const { t } = useTranslation();
-
-  // Check if the current name matches any preset
-  const isPresetApplied = presets.some((p) => p.name === name);
 
   return (
     <Group gap="xs" align="center">
@@ -69,7 +68,7 @@ const PresetControls = ({
 
       {/* Clear Preset Button (space reserved, tooltip only when applied) */}
       <div style={{ width: 28, display: "flex", justifyContent: "center" }}>
-        {isPresetApplied ? (
+        {appliedPreset !== null ? (
           <Tooltip label={t("fileRandomiser.presetControls.clearPreset")}>
             <ActionIcon
               size="sm"
