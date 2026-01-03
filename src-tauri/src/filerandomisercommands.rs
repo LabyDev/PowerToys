@@ -191,15 +191,14 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
 #[cfg(target_os = "windows")]
 fn open_and_wait(path: &str) -> std::io::Result<()> {
     use std::process::Command;
-    use std::os::windows::process::CommandExt;
-
+    
     Command::new("cmd")
         .args(["/C", "start", "/WAIT", "", path])
-        .creation_flags(134217728u32) // CREATE_NO_WINDOW
         .status()?;
 
     Ok(())
 }
+
 #[cfg(target_os = "macos")]
 fn open_and_wait(path: &str) -> std::io::Result<()> {
     std::process::Command::new("open")
