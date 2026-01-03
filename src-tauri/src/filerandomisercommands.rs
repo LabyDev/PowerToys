@@ -3,12 +3,12 @@ use crate::models::{
 };
 use crate::models::{FilterAction, RandomiserPreset};
 use chrono::Utc;
+use dashmap::DashMap;
+use ignore::WalkBuilder;
 use rand::distr::weighted::WeightedIndex;
 use rand::prelude::*;
 use rayon::prelude::*;
-use std::collections::HashMap;
-use std::fs::{self};
-use std::io::{BufReader, Read};
+use std::io::Read;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -76,9 +76,8 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let filter_rules = data.filter_rules.clone();
     let next_id = AtomicU64::new(1);
 
-    // Temporary in-memory cache for this crawl run only
-    let hash_cache: Arc<Mutex<HashMap<PathBuf, (SystemTime, u64, String)>>> =
-        Arc::new(Mutex::new(HashMap::new()));
+    // Replace Mutex<HashMap> with DashMap for lock-free concurrent access
+    let hash_cache: Arc<DashMap<PathBuf, (SystemTime, u64, String)>> = Arc::new(DashMap::new());
 
     // === Utility functions ===
     fn matches_rule(path: &str, rule: &FilterRule) -> bool {
@@ -115,7 +114,6 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
             if file_name.starts_with('.') {
                 return true;
             }
-
             #[cfg(windows)]
             {
                 use std::os::windows::fs::MetadataExt;
@@ -130,83 +128,74 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         false
     }
 
-    fn walk_dir_stream(dir: PathBuf) -> Vec<PathBuf> {
-        let mut files = vec![];
-        if let Ok(entries) = fs::read_dir(&dir) {
-            let dirs_and_files: Vec<_> = entries.flatten().map(|e| e.path()).collect();
-            let (dirs, regular_files): (Vec<_>, Vec<_>) =
-                dirs_and_files.into_iter().partition(|p| p.is_dir());
-
-            for file in regular_files {
-                if !is_system_file(&file) {
-                    files.push(file);
-                }
-            }
-
-            for subdir in dirs {
-                files.extend(walk_dir_stream(subdir));
-            }
-        }
-        files
-    }
-
-    // Buffered file hashing with temporary cache
+    // Buffered file hashing with DashMap
     let hash_file = |path: &PathBuf| -> String {
         if let Ok(metadata) = path.metadata() {
             let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
             let size = metadata.len();
 
-            // Check temp cache
-            {
-                let cache = hash_cache.lock().unwrap();
-                if let Some((cached_modified, cached_size, cached_hash)) = cache.get(path) {
-                    if *cached_modified == modified && *cached_size == size {
-                        return cached_hash.clone();
-                    }
+            // Try DashMap cache
+            if let Some(entry) = hash_cache.get(path) {
+                if entry.0 == modified && entry.1 == size {
+                    return entry.2.clone();
                 }
             }
 
-            // Compute hash if not cached
-            if let Ok(file) = fs::File::open(path) {
-                let mut reader = BufReader::new(file);
+            if let Ok(file) = std::fs::File::open(path) {
+                let mut reader = std::io::BufReader::new(file);
                 let mut hasher = Sha256::new();
                 let mut buffer = [0u8; 8192];
                 loop {
                     let n = reader.read(&mut buffer).unwrap_or(0);
-                    if n == 0 { break; }
+                    if n == 0 {
+                        break;
+                    }
                     hasher.update(&buffer[..n]);
                 }
                 let hash = format!("{:x}", hasher.finalize());
-
-                let mut cache = hash_cache.lock().unwrap();
-                cache.insert(path.clone(), (modified, size, hash.clone()));
-
+                hash_cache.insert(path.clone(), (modified, size, hash.clone()));
                 return hash;
             }
         }
         "".to_string()
     };
 
-    // === Collect all files from all paths ===
-    let mut all_files = vec![];
+    // === Collect all files in parallel using ignore::Walk ===
+    let mut all_files: Vec<PathBuf> = Vec::new();
+
     for saved_path in &paths {
         if let Some(p) = saved_path.path.as_path() {
             if p.is_dir() {
-                all_files.extend(walk_dir_stream(p.to_path_buf()));
+                let walker = WalkBuilder::new(p)
+                    .hidden(false)
+                    .filter_entry(|e| !is_system_file(e.path()))
+                    .build();
+
+                all_files.extend(
+                    walker
+                        .filter_map(|r| r.ok())
+                        .filter(|entry| entry.path().is_file())
+                        .map(|entry| entry.path().to_path_buf()),
+                );
             }
         }
     }
 
-    // === Parallel hashing and constructing FileEntry ===
+    // === Parallel hashing and FileEntry construction ===
     let file_entries: Vec<FileEntry> = all_files
         .into_par_iter()
         .map(|path| {
             let id = next_id.fetch_add(1, Ordering::SeqCst);
-            let name = path.file_name()
+            let name = path
+                .file_name()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_else(|| "unknown".to_string());
             let excluded = should_exclude(&path, &filter_rules);
-            let hash = if excluded { String::new() } else { hash_file(&path) };
+            let hash = if excluded {
+                String::new()
+            } else {
+                hash_file(&path)
+            };
             FileEntry {
                 id,
                 name,
@@ -217,7 +206,6 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         })
         .collect();
 
-    // Save results
     data.files = file_entries.clone();
     data.files.clone()
 }

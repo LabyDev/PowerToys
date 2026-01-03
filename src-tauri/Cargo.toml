@@ -31,6 +31,8 @@ base64 = "0.22.1"
 sys-locale = "0.3.2"
 sha2 = "0.10.9"
 rayon = "1.11.0"
+ignore = "0.4.25"
+dashmap = "6.1.0"
 
 [dependencies.windows]
 version = ">=0.59, <=0.62"
