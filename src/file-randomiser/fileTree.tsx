@@ -18,6 +18,7 @@ import {
 import ClampedTooltipText from "./clampedTooltipText";
 import ItemActions from "./itemActions";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
+import { sep } from "@tauri-apps/api/path";
 
 interface FileTreeProps {
   nodes: FileTreeNode[];
@@ -277,8 +278,12 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
                   onExclude={() =>
                     onExclude({
                       id: -1,
-                      path: node.path,
-                      name: node.name,
+                      path: node.path.endsWith(sep())
+                        ? node.path
+                        : node.path + sep(),
+                      name: node.name.endsWith(sep())
+                        ? node.name
+                        : node.name + sep(),
                       excluded: false,
                     })
                   }
