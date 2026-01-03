@@ -6,6 +6,7 @@ import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
 import {
   AppStateData,
+  Bookmark,
   FileEntry,
   FileTreeNode,
   PresetState,
@@ -173,25 +174,17 @@ const FileRandomiser = () => {
       const originalPreset = lastAppliedPresetRef.current;
       const existing = originalPreset?.bookmarks ?? [];
 
-      // Compute next bookmarks
       const nextBookmarks =
         color === null
-          ? existing.filter((b) => b.path !== file.path)
+          ? existing.filter((b) => b.hash !== file.hash)
           : [
-              ...existing.filter((b) => b.path !== file.path),
-              { path: file.path, color },
+              ...existing.filter((b) => b.hash !== file.hash),
+              { path: file.path, hash: file.hash, color },
             ];
 
-      // Update preset state bookmarks (dirty is only for non-bookmark changes)
-      setPresetState((p) => ({
-        ...p,
-        bookmarks: nextBookmarks,
-      }));
-
-      // Mark bookmarks as dirty separately
+      setPresetState((p) => ({ ...p, bookmarks: nextBookmarks }));
       setBookmarksDirty(true);
 
-      // Update lastAppliedPresetRef
       lastAppliedPresetRef.current = originalPreset
         ? { ...originalPreset, bookmarks: nextBookmarks }
         : {
@@ -202,11 +195,10 @@ const FileRandomiser = () => {
             bookmarks: nextBookmarks,
           };
 
-      // Update files in data with bookmarkColor
       setData((prev) => ({
         ...prev,
         files: prev.files.map((f) =>
-          f.id === file.id ? { ...f, bookmarkColor: color } : f,
+          f.hash === file.hash ? { ...f, bookmarkColor: color } : f,
         ),
       }));
     },
@@ -300,15 +292,13 @@ const FileRandomiser = () => {
   // ------------------------ Preset Handling ------------------------
   const applyBookmarks = (
     files: FileEntry[],
-    bookmarks: RandomiserPreset["bookmarks"] | undefined,
+    bookmarks: Bookmark[] | undefined,
   ): FileEntry[] => {
     if (!bookmarks?.length) return files;
-
-    const map = new Map(bookmarks.map((b) => [b.path, b]));
-
-    return files.map((file) => {
-      const bm = map.get(file.path);
-      return bm ? { ...file, bookmarkColor: bm.color ?? null } : file;
+    const map = new Map(bookmarks.map((b) => [b.hash, b]));
+    return files.map((f) => {
+      const bm = map.get(f.hash);
+      return bm ? { ...f, bookmarkColor: bm.color ?? null } : f;
     });
   };
 

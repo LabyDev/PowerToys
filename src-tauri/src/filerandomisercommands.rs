@@ -128,12 +128,14 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                         .unwrap_or_else(|| "unknown".to_string());
 
                     let excluded = should_exclude(&path, filter_rules);
+                    let hash = hash_file(&path);
 
                     data.files.push(FileEntry {
                         id: *next_id,
                         name,
                         path: FilePath::Path(path),
                         excluded,
+                        hash,
                     });
 
                     *next_id += 1;
@@ -184,9 +186,7 @@ fn open_and_wait(path: &str) -> std::io::Result<()> {
     use windows::core::PCWSTR;
     use windows::Win32::Foundation::{CloseHandle, WAIT_OBJECT_0};
     use windows::Win32::System::Threading::WaitForSingleObject;
-    use windows::Win32::UI::Shell::{
-        ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
-    };
+    use windows::Win32::UI::Shell::{ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW};
 
     let mut wide: Vec<u16> = OsStr::new(path)
         .encode_wide()
@@ -201,7 +201,7 @@ fn open_and_wait(path: &str) -> std::io::Result<()> {
         ..Default::default()
     };
 
-     unsafe {
+    unsafe {
         // Proper Result handling (no as_bool)
 
         use windows::Win32::Foundation::HANDLE;
@@ -288,12 +288,8 @@ pub fn pick_random_file(
 
     let mut data = app_data.lock().unwrap();
 
-    let mut available_files: Vec<FileEntry> = data
-        .files
-        .iter()
-        .filter(|f| !f.excluded)
-        .cloned()
-        .collect();
+    let mut available_files: Vec<FileEntry> =
+        data.files.iter().filter(|f| !f.excluded).cloned().collect();
 
     if available_files.is_empty() {
         return None;
@@ -466,4 +462,12 @@ pub fn open_path(app: tauri::AppHandle, path: tauri_plugin_dialog::FilePath) -> 
         .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+use sha2::{Digest, Sha256};
+
+fn hash_file(path: &std::path::Path) -> Option<String> {
+    fs::read(path)
+        .ok()
+        .map(|data| format!("{:x}", Sha256::digest(&data)))
 }

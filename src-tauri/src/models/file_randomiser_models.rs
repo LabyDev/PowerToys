@@ -19,6 +19,8 @@ pub struct FileEntry {
     pub name: String,
     pub path: FilePath,
     pub excluded: bool,
+    #[serde(default)]
+    pub hash: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -86,6 +88,7 @@ pub struct RandomiserPreset {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Bookmark {
+    pub hash: String, 
     pub path: FilePath, // absolute path (primary key)
     #[serde(default)]
     pub color: Option<String>,

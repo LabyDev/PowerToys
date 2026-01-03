@@ -285,6 +285,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
                         ? node.name
                         : node.name + sep(),
                       excluded: false,
+                      hash: "",
                     })
                   }
                 />

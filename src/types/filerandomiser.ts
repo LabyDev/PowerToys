@@ -10,6 +10,7 @@ export type FileEntry = {
   path: string;
   excluded: boolean;
   bookmarkColor?: string | null;
+  hash: string;
 };
 
 export type HistoryEntry = {
@@ -68,7 +69,7 @@ export type FlattenedNode = {
 };
 
 export type Bookmark = {
-  path: string; // absolute path (primary key)
+  path: string; // absolute path
+  hash: string; // content hash of the file
   color?: string | null;
-  nameOverride?: string; // optional future-proofing
 };
