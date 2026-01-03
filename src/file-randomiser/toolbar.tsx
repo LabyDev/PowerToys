@@ -5,6 +5,7 @@ import {
   TextInput,
   ActionIcon,
   Paper,
+  Tooltip,
 } from "@mantine/core";
 import {
   FolderPlusIcon,
@@ -20,6 +21,7 @@ interface ToolbarProps {
   tracking: boolean;
   allowTracking: boolean;
   query: string;
+  hasStartedTracking: boolean;
   presetControls: React.ReactNode;
   onAddPath: () => void;
   onCrawl: () => void;
@@ -35,6 +37,7 @@ const Toolbar = ({
   allowTracking,
   query,
   presetControls,
+  hasStartedTracking,
   onAddPath,
   onCrawl,
   onPickFile,
@@ -66,15 +69,30 @@ const Toolbar = ({
               >
                 {t("fileRandomiser.toolbar.crawl")}
               </Button>
-              <Button
-                variant="filled"
-                leftSection={<ShuffleIcon size={16} />}
-                onClick={onPickFile}
+              <Tooltip
+                label={
+                  hasStartedTracking
+                    ? t(
+                        "fileRandomiser.toolbar.pickFileDisabledTracking",
+                        "Disabled while tracking is active. You can only pick a file once.",
+                      )
+                    : ""
+                }
+                disabled={!hasStartedTracking} // only show when disabled
+                withArrow
+                position="bottom"
               >
-                {shuffle
-                  ? t("fileRandomiser.toolbar.randomFile")
-                  : t("fileRandomiser.toolbar.nextFile")}
-              </Button>
+                <Button
+                  variant="filled"
+                  leftSection={<ShuffleIcon size={16} />}
+                  onClick={onPickFile}
+                  disabled={hasStartedTracking}
+                >
+                  {shuffle
+                    ? t("fileRandomiser.toolbar.randomFile")
+                    : t("fileRandomiser.toolbar.nextFile")}
+                </Button>
+              </Tooltip>
             </Group>
           </Group>
 

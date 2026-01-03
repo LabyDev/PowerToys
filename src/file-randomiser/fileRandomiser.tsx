@@ -62,6 +62,8 @@ const FileRandomiser = () => {
 
   const [showLoading, setShowLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
+  const [hasStartedTracking, setHasStartedTracking] = useState(false);
+
   const [bookmarksDirty, setBookmarksDirty] = useState(false);
   const [debouncedDirty] = useDebouncedValue(
     presetState.dirty || bookmarksDirty,
@@ -89,11 +91,15 @@ const FileRandomiser = () => {
   }, [settings.fileRandomiser.allow_process_tracking, tracking]);
 
   useEffect(() => {
-    if (!tracking) return;
     let unlisten: (() => void) | null = null;
 
-    listen("file-closed", () => {
-      if (tracking) handlePickFile();
+    listen("file-closed", async () => {
+      if (tracking) {
+        await handlePickFile();
+      } else {
+        // Tracking is off → reset hasStartedTracking now that file is closed
+        setHasStartedTracking(false);
+      }
     }).then((fn) => {
       unlisten = fn;
     });
@@ -246,6 +252,11 @@ const FileRandomiser = () => {
   const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
+    // Only mark as started if tracking is actually enabled
+    if (tracking && !hasStartedTracking) {
+      setHasStartedTracking(true);
+    }
+
     let file: FileEntry | undefined;
 
     if (shuffle) {
@@ -274,14 +285,13 @@ const FileRandomiser = () => {
       await randomiserApi.openFileById(file.id);
     }
 
-    // Update original data.files index
     const originalIndex = data.files.findIndex((f) => f.id === file.id);
     setCurrentIndex(originalIndex);
     currentIndexRef.current = originalIndex;
 
     updateAndRefreshData();
     if (file.id) fileTreeRef.current?.scrollToFile(file.id);
-  }, [data.files, shuffle]);
+  }, [data.files, shuffle, tracking, hasStartedTracking]);
 
   const toggleTreeCollapsed = () => {
     setTreeCollapsed(!treeCollapsed);
@@ -559,6 +569,7 @@ const FileRandomiser = () => {
           tracking={tracking}
           allowTracking={settings?.fileRandomiser?.allow_process_tracking}
           query={query}
+          hasStartedTracking={hasStartedTracking}
           onAddPath={handleAddPath}
           onCrawl={handleCrawl}
           onPickFile={handlePickFile}
