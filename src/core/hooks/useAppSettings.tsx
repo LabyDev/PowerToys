@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { AppSettings, LanguageOption } from "../../types/settings";
-
-export type DarkModeOption = true | false | "system";
+import { Bookmark } from "../../types/filerandomiser";
 
 export function useAppSettings() {
   const [settings, setSettingsState] = useState<AppSettings>({
@@ -12,41 +11,53 @@ export function useAppSettings() {
     fileRandomiser: {
       allow_process_tracking: false,
       randomness_level: 50,
+      global_bookmarks: [],
     },
   });
 
-  // Fetch settings on mount
+  const [globalBookmarks, setGlobalBookmarks] = useState<Bookmark[]>([]);
+
   useEffect(() => {
+    // Fetch app settings
     invoke<AppSettings>("get_app_settings")
       .then(setSettingsState)
-      .catch((err) => console.error("Failed to fetch settings:", err));
+      .catch(console.error);
+
+    // Fetch global bookmarks
+    invoke<Bookmark[]>("get_global_bookmarks")
+      .then(setGlobalBookmarks)
+      .catch(console.error);
   }, []);
 
-  // Function to update settings persistently
   const setSettings = useCallback(async (partial: Partial<AppSettings>) => {
-    try {
-      setSettingsState((prevSettings) => {
-        const newSettings: AppSettings = {
-          ...prevSettings, // keep all top-level keys
-          ...partial, // overwrite top-level if present
-          fileRandomiser: {
-            ...prevSettings.fileRandomiser, // keep existing nested values
-            ...partial.fileRandomiser, // overwrite nested values if provided
-          },
-        };
-
-        invoke("set_app_settings", { settings: newSettings }).catch(
-          console.error,
-        );
-
-        return newSettings;
-      });
-    } catch (err) {
-      console.error("Failed to update settings:", err);
-    }
+    setSettingsState((prev) => {
+      const newSettings: AppSettings = {
+        ...prev,
+        ...partial,
+        fileRandomiser: {
+          ...prev.fileRandomiser,
+          ...partial.fileRandomiser,
+        },
+      };
+      invoke("set_app_settings", { settings: newSettings }).catch(
+        console.error,
+      );
+      return newSettings;
+    });
   }, []);
 
-  // Computed actual dark mode based on system preference
+  const setGlobalBookmarksPersist = useCallback(
+    async (bookmarks: Bookmark[]) => {
+      try {
+        await invoke<Bookmark[]>("set_global_bookmarks", { bookmarks });
+        setGlobalBookmarks(bookmarks);
+      } catch (err) {
+        console.error("Failed to set global bookmarks:", err);
+      }
+    },
+    [],
+  );
+
   const [systemDark, setSystemDark] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -61,5 +72,11 @@ export function useAppSettings() {
   const isDarkMode =
     settings.darkMode === "system" ? systemDark : settings.darkMode === "dark";
 
-  return { settings, setSettings, isDarkMode };
+  return {
+    settings,
+    setSettings,
+    isDarkMode,
+    globalBookmarks,
+    setGlobalBookmarks: setGlobalBookmarksPersist,
+  };
 }

@@ -14,6 +14,7 @@ type ItemActionsProps = {
   onRemove?: () => void;
   onOpen?: () => void;
   onBookmarkChange?: (color: string | null) => void;
+  onBookmarkChangeGlobal?: (color: string | null) => void;
   currentBookmarkColor?: string | null;
 };
 
@@ -33,6 +34,7 @@ const ItemActions = ({
   onRemove,
   onOpen,
   onBookmarkChange,
+  onBookmarkChangeGlobal,
   currentBookmarkColor,
 }: ItemActionsProps) => {
   const { t } = useTranslation();
@@ -42,7 +44,7 @@ const ItemActions = ({
   ): color is BookmarkCycleColor =>
     bookmarkCycle.includes((color ?? null) as BookmarkCycleColor);
 
-  const cycleBookmark = () => {
+  const cycleBookmark = (event: React.MouseEvent) => {
     if (!onBookmarkChange) return;
 
     const normalized: BookmarkCycleColor = isCycleColor(currentBookmarkColor)
@@ -52,7 +54,13 @@ const ItemActions = ({
     const currentIndex = bookmarkCycle.indexOf(normalized);
     const nextIndex = (currentIndex + 1) % bookmarkCycle.length;
 
-    onBookmarkChange(bookmarkCycle[nextIndex]);
+    const nextColor = bookmarkCycle[nextIndex];
+
+    if (event.shiftKey && onBookmarkChangeGlobal) {
+      onBookmarkChangeGlobal(nextColor); // shift = global change
+    } else {
+      onBookmarkChange(nextColor); // normal change
+    }
   };
 
   if (!onOpenFolder && !onExclude && !onRemove && !onOpen && !onBookmarkChange)

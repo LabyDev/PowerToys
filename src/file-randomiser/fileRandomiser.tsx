@@ -30,7 +30,7 @@ import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "@mantine/hooks";
 
 const FileRandomiser = () => {
-  const { settings } = useAppSettings();
+  const { settings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
   const { t } = useTranslation();
 
   const {
@@ -205,6 +205,30 @@ const FileRandomiser = () => {
     [setData],
   );
 
+  // Handle bookmark change globally
+  const handleBookmarkChangeGlobal = useCallback(
+    async (file: FileEntry, color: string | null) => {
+      const existing = globalBookmarks ?? [];
+
+      const nextBookmarks =
+        color === null
+          ? existing.filter((b) => b.hash !== file.hash)
+          : [
+              ...existing.filter((b) => b.hash !== file.hash),
+              { path: file.path, hash: file.hash, color },
+            ];
+
+      await setGlobalBookmarks(nextBookmarks);
+
+      setData((prev) => ({
+        ...prev,
+        files: prev.files.map((f) =>
+          f.hash === file.hash ? { ...f, bookmarkColor: color } : f,
+        ),
+      }));
+    },
+    [globalBookmarks, setData, setGlobalBookmarks],
+  );
   const updateFiltersAndCrawl = async (updatedData: AppStateData) => {
     await updateAndRefreshData(updatedData);
     await handleCrawl();
@@ -290,12 +314,11 @@ const FileRandomiser = () => {
   };
 
   // ------------------------ Preset Handling ------------------------
-  const applyBookmarks = (
-    files: FileEntry[],
-    bookmarks: Bookmark[] | undefined,
-  ): FileEntry[] => {
-    if (!bookmarks?.length) return files;
-    const map = new Map(bookmarks.map((b) => [b.hash, b]));
+  // Merge global bookmarks with active preset bookmarks when displaying files
+  const applyBookmarks = (files: FileEntry[], bookmarks?: Bookmark[]) => {
+    const mergedBookmarks = [...(bookmarks ?? []), ...globalBookmarks];
+    if (!mergedBookmarks.length) return files;
+    const map = new Map(mergedBookmarks.map((b) => [b.hash, b]));
     return files.map((f) => {
       const bm = map.get(f.hash);
       return bm ? { ...f, bookmarkColor: bm.color ?? null } : f;
@@ -691,6 +714,7 @@ const FileRandomiser = () => {
                   handleCrawl();
                 }}
                 onBookmarkChange={handleBookmarkChange}
+                onBookmarkChangeGlobal={handleBookmarkChangeGlobal}
                 currentFileId={
                   currentIndex !== null ? data.files[currentIndex]?.id : null
                 }

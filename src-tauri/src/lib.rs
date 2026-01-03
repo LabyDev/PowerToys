@@ -30,6 +30,8 @@ pub fn run() {
             setting_commands::set_randomness_level,
             setting_commands::restart_app,
             setting_commands::set_language,
+            setting_commands::get_global_bookmarks,
+            setting_commands::set_global_bookmarks,
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
             filerandomisercommands::remove_path,

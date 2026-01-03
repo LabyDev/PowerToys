@@ -24,6 +24,7 @@ interface FileTreeProps {
   nodes: FileTreeNode[];
   onExclude: (file: FileEntry) => void;
   onBookmarkChange: (file: FileEntry, color: string | null) => void;
+  onBookmarkChangeGlobal: (file: FileEntry, color: string | null) => void;
   setFreshCrawl: (fc: boolean) => void;
   currentFileId: number | null;
   freshCrawl?: boolean;
@@ -42,6 +43,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       nodes,
       onExclude,
       onBookmarkChange,
+      onBookmarkChangeGlobal,
       setFreshCrawl,
       currentFileId,
       freshCrawl = false,
@@ -267,6 +269,9 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
                   onExclude={() => onExclude(node.file!)}
                   onBookmarkChange={(color) =>
                     onBookmarkChange(node.file!, color)
+                  }
+                  onBookmarkChangeGlobal={(color) =>
+                    onBookmarkChangeGlobal(node.file!, color)
                   }
                   currentBookmarkColor={node.file.bookmarkColor || null}
                 />
