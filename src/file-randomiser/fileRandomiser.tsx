@@ -242,40 +242,40 @@ const FileRandomiser = () => {
   const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
-    let file;
+    let file: FileEntry | undefined;
 
     if (shuffle) {
       const picked = await randomiserApi.pickRandomFile();
       if (!picked) return;
       file = picked as FileEntry;
     } else {
-      const availableFiles = data.files.filter((f) => !f.excluded);
-      if (!availableFiles.length) return;
+      const treeFiles = fileTreeRef.current
+        ?.getFlattenedFiles()
+        .filter((f) => !f.excluded);
+      if (!treeFiles || !treeFiles.length) return;
 
       const currentId =
         currentIndexRef.current !== null
           ? data.files[currentIndexRef.current]?.id
           : null;
 
-      const currentAvailableIndex = availableFiles.findIndex(
-        (f) => f.id === currentId,
-      );
+      const currentIndexInTree = treeFiles.findIndex((f) => f.id === currentId);
 
-      const index =
-        currentAvailableIndex === -1
+      const nextIndex =
+        currentIndexInTree === -1
           ? 0
-          : (currentAvailableIndex + 1) % availableFiles.length;
+          : (currentIndexInTree + 1) % treeFiles.length;
 
-      file = availableFiles[index];
+      file = treeFiles[nextIndex];
       await randomiserApi.openFileById(file.id);
     }
 
+    // Update original data.files index
     const originalIndex = data.files.findIndex((f) => f.id === file.id);
     setCurrentIndex(originalIndex);
     currentIndexRef.current = originalIndex;
 
     updateAndRefreshData();
-
     if (file.id) fileTreeRef.current?.scrollToFile(file.id);
   }, [data.files, shuffle]);
 

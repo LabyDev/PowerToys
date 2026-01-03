@@ -32,6 +32,7 @@ interface FileTreeProps {
 
 export interface FileTreeHandle {
   scrollToFile: (fileId: number) => void;
+  getFlattenedFiles: () => FileEntry[];
 }
 
 const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
@@ -191,6 +192,12 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           expandParents(fileId, nodes, map);
           return map;
         });
+      },
+      getFlattenedFiles: () => {
+        // Return only files in the same order as flatNodes
+        return flatNodes
+          .map((n) => n.node.file)
+          .filter((f): f is FileEntry => f !== undefined);
       },
     }));
 
