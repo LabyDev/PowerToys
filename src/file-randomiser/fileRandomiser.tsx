@@ -557,7 +557,7 @@ const FileRandomiser = () => {
                 >
                   <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
                     <ClampedTooltipText size="sm" fw={600}>
-                      {item.name}
+                      {item.path}
                     </ClampedTooltipText>
                   </Stack>
 

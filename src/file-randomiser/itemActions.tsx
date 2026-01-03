@@ -131,7 +131,11 @@ const ItemActions = ({
           <ActionIcon
             variant="subtle"
             onClick={cycleBookmark}
-            className="item-action"
+            className={
+              currentBookmarkColor
+                ? "item-action item-action--bookmark"
+                : "item-action"
+            }
             color={currentBookmarkColor ?? "var(--mantine-color-gray-6)"}
           >
             <BookmarkIcon

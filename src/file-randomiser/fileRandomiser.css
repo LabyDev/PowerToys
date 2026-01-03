@@ -19,16 +19,20 @@
   overflow: hidden;
 }
 
-/* Hide all action buttons by default */
+/* Default: hide all */
 .item-action {
   visibility: hidden;
   opacity: 0;
-  transition:
-    visibility 0.2s ease,
-    opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
-/* Show action buttons when the container is hovered */
+/* Always show bookmark */
+.item-action--bookmark {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Show all on hover */
 .item-actions:hover .item-action {
   visibility: visible;
   opacity: 1;
