@@ -467,7 +467,10 @@ pub fn open_path(app: tauri::AppHandle, path: tauri_plugin_dialog::FilePath) -> 
 use sha2::{Digest, Sha256};
 
 fn hash_file(path: &std::path::Path) -> Option<String> {
-    fs::read(path)
-        .ok()
-        .map(|data| format!("{:x}", Sha256::digest(&data)))
+    let data = fs::read(path).ok()?;
+    let file_name = path.file_name()?.to_string_lossy(); // get filename + extension
+    let mut hasher = Sha256::new();
+    hasher.update(file_name.as_bytes());
+    hasher.update(&data);
+    Some(format!("{:x}", hasher.finalize()))
 }
