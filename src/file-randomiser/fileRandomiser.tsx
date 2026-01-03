@@ -171,24 +171,36 @@ const FileRandomiser = () => {
 
   const handleBookmarkChangeGlobal = useCallback(
     async (file: FileEntry, color: string | null, isGlobal = true) => {
-      const existing = globalBookmarks ?? [];
+      if (isGlobal) {
+        // --- GLOBAL BOOKMARK ---
+        const existing = globalBookmarks ?? [];
+        const nextGlobalBookmarks =
+          color === null
+            ? existing.filter((b) => b.hash !== file.hash)
+            : [
+                ...existing.filter((b) => b.hash !== file.hash),
+                { path: file.path, hash: file.hash, color },
+              ];
 
-      // Compute next global bookmarks
-      const nextGlobalBookmarks =
-        color === null
-          ? existing.filter((b) => b.hash !== file.hash)
-          : [
-              ...existing.filter((b) => b.hash !== file.hash),
-              { path: file.path, hash: file.hash, color },
-            ];
+        // persist global bookmarks
+        await setGlobalBookmarks(nextGlobalBookmarks);
 
-      // Persist global bookmarks
-      await setGlobalBookmarks(nextGlobalBookmarks);
-
-      // Update preset bookmarks if it's a local bookmark
-      if (!isGlobal) {
+        // update file immediately
+        setData((prev) => ({
+          ...prev,
+          files: prev.files.map((f) =>
+            f.hash === file.hash
+              ? {
+                  ...f,
+                  bookmark: color ? { color, isGlobal: true } : undefined,
+                }
+              : f,
+          ),
+        }));
+      } else {
+        // --- LOCAL PRESET BOOKMARK ---
         const preset = lastAppliedPresetRef.current;
-        const existingPreset = preset?.bookmarks ?? [];
+        const existingPreset = preset?.bookmarks ?? presetState.bookmarks ?? [];
 
         const nextPresetBookmarks =
           color === null
@@ -198,25 +210,36 @@ const FileRandomiser = () => {
                 { path: file.path, hash: file.hash, color },
               ];
 
-        setPresetState((p) => ({ ...p, bookmarks: nextPresetBookmarks }));
+        // update preset state immediately
+        setPresetState((p) => ({
+          ...p,
+          bookmarks: nextPresetBookmarks,
+          dirty: true,
+        }));
 
+        // update ref if preset exists
         if (preset) {
           lastAppliedPresetRef.current = {
             ...preset,
             bookmarks: nextPresetBookmarks,
           };
         }
-      }
 
-      // Update files data so UI reflects bookmark
-      setData((prev) => ({
-        ...prev,
-        files: prev.files.map((f) =>
-          f.hash === file.hash ? { ...f, bookmark: { color, isGlobal } } : f,
-        ),
-      }));
+        // update file immediately
+        setData((prev) => ({
+          ...prev,
+          files: prev.files.map((f) =>
+            f.hash === file.hash
+              ? {
+                  ...f,
+                  bookmark: color ? { color, isGlobal: false } : undefined,
+                }
+              : f,
+          ),
+        }));
+      }
     },
-    [globalBookmarks, setGlobalBookmarks, setData],
+    [globalBookmarks, setGlobalBookmarks, setData, presetState.bookmarks],
   );
 
   const handleBookmarkChange = useCallback(
@@ -226,7 +249,6 @@ const FileRandomiser = () => {
     [handleBookmarkChangeGlobal],
   );
 
-  // Handle bookmark change globally
   const handleBookmarkChangeGlobalDirect = useCallback(
     (file: FileEntry, color: string | null) => {
       handleBookmarkChangeGlobal(file, color, true);
