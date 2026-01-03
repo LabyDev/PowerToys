@@ -14,6 +14,7 @@ use tauri::Manager;
 use tauri::State;
 use tauri_plugin_dialog::{DialogExt, FilePath};
 use tauri_plugin_opener::OpenerExt;
+use windows::Win32::{Foundation::HANDLE, UI::WindowsAndMessaging::AllowSetForegroundWindow};
 
 #[tauri::command]
 pub fn get_app_state(state: State<'_, Mutex<AppStateData>>) -> AppStateData {
@@ -211,9 +212,7 @@ fn open_and_wait(path: &str) -> std::io::Result<()> {
     };
 
     unsafe {
-        // Proper Result handling (no as_bool)
-
-        use windows::Win32::Foundation::HANDLE;
+        let _ = AllowSetForegroundWindow(u32::MAX);
         ShellExecuteExW(&mut exec_info)
             .map_err(|e| std::io::Error::from_raw_os_error(e.code().0))?;
 
