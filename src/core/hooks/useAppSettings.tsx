@@ -46,16 +46,29 @@ export function useAppSettings() {
     });
   }, []);
 
+  const fetchGlobalBookmarks = useCallback(async () => {
+    try {
+      const latest = await invoke<Bookmark[]>("get_global_bookmarks");
+      setGlobalBookmarks(latest);
+      return latest;
+    } catch (err) {
+      console.error("Failed to fetch global bookmarks:", err);
+      return [];
+    }
+  }, []);
+
   const setGlobalBookmarksPersist = useCallback(
     async (bookmarks: Bookmark[]) => {
       try {
-        await invoke<Bookmark[]>("set_global_bookmarks", { bookmarks });
-        setGlobalBookmarks(bookmarks);
+        await invoke("set_global_bookmarks", { bookmarks });
+        // Always fetch latest after saving
+        return fetchGlobalBookmarks();
       } catch (err) {
         console.error("Failed to set global bookmarks:", err);
+        return [];
       }
     },
-    [],
+    [fetchGlobalBookmarks],
   );
 
   const [systemDark, setSystemDark] = useState(
@@ -78,5 +91,6 @@ export function useAppSettings() {
     isDarkMode,
     globalBookmarks,
     setGlobalBookmarks: setGlobalBookmarksPersist,
+    fetchGlobalBookmarks,
   };
 }

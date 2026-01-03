@@ -44,6 +44,9 @@ const ItemActions = ({
   const cycleBookmark = (event: React.MouseEvent) => {
     if (!onBookmarkChange) return;
 
+    // Determine if we are in "global lock" mode
+    const isGlobalLocked = currentBookmark?.isGlobal ?? false;
+
     const currentColor: BookmarkCycleColor = bookmarkCycle.includes(
       currentBookmark?.color as BookmarkCycleColor,
     )
@@ -52,10 +55,11 @@ const ItemActions = ({
 
     const currentIndex = bookmarkCycle.indexOf(currentColor);
     const nextIndex = (currentIndex + 1) % bookmarkCycle.length;
-
     const nextColor = bookmarkCycle[nextIndex];
 
-    if (event.shiftKey && onBookmarkChangeGlobal) {
+    // If shift is pressed → always global
+    if (event.shiftKey || isGlobalLocked) {
+      if (!onBookmarkChangeGlobal) return;
       onBookmarkChangeGlobal(nextColor);
     } else {
       onBookmarkChange(nextColor);

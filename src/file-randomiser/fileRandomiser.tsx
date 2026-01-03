@@ -169,12 +169,12 @@ const FileRandomiser = () => {
     });
   };
 
-  const handleBookmarkChange = useCallback(
-    (file: FileEntry, color: string | null) => {
-      const originalPreset = lastAppliedPresetRef.current;
-      const existing = originalPreset?.bookmarks ?? [];
+  const handleBookmarkChangeGlobal = useCallback(
+    async (file: FileEntry, color: string | null, isGlobal = true) => {
+      const existing = globalBookmarks ?? [];
 
-      const nextBookmarks =
+      // Compute next global bookmarks
+      const nextGlobalBookmarks =
         color === null
           ? existing.filter((b) => b.hash !== file.hash)
           : [
@@ -182,63 +182,58 @@ const FileRandomiser = () => {
               { path: file.path, hash: file.hash, color },
             ];
 
-      setPresetState((p) => ({ ...p, bookmarks: nextBookmarks }));
-      setBookmarksDirty(true);
+      // Persist global bookmarks
+      await setGlobalBookmarks(nextGlobalBookmarks);
 
-      lastAppliedPresetRef.current = originalPreset
-        ? { ...originalPreset, bookmarks: nextBookmarks }
-        : {
-            id: Date.now().toString(),
-            name: "Untitled",
-            paths: [],
-            filterRules: [],
-            bookmarks: nextBookmarks,
+      // Update preset bookmarks if it's a local bookmark
+      if (!isGlobal) {
+        const preset = lastAppliedPresetRef.current;
+        const existingPreset = preset?.bookmarks ?? [];
+
+        const nextPresetBookmarks =
+          color === null
+            ? existingPreset.filter((b) => b.hash !== file.hash)
+            : [
+                ...existingPreset.filter((b) => b.hash !== file.hash),
+                { path: file.path, hash: file.hash, color },
+              ];
+
+        setPresetState((p) => ({ ...p, bookmarks: nextPresetBookmarks }));
+
+        if (preset) {
+          lastAppliedPresetRef.current = {
+            ...preset,
+            bookmarks: nextPresetBookmarks,
           };
+        }
+      }
 
+      // Update files data so UI reflects bookmark
       setData((prev) => ({
         ...prev,
         files: prev.files.map((f) =>
-          f.hash === file.hash
-            ? {
-                ...f,
-                bookmark: { color, isGlobal: f.bookmark?.isGlobal ?? false },
-              }
-            : f,
+          f.hash === file.hash ? { ...f, bookmark: { color, isGlobal } } : f,
         ),
       }));
     },
-    [setData],
+    [globalBookmarks, setGlobalBookmarks, setData],
+  );
+
+  const handleBookmarkChange = useCallback(
+    (file: FileEntry, color: string | null) => {
+      handleBookmarkChangeGlobal(file, color, false);
+    },
+    [handleBookmarkChangeGlobal],
   );
 
   // Handle bookmark change globally
-  const handleBookmarkChangeGlobal = useCallback(
-    async (file: FileEntry, color: string | null) => {
-      const existing = globalBookmarks ?? [];
-
-      const nextBookmarks =
-        color === null
-          ? existing.filter((b) => b.hash !== file.hash)
-          : [
-              ...existing.filter((b) => b.hash !== file.hash),
-              { path: file.path, hash: file.hash, color },
-            ];
-
-      await setGlobalBookmarks(nextBookmarks);
-
-      setData((prev) => ({
-        ...prev,
-        files: prev.files.map((f) =>
-          f.hash === file.hash
-            ? {
-                ...f,
-                bookmark: { color, isGlobal: f.bookmark?.isGlobal ?? false },
-              }
-            : f,
-        ),
-      }));
+  const handleBookmarkChangeGlobalDirect = useCallback(
+    (file: FileEntry, color: string | null) => {
+      handleBookmarkChangeGlobal(file, color, true);
     },
-    [globalBookmarks, setData, setGlobalBookmarks],
+    [handleBookmarkChangeGlobal],
   );
+
   const updateFiltersAndCrawl = async (updatedData: AppStateData) => {
     await updateAndRefreshData(updatedData);
     await handleCrawl();
@@ -739,7 +734,7 @@ const FileRandomiser = () => {
                   handleCrawl();
                 }}
                 onBookmarkChange={handleBookmarkChange}
-                onBookmarkChangeGlobal={handleBookmarkChangeGlobal}
+                onBookmarkChangeGlobal={handleBookmarkChangeGlobalDirect}
                 currentFileId={
                   currentIndex !== null ? data.files[currentIndex]?.id : null
                 }
