@@ -157,7 +157,6 @@ const ItemActions = ({
                 style={{
                   position: "absolute",
                   top: -4,
-                  right: -4,
                   width: 16,
                   height: 16,
                   display: "flex",
