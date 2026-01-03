@@ -3,15 +3,12 @@ use crate::models::{
 };
 use crate::models::{FilterAction, RandomiserPreset};
 use chrono::Utc;
-use dashmap::DashMap;
 use ignore::WalkBuilder;
 use rand::distr::weighted::WeightedIndex;
 use rand::prelude::*;
 use rayon::prelude::*;
-use std::hash::Hasher;
-use std::collections::hash_map::DefaultHasher;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
@@ -75,10 +72,6 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let filter_rules = data.filter_rules.clone();
     let next_id = AtomicU64::new(1);
 
-    // Lock-free hash cache
-    let hash_cache: Arc<DashMap<std::path::PathBuf, (std::time::SystemTime, u64, u64)>> =
-        Arc::new(DashMap::new());
-
     fn matches_rule(path: &str, rule: &FilterRule) -> bool {
         let text = if rule.case_sensitive {
             path.to_string()
@@ -127,36 +120,20 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     }
 
     // Fast non-cryptographic hash for bookmarks
-    let hash_file = |path: &std::path::Path| -> u64 {
+    fn fast_file_id(path: &std::path::Path) -> u64 {
         if let Ok(meta) = path.metadata() {
-            let modified = meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+            let modified = meta
+                .modified()
+                .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
             let size = meta.len();
-
-            if let Some(entry) = hash_cache.get(path) {
-                if entry.0 == modified && entry.1 == size {
-                    return entry.2;
-                }
-            }
-
-            let mut hasher = DefaultHasher::new();
-            std::fs::File::open(path).ok().and_then(|mut f| {
-                use std::io::Read;
-                let mut buf = [0u8; 8192];
-                while let Ok(n) = f.read(&mut buf) {
-                    if n == 0 {
-                        break;
-                    }
-                    hasher.write(&buf[..n]);
-                }
-                Some(())
-            });
-            let h = hasher.finish();
-            hash_cache.insert(path.to_path_buf(), (modified, size, h));
-            h
-        } else {
-            0
+            // Combine into u64
+            return size.wrapping_mul(31) ^ modified;
         }
-    };
+        0
+    }
 
     // Collect all files
     let mut all_files: Vec<std::path::PathBuf> = Vec::new();
@@ -187,7 +164,7 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or("unknown".to_string());
             let excluded = should_exclude(&path, &filter_rules);
-            let hash = if excluded { 0 } else { hash_file(&path) };
+            let hash = if excluded { 0 } else { fast_file_id(&path) };
             FileEntry {
                 id,
                 name,
