@@ -59,7 +59,8 @@
       "randomFile": "Willekeurig bestand",
       "shuffle": "Shuffle",
       "tracking": "Tracking",
-      "searchPlaceholder": "Zoek paden, bestanden en geschiedenis…"
+      "searchPlaceholder": "Zoek paden, bestanden en geschiedenis…",
+      "pickFileDisabledTracking": "Uitgeschakeld terwijl volgen actief is. Je kunt slechts één bestand kiezen."
     }
   },
   "fileSorter": {

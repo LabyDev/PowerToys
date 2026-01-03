@@ -72,10 +72,7 @@ const Toolbar = ({
               <Tooltip
                 label={
                   hasStartedTracking
-                    ? t(
-                        "fileRandomiser.toolbar.pickFileDisabledTracking",
-                        "Disabled while tracking is active. You can only pick a file once.",
-                      )
+                    ? t("fileRandomiser.toolbar.pickFileDisabledTracking")
                     : ""
                 }
                 disabled={!hasStartedTracking} // only show when disabled

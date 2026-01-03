@@ -59,7 +59,8 @@
       "randomFile": "Random file",
       "shuffle": "Shuffle",
       "tracking": "Tracking",
-      "searchPlaceholder": "Search paths, files, and history…"
+      "searchPlaceholder": "Search paths, files, and history…",
+      "pickFileDisabledTracking": "Disabled while tracking is active. You can only pick a file once."
     }
   },
   "fileSorter": {

@@ -58,7 +58,8 @@
       "randomFile": "Zufällige Datei",
       "shuffle": "Mischen",
       "tracking": "Verfolgung",
-      "searchPlaceholder": "Suche nach Pfaden, Dateien und Verlauf…"
+      "searchPlaceholder": "Suche nach Pfaden, Dateien und Verlauf…",
+      "pickFileDisabledTracking": "Deaktiviert, solange die Nachverfolgung aktiv ist. Du kannst nur einmal eine Datei auswählen."
     }
   },
   "fileSorter": {

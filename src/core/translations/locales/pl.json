@@ -58,7 +58,8 @@
       "randomFile": "Losowy plik",
       "shuffle": "Tasuj",
       "tracking": "Śledzenie",
-      "searchPlaceholder": "Szukaj ścieżek, plików i historii…"
+      "searchPlaceholder": "Szukaj ścieżek, plików i historii…",
+      "pickFileDisabledTracking": "Wyłączone, gdy śledzenie jest aktywne. Plik można wybrać tylko raz."
     }
   },
   "fileSorter": {

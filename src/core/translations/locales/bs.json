@@ -59,7 +59,8 @@
       "randomFile": "Nasumični fajl",
       "shuffle": "Promiješaj",
       "tracking": "Praćenje",
-      "searchPlaceholder": "Pretraži putanje, fajlove i historiju…"
+      "searchPlaceholder": "Pretraži putanje, fajlove i historiju…",
+      "pickFileDisabledTracking": "Onemogućeno dok je praćenje aktivno. Datoteku možete odabrati samo jednom."
     }
   },
   "fileSorter": {
