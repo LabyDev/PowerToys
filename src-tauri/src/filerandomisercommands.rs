@@ -5,7 +5,9 @@ use crate::models::{FilterAction, RandomiserPreset};
 use chrono::Utc;
 use rand::distr::weighted::WeightedIndex;
 use rand::prelude::*;
+use rayon::prelude::*;
 use std::fs;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::Manager;
@@ -65,10 +67,10 @@ pub fn remove_path(app_data: State<'_, Mutex<AppStateData>>, id: u64) -> bool {
 pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let mut data = app_data.lock().unwrap();
     data.files.clear();
-    let paths = data.paths.clone();
-    let mut next_id = 1u64;
 
+    let paths = data.paths.clone();
     let filter_rules = data.filter_rules.clone();
+    let next_id = AtomicU64::new(1);
 
     fn matches_rule(path: &str, rule: &FilterRule) -> bool {
         let text = if rule.case_sensitive {
@@ -76,13 +78,11 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         } else {
             path.to_lowercase()
         };
-
         let pattern = if rule.case_sensitive {
             rule.pattern.clone()
         } else {
             rule.pattern.to_lowercase()
         };
-
         match rule.match_type {
             FilterMatchType::Contains => text.contains(&pattern),
             FilterMatchType::StartsWith => text.starts_with(&pattern),
@@ -95,9 +95,7 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
 
     fn should_exclude(path: &std::path::Path, filter_rules: &[FilterRule]) -> bool {
         let path_str = path.to_string_lossy();
-
-        // Apply rules: last matching rule wins
-        let mut result = false; // default: not excluded
+        let mut result = false;
         for rule in filter_rules {
             if matches_rule(&path_str, rule) {
                 result = matches!(rule.action, FilterAction::Exclude);
@@ -106,47 +104,6 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         result
     }
 
-    fn add_files_from_dir(
-        dir: &std::path::Path,
-        data: &mut AppStateData,
-        next_id: &mut u64,
-        filter_rules: &[FilterRule],
-    ) {
-        if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-
-                // Skip system/hidden files completely
-                if is_system_file(&path) {
-                    continue;
-                }
-
-                if path.is_file() {
-                    let name = path
-                        .file_name()
-                        .map(|s| s.to_string_lossy().to_string())
-                        .unwrap_or_else(|| "unknown".to_string());
-
-                    let excluded = should_exclude(&path, filter_rules);
-                    let hash = hash_file(&path);
-
-                    data.files.push(FileEntry {
-                        id: *next_id,
-                        name,
-                        path: FilePath::Path(path),
-                        excluded,
-                        hash,
-                    });
-
-                    *next_id += 1;
-                } else if path.is_dir() {
-                    add_files_from_dir(&path, data, next_id, filter_rules);
-                }
-            }
-        }
-    }
-
-    // Helper function to detect system/hidden files
     fn is_system_file(path: &std::path::Path) -> bool {
         if let Some(file_name) = path.file_name() {
             let file_name = file_name.to_string_lossy();
@@ -168,14 +125,59 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         false
     }
 
+    // Recursive directory walker that returns a parallel iterator of file paths
+    fn walk_dir_recursive(dir: std::path::PathBuf) -> Vec<std::path::PathBuf> {
+        let mut files = vec![];
+        if let Ok(entries) = fs::read_dir(&dir) {
+            let dirs_and_files: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+            let (dirs, regular_files): (Vec<_>, Vec<_>) =
+                dirs_and_files.into_iter().partition(|p| p.is_dir());
+
+            for file in regular_files {
+                if !is_system_file(&file) {
+                    files.push(file);
+                }
+            }
+
+            for subdir in dirs {
+                files.extend(walk_dir_recursive(subdir));
+            }
+        }
+        files
+    }
+
+    // Collect all files from all paths first
+    let mut all_files = vec![];
     for saved_path in &paths {
-        if let Some(folder_path) = saved_path.path.as_path() {
-            if folder_path.is_dir() {
-                add_files_from_dir(folder_path, &mut data, &mut next_id, &filter_rules);
+        if let Some(p) = saved_path.path.as_path() {
+            if p.is_dir() {
+                all_files.extend(walk_dir_recursive(p.to_path_buf()));
             }
         }
     }
 
+    // Hash files in parallel and construct FileEntry
+    let file_entries: Vec<FileEntry> = all_files
+        .into_par_iter() // <- rayon parallel iterator
+        .map(|path| {
+            let id = next_id.fetch_add(1, Ordering::SeqCst);
+            let name = path
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "unknown".to_string());
+            let excluded = should_exclude(&path, &filter_rules);
+            let hash = hash_file(&path);
+            FileEntry {
+                id,
+                name,
+                path: FilePath::Path(path),
+                excluded,
+                hash,
+            }
+        })
+        .collect();
+
+    data.files = file_entries.clone();
     data.files.clone()
 }
 
