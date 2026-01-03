@@ -5,6 +5,7 @@ import {
   TrashIcon,
   FileArrowUpIcon,
   BookmarkIcon,
+  GlobeHemisphereWestIcon,
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { BookmarkInfo } from "../types/filerandomiser";
@@ -43,7 +44,6 @@ const ItemActions = ({
   const cycleBookmark = (event: React.MouseEvent) => {
     if (!onBookmarkChange) return;
 
-    // Safely get the current color or null
     const currentColor: BookmarkCycleColor = bookmarkCycle.includes(
       currentBookmark?.color as BookmarkCycleColor,
     )
@@ -135,21 +135,40 @@ const ItemActions = ({
           withArrow
           position="top"
         >
-          <ActionIcon
-            variant="subtle"
-            onClick={cycleBookmark}
-            className={
-              currentBookmark?.color
-                ? "item-action item-action--bookmark"
-                : "item-action"
-            }
-            color={currentBookmark?.color ?? "var(--mantine-color-gray-6)"}
-          >
-            <BookmarkIcon
-              weight={currentBookmark?.color ? "fill" : "regular"}
-              size={18}
-            />
-          </ActionIcon>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <ActionIcon
+              variant="subtle"
+              onClick={cycleBookmark}
+              className={`item-action ${currentBookmark?.color ? "item-action--bookmark" : ""}`}
+              color={currentBookmark?.color ?? "var(--mantine-color-gray-6)"}
+            >
+              <BookmarkIcon
+                weight={currentBookmark?.color ? "fill" : "regular"}
+                size={18}
+              />
+            </ActionIcon>
+
+            {currentBookmark?.isGlobal && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  width: 16,
+                  height: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <GlobeHemisphereWestIcon
+                  size={10}
+                  weight="fill"
+                  color="var(--mantine-color-blue-6)"
+                />
+              </div>
+            )}
+          </div>
         </Tooltip>
       )}
     </Group>
