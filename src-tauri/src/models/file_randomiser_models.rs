@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tauri_plugin_dialog::FilePath;
@@ -65,6 +67,8 @@ pub struct AppStateData {
     pub history: Vec<HistoryEntry>,
     pub tracking_enabled: bool,
     pub filter_rules: Vec<FilterRule>,
+    pub last_picked_id: Option<u64>,
+    pub pick_counts: HashMap<u64, u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

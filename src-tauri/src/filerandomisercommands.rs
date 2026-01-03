@@ -281,43 +281,66 @@ pub fn open_file_tracked(
 pub fn pick_random_file(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
-    randomness: Option<u8>, // 0-100
+    randomness: Option<u8>, // 0–100
 ) -> Option<FileEntry> {
     let randomness = randomness.unwrap_or(50) as f64 / 100.0;
+    let temperature = (1.0 - randomness).max(0.05); // avoid extreme spikes
 
-    let data = app_data.lock().unwrap();
-    if data.files.is_empty() {
-        return None;
-    }
+    let mut data = app_data.lock().unwrap();
 
-    let available_files: Vec<_> = data.files.iter().filter(|f| !f.excluded).cloned().collect();
+    let mut available_files: Vec<FileEntry> = data
+        .files
+        .iter()
+        .filter(|f| !f.excluded)
+        .cloned()
+        .collect();
+
     if available_files.is_empty() {
         return None;
     }
 
-    // Compute weights based on slider
+    let mut rng = rand::rng();
+
+    // Remove order bias
+    available_files.shuffle(&mut rng);
+
+    // Build weights
     let weights: Vec<f64> = available_files
         .iter()
         .enumerate()
-        .map(|(i, _)| {
-            // exponential bias: low randomness favors first items
-            let pos = i as f64 / (available_files.len() - 1) as f64; // 0 = first, 1 = last
-            pos.powf(randomness)
+        .map(|(i, file)| {
+            // base positional bias (soft)
+            let pos = i as f64 / (available_files.len().saturating_sub(1).max(1)) as f64;
+            let mut weight = (pos / temperature).exp();
+
+            // avoid immediate repeat
+            if Some(file.id) == data.last_picked_id {
+                weight *= 0.1;
+            }
+
+            // penalize frequently picked files
+            let picks = *data.pick_counts.get(&file.id).unwrap_or(&0) as f64;
+            weight /= 1.0 + picks;
+
+            weight.max(0.0001)
         })
         .collect();
 
-    let mut rng = rand::rng();
-    let dist = WeightedIndex::new(&weights).unwrap();
+    let dist = WeightedIndex::new(&weights).ok()?;
     let idx = dist.sample(&mut rng);
-
     let file = available_files[idx].clone();
+
+    // update history
+    data.last_picked_id = Some(file.id);
+    *data.pick_counts.entry(file.id).or_insert(0) += 1;
+
     drop(data);
 
     let _ = open_file_tracked(
-        app.clone(),
+        app,
         match &file.path {
             FilePath::Path(p) => p.to_string_lossy().to_string(),
-            FilePath::Url(u) => u.clone().to_string(),
+            FilePath::Url(u) => u.to_string(),
         },
         Some(file.id),
         Some(file.name.clone()),

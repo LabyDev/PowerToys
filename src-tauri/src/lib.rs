@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{collections::HashMap, sync::Mutex};
 mod filerandomisercommands;
 pub mod models;
 pub mod setting_commands;
@@ -17,6 +17,8 @@ pub fn run() {
             history: vec![],
             tracking_enabled: false,
             filter_rules: vec![],
+            last_picked_id: None,
+            pick_counts: HashMap::new(),
         }))
         .invoke_handler(tauri::generate_handler![
             setting_commands::get_app_settings,
