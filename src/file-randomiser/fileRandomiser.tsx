@@ -8,6 +8,7 @@ import {
   AppStateData,
   FileEntry,
   FileTreeNode,
+  PresetState,
   RandomiserPreset,
 } from "../types/filerandomiser";
 import { useAppSettings } from "../core/hooks/useAppSettings";
@@ -25,6 +26,7 @@ import ItemActions from "./itemActions";
 import { sep } from "@tauri-apps/api/path";
 import { useFileRandomiser } from "../core/hooks/fileRandomiserStateProvider";
 import { useTranslation } from "react-i18next";
+import { useDebouncedValue } from "@mantine/hooks";
 
 const FileRandomiser = () => {
   const { settings } = useAppSettings();
@@ -60,6 +62,11 @@ const FileRandomiser = () => {
 
   const [showLoading, setShowLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
+  const [bookmarksDirty, setBookmarksDirty] = useState(false);
+  const [debouncedDirty] = useDebouncedValue(
+    presetState.dirty || bookmarksDirty,
+    100, // 100ms delay for visual updates
+  );
 
   // ------------------------ Effects ------------------------
   useEffect(() => {
@@ -92,20 +99,17 @@ const FileRandomiser = () => {
 
   useEffect(() => {
     const preset = lastAppliedPresetRef.current;
-
-    if (
-      preset &&
-      arraysEqual(data.paths, preset.paths) &&
-      arraysEqual(data.filterRules, preset.filterRules) &&
-      presetState.name === preset.name &&
-      shuffle === preset.shuffle
-    ) {
-      // Matches last applied preset exactly → don't mark dirty
-      return;
-    }
-
-    setPresetState((p) => ({ ...p, dirty: true }));
-  }, [data.paths, data.filterRules, presetState.name, shuffle]);
+    setPresetState((p) => ({
+      ...p,
+      // only recalc dirty based on name, paths, rules, shuffle
+      dirty: isPresetDirty(
+        preset,
+        data,
+        { ...p, bookmarks: preset?.bookmarks ?? [] },
+        shuffle,
+      ),
+    }));
+  }, [data, presetState.name, shuffle]);
 
   useEffect(() => {
     if (isCrawling) {
@@ -156,21 +160,10 @@ const FileRandomiser = () => {
 
   const handleBookmarkChange = useCallback(
     (file: FileEntry, color: string | null) => {
-      let preset = lastAppliedPresetRef.current;
+      const originalPreset = lastAppliedPresetRef.current;
+      const existing = originalPreset?.bookmarks ?? [];
 
-      if (!preset) {
-        // No preset applied yet — create a temporary one in memory
-        preset = {
-          id: Date.now().toString(), // unique temporary ID
-          name: "Untitled",
-          paths: [],
-          filterRules: [],
-          bookmarks: [],
-        };
-      }
-
-      const existing = preset?.bookmarks ?? [];
-
+      // Compute next bookmarks
       const nextBookmarks =
         color === null
           ? existing.filter((b) => b.path !== file.path)
@@ -179,16 +172,27 @@ const FileRandomiser = () => {
               { path: file.path, color },
             ];
 
-      // Update the ref (source of truth)
-      lastAppliedPresetRef.current = {
-        ...preset,
+      // Update preset state bookmarks (dirty is only for non-bookmark changes)
+      setPresetState((p) => ({
+        ...p,
         bookmarks: nextBookmarks,
-      };
+      }));
 
-      // Update preset state and file data
+      // Mark bookmarks as dirty separately
+      setBookmarksDirty(true);
 
-      setPresetState((p) => ({ ...p, dirty: true, bookmarks: nextBookmarks }));
+      // Update lastAppliedPresetRef
+      lastAppliedPresetRef.current = originalPreset
+        ? { ...originalPreset, bookmarks: nextBookmarks }
+        : {
+            id: Date.now().toString(),
+            name: "Untitled",
+            paths: [],
+            filterRules: [],
+            bookmarks: nextBookmarks,
+          };
 
+      // Update files in data with bookmarkColor
       setData((prev) => ({
         ...prev,
         files: prev.files.map((f) =>
@@ -196,7 +200,7 @@ const FileRandomiser = () => {
         ),
       }));
     },
-    [setPresetState],
+    [setData],
   );
 
   const updateFiltersAndCrawl = async (updatedData: AppStateData) => {
@@ -295,28 +299,28 @@ const FileRandomiser = () => {
   };
 
   const handleNameChange = (newName: string) => {
-    setPresetState((p) => ({
-      ...p,
-      name: newName,
-      dirty:
-        !lastAppliedPresetRef.current ||
-        newName !== lastAppliedPresetRef.current.name ||
-        !arraysEqual(data.paths, lastAppliedPresetRef.current.paths) ||
-        !arraysEqual(
-          data.filterRules,
-          lastAppliedPresetRef.current.filterRules,
-        ),
-    }));
+    setPresetState((p) => {
+      const updated = { ...p, name: newName };
+      updated.dirty = isPresetDirty(
+        lastAppliedPresetRef.current,
+        data,
+        updated,
+        shuffle,
+      );
+      return updated;
+    });
   };
 
   const applyPreset = async (preset: RandomiserPreset) => {
     lastAppliedPresetRef.current = preset;
+
     setPresetState({
       currentId: preset.id,
       name: preset.name,
-      dirty: false,
+      dirty: false, // freshly applied preset → not dirty
       bookmarks: preset.bookmarks,
     });
+
     await updateFiltersAndCrawl({
       ...data,
       paths: preset.paths,
@@ -327,7 +331,7 @@ const FileRandomiser = () => {
   const savePreset = async () => {
     const preset = lastAppliedPresetRef.current;
 
-    // If no current ID or the name has changed, create a new preset
+    // No current preset ID or name changed → save as new
     if (!presetState.currentId || presetState.name !== preset?.name) {
       return savePresetAs();
     }
@@ -341,28 +345,51 @@ const FileRandomiser = () => {
       shuffle,
     } as RandomiserPreset);
 
-    setPresetState((p) => ({ ...p, dirty: false }));
+    // Update ref
+    lastAppliedPresetRef.current = {
+      id: presetState.currentId,
+      name: presetState.name,
+      paths: data.paths,
+      filterRules: data.filterRules,
+      bookmarks: preset?.bookmarks ?? [],
+      shuffle,
+    };
+
+    setPresetState((p) => ({
+      ...p,
+      dirty: false,
+      bookmarks: preset?.bookmarks ?? [],
+    }));
+    setBookmarksDirty(false);
+
     presetApi.getPresets().then(setPresets);
   };
 
   const savePresetAs = async () => {
     const id = crypto.randomUUID();
 
-    await presetApi.savePreset({
+    const newPreset: RandomiserPreset = {
       id,
       name: presetState.name || "New preset",
       paths: data.paths,
       filterRules: data.filterRules,
       bookmarks: presetState?.bookmarks ?? [],
       shuffle,
-    } as RandomiserPreset);
+    };
+
+    await presetApi.savePreset(newPreset);
+
+    // Update ref and state
+    lastAppliedPresetRef.current = newPreset;
 
     setPresetState({
       currentId: id,
-      name: presetState.name,
+      name: newPreset.name,
       dirty: false,
-      bookmarks: presetState?.bookmarks,
+      bookmarks: newPreset.bookmarks,
     });
+    setBookmarksDirty(false);
+
     presetApi.getPresets().then(setPresets);
   };
 
@@ -372,7 +399,7 @@ const FileRandomiser = () => {
     setPresetState({
       currentId: null,
       name: "Untitled",
-      dirty: false,
+      dirty: true, // always dirty when no preset applied
       bookmarks: [],
     });
 
@@ -385,6 +412,23 @@ const FileRandomiser = () => {
 
   const openPresetsFolder = () => {
     presetApi.openPresetsFolder();
+  };
+
+  const isPresetDirty = (
+    preset: RandomiserPreset | null,
+    currentData: AppStateData,
+    presetState: PresetState,
+    shuffle: boolean,
+  ): boolean => {
+    if (!preset) return true; // Untitled → always dirty
+
+    return (
+      presetState.name !== preset.name ||
+      !arraysEqual(currentData.paths, preset.paths) ||
+      !arraysEqual(currentData.filterRules, preset.filterRules) ||
+      shuffle !== preset.shuffle ||
+      !arraysEqual(presetState.bookmarks ?? [], preset.bookmarks ?? [])
+    );
   };
 
   // ------------------------ Filtering ------------------------
@@ -521,7 +565,7 @@ const FileRandomiser = () => {
             <PresetControls
               presets={presets}
               name={presetState.name}
-              dirty={presetState.dirty}
+              dirty={debouncedDirty}
               onNameChange={handleNameChange}
               onSelect={applyPreset}
               onSave={savePreset}
