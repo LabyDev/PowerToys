@@ -2,6 +2,7 @@ use crate::models::{
     AppStateData, FileEntry, FilterMatchType, FilterRule, HistoryEntry, SavedPath,
 };
 use crate::models::{FilterAction, RandomiserPreset};
+use crate::setting_commands::get_app_settings;
 use chrono::Utc;
 use ignore::WalkBuilder;
 use rand::distr::weighted::WeightedIndex;
@@ -189,31 +190,57 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
 }
 
 #[cfg(target_os = "windows")]
-fn open_and_wait(path: &str) -> std::io::Result<()> {
+fn open_and_wait(path: &str, show_cmd: bool) -> std::io::Result<()> {
+    use std::os::windows::process::CommandExt;
     use std::process::Command;
-    
-    Command::new("cmd")
-        .args(["/C", "start", "/WAIT", "", path])
-        .status()?;
+
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    if show_cmd {
+        // tracking → wait for process
+        Command::new("cmd")
+            .args(["/C", "start", "/WAIT", "", path])
+            .status()?;
+    } else {
+        // no tracking → hide cmd, taskbar flash only
+        Command::new("cmd")
+            .args(["/C", "start", "", path])
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()?;
+    }
 
     Ok(())
 }
 
 #[cfg(target_os = "macos")]
-fn open_and_wait(path: &str) -> std::io::Result<()> {
-    std::process::Command::new("open")
-        .arg("-W")
-        .arg(path)
-        .status()
-        .map(|_| ())
+fn open_and_wait(path: &str, show_cmd: bool) -> std::io::Result<()> {
+    if show_cmd {
+        std::process::Command::new("open")
+            .arg("-W")
+            .arg(path)
+            .status()
+            .map(|_| ())
+    } else {
+        std::process::Command::new("open")
+            .arg(path)
+            .spawn()
+            .map(|_| ())
+    }
 }
 
 #[cfg(target_os = "linux")]
-fn open_and_wait(path: &str) -> std::io::Result<()> {
-    std::process::Command::new("gio")
-        .args(["open", "--wait", path])
-        .status()
-        .map(|_| ())
+fn open_and_wait(path: &str, show_cmd: bool) -> std::io::Result<()> {
+    if show_cmd {
+        std::process::Command::new("gio")
+            .args(["open", "--wait", path])
+            .status()
+            .map(|_| ())
+    } else {
+        std::process::Command::new("gio")
+            .args(["open", path])
+            .spawn()
+            .map(|_| ())
+    }
 }
 
 pub fn open_file_tracked(
@@ -222,11 +249,11 @@ pub fn open_file_tracked(
     id: Option<u64>,
     name: Option<String>,
 ) -> Result<(), String> {
-    // Update history immediately
+    let settings = get_app_settings(app.clone())?;
+    let allow_tracking = settings.file_randomiser.allow_process_tracking;
     if let (Some(id), Some(name)) = (id, name) {
-        let app_data = app.state::<Mutex<AppStateData>>();
-        let mut state = app_data.lock().unwrap();
-
+        let app_data_lock = app.state::<Mutex<AppStateData>>();
+        let mut state = app_data_lock.lock().unwrap();
         state.history.push(HistoryEntry {
             id,
             name,
@@ -235,10 +262,13 @@ pub fn open_file_tracked(
         });
     }
 
+    // Spawn thread to open file
     let app_clone = app.clone();
     std::thread::spawn(move || {
-        let _ = open_and_wait(&path);
-        let _ = app_clone.emit("file-closed", ());
+        let _ = open_and_wait(&path, allow_tracking);
+        if allow_tracking {
+            let _ = app_clone.emit("file-closed", ());
+        }
     });
 
     Ok(())
