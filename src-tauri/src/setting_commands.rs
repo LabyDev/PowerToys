@@ -1,6 +1,7 @@
-use crate::models::LanguageOption;
+use crate::models::Bookmark;
 use crate::models::settings::AppSettings;
 use crate::models::DarkModeOption;
+use crate::models::LanguageOption;
 use base64::{engine::general_purpose, Engine as _};
 use std::fs;
 use std::path::PathBuf;
@@ -126,4 +127,21 @@ pub fn set_randomness_level(app: tauri::AppHandle<Wry>, level: u8) -> Result<App
 pub fn restart_app(app_handle: tauri::AppHandle) {
     // Relaunch the app
     app_handle.restart();
+}
+
+#[tauri::command]
+pub fn get_global_bookmarks(app: tauri::AppHandle<Wry>) -> Result<Vec<Bookmark>, String> {
+    let settings = get_app_settings(app)?;
+    Ok(settings.file_randomiser.global_bookmarks)
+}
+
+#[tauri::command]
+pub fn set_global_bookmarks(
+    app: tauri::AppHandle<Wry>,
+    bookmarks: Vec<Bookmark>,
+) -> Result<Vec<Bookmark>, String> {
+    let mut settings = get_app_settings(app.clone())?;
+    settings.file_randomiser.global_bookmarks = bookmarks.clone();
+    set_app_settings(app, settings)?;
+    Ok(bookmarks)
 }

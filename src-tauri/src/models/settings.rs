@@ -1,10 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::Bookmark;
+
 // File randomiser settings
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FileRandomiserSettings {
     pub allow_process_tracking: bool,
     pub randomness_level: u8,
+    pub global_bookmarks: Vec<Bookmark>,
 }
 
 impl Default for FileRandomiserSettings {
@@ -12,6 +15,7 @@ impl Default for FileRandomiserSettings {
         FileRandomiserSettings {
             allow_process_tracking: false,
             randomness_level: 50,
+            global_bookmarks: vec![],
         }
     }
 }
