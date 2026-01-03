@@ -121,6 +121,9 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
 
     // Fast non-cryptographic hash for bookmarks
     fn fast_file_id(path: &std::path::Path) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
         if let Ok(meta) = path.metadata() {
             let modified = meta
                 .modified()
@@ -129,8 +132,14 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                 .unwrap_or_default()
                 .as_secs();
             let size = meta.len();
-            // Combine into u64
-            return size.wrapping_mul(31) ^ modified;
+
+            // Include file name + extension in hash
+            let mut hasher = DefaultHasher::new();
+            path.file_name().hash(&mut hasher); // includes extension
+            size.hash(&mut hasher);
+            modified.hash(&mut hasher);
+
+            return hasher.finish();
         }
         0
     }
