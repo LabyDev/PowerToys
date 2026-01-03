@@ -179,12 +179,55 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
 
 #[cfg(target_os = "windows")]
 fn open_and_wait(path: &str) -> std::io::Result<()> {
-    use std::process::Command;
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    use windows::core::PCWSTR;
+    use windows::Win32::Foundation::{CloseHandle, WAIT_OBJECT_0};
+    use windows::Win32::System::Threading::WaitForSingleObject;
+    use windows::Win32::UI::Shell::{
+        ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
+    };
 
-    // Use 'start' with '/WAIT' to block, and it usually focuses the window
-    Command::new("cmd")
-        .args(["/C", "start", "/WAIT", "", path])
-        .status()?; // blocks until program exits
+    let mut wide: Vec<u16> = OsStr::new(path)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+
+    let mut exec_info = SHELLEXECUTEINFOW {
+        cbSize: std::mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+        fMask: SEE_MASK_NOCLOSEPROCESS,
+        lpFile: PCWSTR(wide.as_mut_ptr()),
+        nShow: 1i32,
+        ..Default::default()
+    };
+
+     unsafe {
+        // Proper Result handling (no as_bool)
+
+        use windows::Win32::Foundation::HANDLE;
+        ShellExecuteExW(&mut exec_info)
+            .map_err(|e| std::io::Error::from_raw_os_error(e.code().0))?;
+
+        let process: HANDLE = exec_info.hProcess;
+
+        if process.is_invalid() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "ShellExecuteExW returned an invalid process handle",
+            ));
+        }
+
+        let wait_result = WaitForSingleObject(process, u32::MAX);
+
+        let _ = CloseHandle(process);
+
+        if wait_result != WAIT_OBJECT_0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "WaitForSingleObject failed",
+            ));
+        }
+    }
 
     Ok(())
 }
@@ -225,7 +268,6 @@ pub fn open_file_tracked(
         });
     }
 
-    // Spawn thread to open file and emit event when closed
     let app_clone = app.clone();
     std::thread::spawn(move || {
         let _ = open_and_wait(&path);
