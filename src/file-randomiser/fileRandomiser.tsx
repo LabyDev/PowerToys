@@ -198,7 +198,12 @@ const FileRandomiser = () => {
       setData((prev) => ({
         ...prev,
         files: prev.files.map((f) =>
-          f.hash === file.hash ? { ...f, bookmarkColor: color } : f,
+          f.hash === file.hash
+            ? {
+                ...f,
+                bookmark: { color, isGlobal: f.bookmark?.isGlobal ?? false },
+              }
+            : f,
         ),
       }));
     },
@@ -223,7 +228,12 @@ const FileRandomiser = () => {
       setData((prev) => ({
         ...prev,
         files: prev.files.map((f) =>
-          f.hash === file.hash ? { ...f, bookmarkColor: color } : f,
+          f.hash === file.hash
+            ? {
+                ...f,
+                bookmark: { color, isGlobal: f.bookmark?.isGlobal ?? false },
+              }
+            : f,
         ),
       }));
     },
@@ -315,13 +325,28 @@ const FileRandomiser = () => {
 
   // ------------------------ Preset Handling ------------------------
   // Merge global bookmarks with active preset bookmarks when displaying files
-  const applyBookmarks = (files: FileEntry[], bookmarks?: Bookmark[]) => {
-    const mergedBookmarks = [...(bookmarks ?? []), ...globalBookmarks];
-    if (!mergedBookmarks.length) return files;
+  const applyBookmarks = (
+    files: FileEntry[],
+    bookmarks?: Bookmark[],
+  ): FileEntry[] => {
+    const mergedBookmarks = [
+      ...(bookmarks?.map((b) => ({ ...b, isGlobal: false })) ?? []),
+      ...(globalBookmarks?.map((b) => ({ ...b, isGlobal: true })) ?? []),
+    ];
+
+    if (!mergedBookmarks.length)
+      return files.map((f) => ({ ...f, bookmark: undefined }));
+
     const map = new Map(mergedBookmarks.map((b) => [b.hash, b]));
+
     return files.map((f) => {
       const bm = map.get(f.hash);
-      return bm ? { ...f, bookmarkColor: bm.color ?? null } : f;
+      return {
+        ...f,
+        bookmark: bm
+          ? { color: bm.color ?? null, isGlobal: bm.isGlobal } // BookmarkInfo
+          : undefined, // use undefined instead of null
+      };
     });
   };
 

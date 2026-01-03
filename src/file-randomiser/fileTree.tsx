@@ -273,7 +273,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
                   onBookmarkChangeGlobal={(color) =>
                     onBookmarkChangeGlobal(node.file!, color)
                   }
-                  currentBookmarkColor={node.file.bookmarkColor || null}
+                  currentBookmark={node.file.bookmark || undefined}
                 />
               )}
 

@@ -7,6 +7,7 @@ import {
   BookmarkIcon,
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
+import { BookmarkInfo } from "../types/filerandomiser";
 
 type ItemActionsProps = {
   onOpenFolder?: () => void;
@@ -15,7 +16,7 @@ type ItemActionsProps = {
   onOpen?: () => void;
   onBookmarkChange?: (color: string | null) => void;
   onBookmarkChangeGlobal?: (color: string | null) => void;
-  currentBookmarkColor?: string | null;
+  currentBookmark?: BookmarkInfo | undefined;
 };
 
 const bookmarkCycle = [
@@ -35,31 +36,29 @@ const ItemActions = ({
   onOpen,
   onBookmarkChange,
   onBookmarkChangeGlobal,
-  currentBookmarkColor,
+  currentBookmark,
 }: ItemActionsProps) => {
   const { t } = useTranslation();
-
-  const isCycleColor = (
-    color: string | null | undefined,
-  ): color is BookmarkCycleColor =>
-    bookmarkCycle.includes((color ?? null) as BookmarkCycleColor);
 
   const cycleBookmark = (event: React.MouseEvent) => {
     if (!onBookmarkChange) return;
 
-    const normalized: BookmarkCycleColor = isCycleColor(currentBookmarkColor)
-      ? currentBookmarkColor
+    // Safely get the current color or null
+    const currentColor: BookmarkCycleColor = bookmarkCycle.includes(
+      currentBookmark?.color as BookmarkCycleColor,
+    )
+      ? (currentBookmark!.color as BookmarkCycleColor)
       : null;
 
-    const currentIndex = bookmarkCycle.indexOf(normalized);
+    const currentIndex = bookmarkCycle.indexOf(currentColor);
     const nextIndex = (currentIndex + 1) % bookmarkCycle.length;
 
     const nextColor = bookmarkCycle[nextIndex];
 
     if (event.shiftKey && onBookmarkChangeGlobal) {
-      onBookmarkChangeGlobal(nextColor); // shift = global change
+      onBookmarkChangeGlobal(nextColor);
     } else {
-      onBookmarkChange(nextColor); // normal change
+      onBookmarkChange(nextColor);
     }
   };
 
@@ -140,14 +139,14 @@ const ItemActions = ({
             variant="subtle"
             onClick={cycleBookmark}
             className={
-              currentBookmarkColor
+              currentBookmark?.color
                 ? "item-action item-action--bookmark"
                 : "item-action"
             }
-            color={currentBookmarkColor ?? "var(--mantine-color-gray-6)"}
+            color={currentBookmark?.color ?? "var(--mantine-color-gray-6)"}
           >
             <BookmarkIcon
-              weight={currentBookmarkColor ? "fill" : "regular"}
+              weight={currentBookmark?.color ? "fill" : "regular"}
               size={18}
             />
           </ActionIcon>

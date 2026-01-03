@@ -9,7 +9,7 @@ export type FileEntry = {
   name: string;
   path: string;
   excluded: boolean;
-  bookmarkColor?: string | null;
+  bookmark?: BookmarkInfo;
   hash: string;
 };
 
@@ -72,4 +72,9 @@ export type Bookmark = {
   path: string; // absolute path
   hash: string; // content hash of the file
   color?: string | null;
+};
+
+export type BookmarkInfo = {
+  color: string | null;
+  isGlobal: boolean;
 };
