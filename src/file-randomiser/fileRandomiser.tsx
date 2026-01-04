@@ -60,6 +60,8 @@ const FileRandomiser = () => {
 
   const fileTreeVirtuosoRef = useRef<VirtuosoHandle>(null);
   const fileTreeRef = useRef<FileTreeHandle>(null);
+  const shuffleRef = useRef(shuffle);
+  const trackingRef = useRef(tracking);
 
   const [showLoading, setShowLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
@@ -77,6 +79,13 @@ const FileRandomiser = () => {
 
   // ------------------------ Effects ------------------------
   useEffect(() => {
+    shuffleRef.current = shuffle;
+  }, [shuffle]);
+  useEffect(() => {
+    trackingRef.current = tracking;
+  }, [tracking]);
+
+  useEffect(() => {
     updateAndRefreshData();
     presetApi.getPresets().then(setPresets);
   }, []);
@@ -86,27 +95,10 @@ const FileRandomiser = () => {
   }, [currentIndex]);
 
   useEffect(() => {
-    if (!settings.fileRandomiser.allow_process_tracking && tracking) {
+    if (settings.fileRandomiser.allow_process_tracking === false && tracking) {
       setTracking(false);
     }
-  }, [settings.fileRandomiser.allow_process_tracking, tracking]);
-
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-
-    listen("file-closed", async () => {
-      if (tracking) {
-        await handlePickFile();
-      } else {
-        // Tracking is off → reset hasStartedTracking now that file is closed
-        setHasStartedTracking(false);
-      }
-    }).then((fn) => {
-      unlisten = fn;
-    });
-
-    return () => unlisten?.();
-  }, [tracking]);
+  }, [settings.fileRandomiser.allow_process_tracking]);
 
   useEffect(() => {
     const preset = lastAppliedPresetRef.current;
@@ -304,14 +296,17 @@ const FileRandomiser = () => {
   const handlePickFile = useCallback(async () => {
     if (!data.files.length) return;
 
+    const isTracking = trackingRef.current;
+    const isShuffle = shuffleRef.current;
+
     // Only mark as started if tracking is actually enabled
-    if (tracking && !hasStartedTracking) {
+    if (isTracking && !hasStartedTracking) {
       setHasStartedTracking(true);
     }
 
     let file: FileEntry | undefined;
 
-    if (shuffle) {
+    if (isShuffle) {
       const picked = await randomiserApi.pickRandomFile();
       if (!picked) return;
       file = picked as FileEntry;
@@ -344,6 +339,23 @@ const FileRandomiser = () => {
     updateAndRefreshData();
     if (file.id) fileTreeRef.current?.scrollToFile(file.id);
   }, [data.files, shuffle, tracking, hasStartedTracking]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+
+    listen("file-closed", async () => {
+      // Use the REF here, not the state variable
+      if (trackingRef.current) {
+        await handlePickFile();
+      } else {
+        setHasStartedTracking(false);
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => unlisten?.();
+  }, [handlePickFile]);
 
   const toggleTreeCollapsed = () => {
     setTreeCollapsed(!treeCollapsed);
