@@ -160,6 +160,28 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       return flat;
     };
 
+    const flattenTreeAll = (
+      nodes: FileTreeNode[],
+      depth = 0,
+    ): FlattenedNode[] => {
+      const flat: FlattenedNode[] = [];
+
+      const sortedNodes = [...nodes].sort((a, b) => {
+        if (a.children && !b.children) return -1;
+        if (!a.children && b.children) return 1;
+        return 0;
+      });
+
+      for (const node of sortedNodes) {
+        flat.push({ node, depth });
+        if (node.children) {
+          flat.push(...flattenTreeAll(node.children, depth + 1));
+        }
+      }
+
+      return flat;
+    };
+
     const flatNodes = useMemo(() => flattenTree(nodes), [nodes, expandedMap]);
 
     const pendingScrollId = useRef<number | null>(null);
@@ -198,9 +220,9 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       },
       getFlattenedFiles: () => {
         // Return only files in the same order as flatNodes
-        return flatNodes
+        return flattenTreeAll(nodes)
           .map((n) => n.node.file)
-          .filter((f): f is FileEntry => f !== undefined);
+          .filter((f): f is FileEntry => !!f);
       },
     }));
 

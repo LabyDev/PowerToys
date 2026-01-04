@@ -266,15 +266,24 @@ const FileRandomiser = () => {
     await handleCrawl();
   };
 
+  const filesStructureEqual = (a: FileEntry[], b: FileEntry[]) => {
+    if (a.length !== b.length) return false;
+
+    for (let i = 0; i < a.length; i++) {
+      if (a[i].path !== b[i].path) return false;
+    }
+
+    return true;
+  };
+
   const handleCrawl = async () => {
     setIsCrawling(true);
     try {
       await randomiserApi.crawlPaths();
       const latest = await randomiserApi.getAppState();
 
-      // Check if data changed
-      const changed =
-        !arraysEqual(latest.files, data.files) ||
+      const structureChanged =
+        !filesStructureEqual(latest.files, data.files) ||
         !arraysEqual(latest.paths, data.paths);
 
       const preset = lastAppliedPresetRef.current;
@@ -284,8 +293,8 @@ const FileRandomiser = () => {
         files: applyBookmarks(latest.files, preset?.bookmarks),
       });
 
-      if (changed) {
-        setFreshCrawl(true); // mark for auto-expansion
+      if (structureChanged) {
+        setFreshCrawl(true);
       }
     } finally {
       setIsCrawling(false);
