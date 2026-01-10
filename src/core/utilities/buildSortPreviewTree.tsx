@@ -9,6 +9,7 @@ export function buildSortPreviewTree(
     name: rootPath.split(sep()).pop() ?? rootPath,
     path: rootPath,
     children: [],
+    isDir: true,
   };
 
   const folderMap = new Map<string, SortTreeNode>();

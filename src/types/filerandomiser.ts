@@ -1,4 +1,4 @@
-import { FileEntry, FilterRule, SavedPath } from "./common";
+import { FileEntryBase, FilterRule, SavedPath } from "./common";
 
 export type HistoryEntry = {
   id: number;
@@ -48,4 +48,15 @@ export type Bookmark = {
   path: string; // absolute path
   hash: string; // content hash of the file
   color?: string | null;
+};
+
+export type FileEntry = FileEntryBase & {
+  excluded: boolean;
+  hash: string;
+  bookmark?: BookmarkInfo;
+};
+
+export type BookmarkInfo = {
+  color: string | null;
+  isGlobal: boolean;
 };

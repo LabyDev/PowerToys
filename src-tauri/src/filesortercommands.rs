@@ -1,4 +1,4 @@
-use crate::models::{FileSorterState, SortOperation, SortStats};
+use crate::models::{FileSorterState, SortOperation, SortStats, SorterFileEntry};
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
@@ -27,22 +27,96 @@ pub fn select_sort_directory(
     Some(path_str)
 }
 
+use ignore::WalkBuilder;
+use std::path::Path;
+
+#[tauri::command]
+pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String> {
+    let mut entries = Vec::new();
+
+    let walker = WalkBuilder::new(&path)
+        .hidden(false)
+        .filter_entry(|_e| {
+            // skip .git etc later if needed
+            true
+        })
+        .build();
+
+    for entry in walker {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let p = entry.path();
+
+        // skip root itself
+        if p == Path::new(&path) {
+            continue;
+        }
+
+        entries.push(SorterFileEntry {
+            path: p.to_string_lossy().to_string(),
+            name: p
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default(),
+            is_dir: p.is_dir(),
+        });
+    }
+
+    Ok(entries)
+}
+
 #[tauri::command]
 pub fn get_sort_preview(
     state: State<'_, Mutex<FileSorterState>>,
 ) -> Result<FileSorterState, String> {
     let mut data = state.lock().unwrap();
-    
-    // 1. Logic: Use data.filter_rules and data.similarity_threshold
-    // to generate the Vec<SortOperation>
-    let preview: Vec<SortOperation> = Vec::new(); // Implementation here
 
-    // 2. Update state
-    data.preview = preview.clone();
-    data.stats = SortStats {
-        files_to_move: preview.len(),
-        folders_to_create: 0, // Calculate unique destination folders
+    let current_path = match &data.current_path {
+        Some(p) => p.clone(),
+        None => return Err("No folder selected".into()),
     };
+
+    // Crawl the folder
+    let entries = crawl_sort_directory(current_path.clone())?;
+
+    // Apply filters (simple example, you can expand based on FilterRule)
+    let filtered_files: Vec<_> = entries
+        .into_iter()
+        .filter(|e| !e.is_dir) // skip directories for sorting
+        // .filter(|e| {
+        //     data.filter_rules.iter().all(|rule| {
+        //         // Example: match by file extension
+        //         if let Some(ext) = rule.extension.clone() {
+        //             e.name.ends_with(&ext)
+        //         } else {
+        //             true
+        //         }
+        //     })
+        // })
+        .collect();
+
+    // Build SortOperations
+    let preview: Vec<SortOperation> = filtered_files
+        .into_iter()
+        .map(|file| SortOperation {
+            source_path: file.path.clone(),
+            destination_folder: format!("{}/Sorted", current_path),
+            file_name: file.name.clone(),
+            reason: "matches filter".to_string(),
+        })
+        .collect();
+
+    // Update stats
+    let stats = SortStats {
+        files_to_move: preview.len(),
+        folders_to_create: preview
+            .iter()
+            .map(|op| op.destination_folder.clone())
+            .collect::<std::collections::HashSet<_>>()
+            .len(),
+    };
+
+    data.preview = preview;
+    data.stats = stats;
 
     Ok(data.clone())
 }

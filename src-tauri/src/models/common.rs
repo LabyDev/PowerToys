@@ -3,10 +3,18 @@ use tauri_plugin_dialog::FilePath;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct SavedPath {
-    pub id: u64,
-    pub name: String,
-    pub path: FilePath,
+pub enum FilterAction {
+    Include,
+    Exclude,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum FilterMatchType {
+    Contains,
+    StartsWith,
+    EndsWith,
+    Regex,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -23,16 +31,17 @@ pub struct FilterRule {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub enum FilterAction {
-    Include,
-    Exclude,
+pub struct SavedPath {
+    pub id: u64,
+    pub name: String,
+    pub path: FilePath,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub enum FilterMatchType {
-    Contains,
-    StartsWith,
-    EndsWith,
-    Regex,
+pub struct FileEntryBase {
+    pub id: u64,
+    pub name: String,
+    pub path: FilePath,
+    pub is_dir: bool,
 }

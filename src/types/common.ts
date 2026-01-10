@@ -15,16 +15,9 @@ export type SavedPath = {
   path: string;
 };
 
-export type FileEntry = {
+export type FileEntryBase = {
   id: number;
   name: string;
   path: string;
-  excluded: boolean;
-  hash: string;
-  bookmark?: BookmarkInfo;
-};
-
-export type BookmarkInfo = {
-  color: string | null;
-  isGlobal: boolean;
+  isDir: boolean;
 };

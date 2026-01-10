@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Group,
@@ -17,19 +17,12 @@ import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
 import FiltersPanel from "../file-randomiser/filtersPanel";
 import { FilterRule } from "../types/common";
-import {
-  restoreLastSort,
-  selectSortDirectory,
-  sortFiles,
-} from "../core/api/fileSorterApi";
-import { FileSorterState, SortTreeNode } from "../types/filesorter";
-import SortPreviewTree from "./sortPreviewTree";
+import { FileSorterState } from "../types/filesorter";
+import SortPreviewTree, { SortTreeNode } from "./sortPreviewTree";
+import { invoke } from "@tauri-apps/api/core";
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
-  const [previewTree, setPreviewTree] = useState<SortTreeNode | null>(null);
-
-  // Single source of truth using FileSorterState
   const [state, setState] = useState<FileSorterState>({
     currentPath: null,
     similarityThreshold: 60,
@@ -40,26 +33,42 @@ const FileSorter = () => {
       foldersToCreate: 0,
     },
     hasRestorePoint: false,
+    files: [],
   });
 
+  const fetchState = async () => {
+    const backendState: FileSorterState = await invoke("get_sorter_state");
+    setState(backendState);
+  };
+
+  useEffect(() => {
+    fetchState();
+  }, []);
+
   const handleSelectFolder = async () => {
-    const path = await selectSortDirectory();
+    const path = await invoke<string | null>("select_sort_directory");
     if (path) {
       setState((prev) => ({ ...prev, currentPath: path }));
-      // TEMP: populate preview tree
-      setPreviewTree(buildMockTree(path));
+      await handlePreview(); // fetch preview after folder selection
+    }
+  };
+
+  const handlePreview = async () => {
+    if (!state.currentPath) return;
+    setShowLoading(true);
+    try {
+      const updatedState: FileSorterState = await invoke("get_sort_preview");
+      setState(updatedState);
+    } finally {
+      setShowLoading(false);
     }
   };
 
   const handleSort = async () => {
-    if (!state.currentPath) return;
     setShowLoading(true);
     try {
-      await sortFiles(
-        state.currentPath,
-        state.similarityThreshold,
-        state.filterRules,
-      );
+      await invoke("sort_files");
+      await fetchState(); // refresh state after sort
     } finally {
       setShowLoading(false);
     }
@@ -68,47 +77,31 @@ const FileSorter = () => {
   const handleRestore = async () => {
     setShowLoading(true);
     try {
-      await restoreLastSort();
-      setState((prev) => ({ ...prev, hasRestorePoint: false }));
+      await invoke("restore_last_sort");
+      await fetchState(); // refresh state after restore
     } finally {
       setShowLoading(false);
     }
   };
 
-  const updateFilters = (rules: FilterRule[]) => {
+  const updateFilters = async (rules: FilterRule[]) => {
     setState((prev) => ({ ...prev, filterRules: rules }));
+    await handlePreview();
   };
 
-  const buildMockTree = (rootPath: string): SortTreeNode => ({
-    name: rootPath.split("/").pop() ?? rootPath,
-    path: rootPath,
-    children: [
-      {
-        name: "Images",
-        path: `${rootPath}/Images`,
-        children: [
-          {
-            name: "cat.jpg",
-            path: `${rootPath}/Images/cat.jpg`,
-          },
-          {
-            name: "dog.png",
-            path: `${rootPath}/Images/dog.png`,
-          },
-        ],
-      },
-      {
-        name: "Docs",
-        path: `${rootPath}/Docs`,
-        children: [
-          {
-            name: "readme.txt",
-            path: `${rootPath}/Docs/readme.txt`,
-          },
-        ],
-      },
-    ],
-  });
+  const buildTree = (state: FileSorterState): SortTreeNode | null => {
+    if (!state.currentPath) return null;
+    return {
+      name: state.currentPath.split("/").pop() ?? state.currentPath,
+      path: state.currentPath,
+      children: state.preview.map((op) => ({
+        name: op.fileName,
+        path: op.sourcePath,
+      })),
+    };
+  };
+
+  const previewTree = buildTree(state);
 
   return (
     <Box p="md" h="94vh">
@@ -120,12 +113,11 @@ const FileSorter = () => {
           onSelectFolder={handleSelectFolder}
           onSort={handleSort}
           onRestore={handleRestore}
-          onRefresh={() => {}}
+          onRefresh={handlePreview}
           hasRestorePoint={state.hasRestorePoint}
           onQueryChange={() => {}}
         />
 
-        {/* FiltersPanel expects an object with filterRules; updateData returns that object */}
         <FiltersPanel
           data={{ filterRules: state.filterRules }}
           updateData={async (u) => updateFilters(u.filterRules)}
@@ -154,9 +146,10 @@ const FileSorter = () => {
                 </Text>
                 <Slider
                   value={state.similarityThreshold}
-                  onChange={(val) =>
-                    setState((prev) => ({ ...prev, similarityThreshold: val }))
-                  }
+                  onChange={async (val) => {
+                    setState((prev) => ({ ...prev, similarityThreshold: val }));
+                    await handlePreview();
+                  }}
                   min={10}
                   max={100}
                   step={5}
@@ -165,13 +158,10 @@ const FileSorter = () => {
               <Divider label="Stats" labelPosition="center" />
               <Stack gap="xs">
                 <Badge variant="light" fullWidth size="lg">
-                  Files to Move:{" "}
-                  {state.preview.length || state.stats.filesToMove}
+                  Files to Move: {state.stats.filesToMove}
                 </Badge>
                 <Badge color="cyan" variant="light" fullWidth size="lg">
-                  New Folders:{" "}
-                  {new Set(state.preview.map((p) => p.destinationFolder))
-                    .size || state.stats.foldersToCreate}
+                  New Folders: {state.stats.foldersToCreate}
                 </Badge>
               </Stack>
             </Stack>

@@ -20,13 +20,13 @@ import { sep } from "@tauri-apps/api/path";
 import { useFileRandomiser } from "../core/hooks/fileRandomiserStateProvider";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "@mantine/hooks";
-import { FileEntry } from "../types/common";
 import {
   AppStateData,
   Bookmark,
   RandomiserPreset,
   PresetState,
   FileTreeNode,
+  FileEntry,
 } from "../types/filerandomiser";
 
 const FileRandomiser = () => {

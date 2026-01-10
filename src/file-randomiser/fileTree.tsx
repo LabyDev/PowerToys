@@ -10,12 +10,15 @@ import {
 } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
-import { FileTreeNode, FlattenedNode } from "../types/filerandomiser";
+import {
+  FileEntry,
+  FileTreeNode,
+  FlattenedNode,
+} from "../types/filerandomiser";
 import ClampedTooltipText from "./clampedTooltipText";
 import ItemActions from "./itemActions";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
 import { sep } from "@tauri-apps/api/path";
-import { FileEntry } from "../types/common";
 
 interface FileTreeProps {
   nodes: FileTreeNode[];
@@ -310,6 +313,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
                         : node.name + sep(),
                       excluded: false,
                       hash: "",
+                      isDir: true,
                     })
                   }
                 />
