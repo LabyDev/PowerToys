@@ -17,9 +17,64 @@ import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
 import FiltersPanel from "../file-randomiser/filtersPanel";
 import { FilterRule } from "../types/common";
-import { FileSorterState } from "../types/filesorter";
-import SortPreviewTree, { SortTreeNode } from "./sortPreviewTree";
+import {
+  FileSorterState,
+  SortOperation,
+  SortTreeNode,
+} from "../types/filesorter";
+import SortPreviewTree from "./sortPreviewTree";
 import { invoke } from "@tauri-apps/api/core";
+
+// Helper to normalize paths
+const splitPath = (path: string) => path.replace(/\\/g, "/").split("/");
+
+// Build nested tree from preview
+export function buildSortPreviewTree(
+  rootPath: string,
+  ops: SortOperation[],
+): SortTreeNode {
+  const root: SortTreeNode = {
+    name: splitPath(rootPath).pop() || rootPath,
+    path: rootPath,
+    children: [],
+    isDir: true,
+  };
+
+  const folderMap = new Map<string, SortTreeNode>();
+  folderMap.set(rootPath, root);
+
+  const ensureFolder = (folderPath: string): SortTreeNode => {
+    if (folderMap.has(folderPath)) return folderMap.get(folderPath)!;
+
+    const segments = splitPath(folderPath);
+    const parentPath = segments.slice(0, -1).join("/") || rootPath;
+
+    const parent = ensureFolder(parentPath);
+
+    const node: SortTreeNode = {
+      name: segments[segments.length - 1],
+      path: folderPath,
+      children: [],
+      isDir: true,
+    };
+
+    parent.children!.push(node);
+    folderMap.set(folderPath, node);
+    return node;
+  };
+
+  for (const op of ops) {
+    const folder = ensureFolder(op.destinationFolder);
+
+    folder.children!.push({
+      name: op.fileName,
+      path: `${op.destinationFolder}/${op.fileName}`,
+      isDir: false,
+    });
+  }
+
+  return root;
+}
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
@@ -28,10 +83,7 @@ const FileSorter = () => {
     similarityThreshold: 60,
     filterRules: [],
     preview: [],
-    stats: {
-      filesToMove: 0,
-      foldersToCreate: 0,
-    },
+    stats: { filesToMove: 0, foldersToCreate: 0 },
     hasRestorePoint: false,
     files: [],
   });
@@ -49,7 +101,7 @@ const FileSorter = () => {
     const path = await invoke<string | null>("select_sort_directory");
     if (path) {
       setState((prev) => ({ ...prev, currentPath: path }));
-      await handlePreview(); // fetch preview after folder selection
+      await handlePreview();
     }
   };
 
@@ -68,7 +120,7 @@ const FileSorter = () => {
     setShowLoading(true);
     try {
       await invoke("sort_files");
-      await fetchState(); // refresh state after sort
+      await fetchState();
     } finally {
       setShowLoading(false);
     }
@@ -78,7 +130,7 @@ const FileSorter = () => {
     setShowLoading(true);
     try {
       await invoke("restore_last_sort");
-      await fetchState(); // refresh state after restore
+      await fetchState();
     } finally {
       setShowLoading(false);
     }
@@ -89,19 +141,9 @@ const FileSorter = () => {
     await handlePreview();
   };
 
-  const buildTree = (state: FileSorterState): SortTreeNode | null => {
-    if (!state.currentPath) return null;
-    return {
-      name: state.currentPath.split("/").pop() ?? state.currentPath,
-      path: state.currentPath,
-      children: state.preview.map((op) => ({
-        name: op.fileName,
-        path: op.sourcePath,
-      })),
-    };
-  };
-
-  const previewTree = buildTree(state);
+  const previewTree = state.currentPath
+    ? buildSortPreviewTree(state.currentPath, state.preview)
+    : null;
 
   return (
     <Box p="md" h="94vh">

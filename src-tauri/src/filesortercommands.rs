@@ -1,4 +1,5 @@
 use crate::models::{FileSorterState, SortOperation, SortStats, SorterFileEntry};
+use std::path::Path;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
@@ -28,7 +29,6 @@ pub fn select_sort_directory(
 }
 
 use ignore::WalkBuilder;
-use std::path::Path;
 
 #[tauri::command]
 pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String> {
@@ -36,17 +36,13 @@ pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String
 
     let walker = WalkBuilder::new(&path)
         .hidden(false)
-        .filter_entry(|_e| {
-            // skip .git etc later if needed
-            true
-        })
+        .filter_entry(|_e| true)
         .build();
 
     for entry in walker {
         let entry = entry.map_err(|e| e.to_string())?;
         let p = entry.path();
 
-        // skip root itself
         if p == Path::new(&path) {
             continue;
         }
@@ -64,59 +60,79 @@ pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String
     Ok(entries)
 }
 
+/// Core logic: compute destination folder for a file
+fn compute_destination(root: &str, file: &SorterFileEntry) -> (String, String) {
+    let relative = Path::new(&file.path)
+        .strip_prefix(root)
+        .unwrap_or(Path::new(""))
+        .parent()
+        .unwrap_or(Path::new(""))
+        .to_string_lossy()
+        .to_string();
+
+    let destination_folder = if relative.is_empty() {
+        format!("{}/Sorted", root)
+    } else {
+        format!("{}/Sorted/{}", root, relative)
+    };
+
+    (file.name.clone(), destination_folder)
+}
+
+/// Build sort plan (used for preview and actual sort)
+fn build_sort_plan(root: &str, files: &[SorterFileEntry]) -> Vec<SortOperation> {
+    files
+        .iter()
+        .filter(|f| !f.is_dir)
+        .map(|f| {
+            let (file_name, destination_folder) = compute_destination(root, f);
+            SortOperation {
+                file_name,
+                source_path: f.path.clone(),
+                destination_folder,
+                reason: "planned".into(),
+            }
+        })
+        .collect()
+}
+
+/// Execute a plan, moving files and tracking undo
+fn execute_sort_plan(plan: &[SortOperation]) -> Result<Vec<(String, String)>, String> {
+    let mut moves = Vec::new();
+
+    for op in plan {
+        std::fs::create_dir_all(&op.destination_folder).map_err(|e| e.to_string())?;
+        let dest_path = Path::new(&op.destination_folder).join(&op.file_name);
+        let dest_str = dest_path.to_string_lossy().to_string();
+
+        std::fs::rename(&op.source_path, &dest_path).map_err(|e| e.to_string())?;
+
+        moves.push((op.source_path.clone(), dest_str));
+    }
+
+    Ok(moves)
+}
+
 #[tauri::command]
 pub fn get_sort_preview(
     state: State<'_, Mutex<FileSorterState>>,
 ) -> Result<FileSorterState, String> {
-    let mut data = state.lock().unwrap();
+    let mut data = state.lock().unwrap().clone();
+    let root = data.current_path.as_ref().ok_or("No folder selected")?;
 
-    let current_path = match &data.current_path {
-        Some(p) => p.clone(),
-        None => return Err("No folder selected".into()),
-    };
+    data.files = crawl_sort_directory(root.clone())?;
 
-    // Crawl the folder
-    let entries = crawl_sort_directory(current_path.clone())?;
+    let plan = build_sort_plan(root, &data.files);
+    data.preview = plan.clone();
 
-    // Apply filters (simple example, you can expand based on FilterRule)
-    let filtered_files: Vec<_> = entries
-        .into_iter()
-        .filter(|e| !e.is_dir) // skip directories for sorting
-        // .filter(|e| {
-        //     data.filter_rules.iter().all(|rule| {
-        //         // Example: match by file extension
-        //         if let Some(ext) = rule.extension.clone() {
-        //             e.name.ends_with(&ext)
-        //         } else {
-        //             true
-        //         }
-        //     })
-        // })
-        .collect();
-
-    // Build SortOperations
-    let preview: Vec<SortOperation> = filtered_files
-        .into_iter()
-        .map(|file| SortOperation {
-            source_path: file.path.clone(),
-            destination_folder: format!("{}/Sorted", current_path),
-            file_name: file.name.clone(),
-            reason: "matches filter".to_string(),
-        })
-        .collect();
-
-    // Update stats
-    let stats = SortStats {
-        files_to_move: preview.len(),
-        folders_to_create: preview
+    data.stats = SortStats {
+        files_to_move: plan.len(),
+        folders_to_create: plan
             .iter()
             .map(|op| op.destination_folder.clone())
             .collect::<std::collections::HashSet<_>>()
             .len(),
     };
-
-    data.preview = preview;
-    data.stats = stats;
 
     Ok(data.clone())
 }
@@ -127,24 +143,12 @@ pub fn sort_files(
     undo_stack: State<'_, UndoStack>,
 ) -> Result<(), String> {
     let data = state.lock().unwrap();
-    let mut moves = Vec::new();
+    let root = data.current_path.as_ref().ok_or("No folder selected")?;
+    let plan = build_sort_plan(root, &data.files);
 
-    for op in &data.preview {
-        // Create folder
-        std::fs::create_dir_all(&op.destination_folder).map_err(|e| e.to_string())?;
-
-        // Build destination path
-        let dest_path = std::path::Path::new(&op.destination_folder).join(&op.file_name);
-        let dest_str = dest_path.to_string_lossy().to_string();
-
-        // Perform move
-        std::fs::rename(&op.source_path, &dest_path).map_err(|e| e.to_string())?;
-
-        // Track for undo
-        moves.push((op.source_path.clone(), dest_str));
-    }
-
+    let moves = execute_sort_plan(&plan)?;
     undo_stack.0.lock().unwrap().push(moves);
+
     Ok(())
 }
 
