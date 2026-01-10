@@ -17,64 +17,10 @@ import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
 import FiltersPanel from "../file-randomiser/filtersPanel";
 import { FilterRule } from "../types/common";
-import {
-  FileSorterState,
-  SortOperation,
-  SortTreeNode,
-} from "../types/filesorter";
+import { FileSorterState } from "../types/filesorter";
 import SortPreviewTree from "./sortPreviewTree";
 import { invoke } from "@tauri-apps/api/core";
-
-// Helper to normalize paths
-const splitPath = (path: string) => path.replace(/\\/g, "/").split("/");
-
-// Build nested tree from preview
-export function buildSortPreviewTree(
-  rootPath: string,
-  ops: SortOperation[],
-): SortTreeNode {
-  const root: SortTreeNode = {
-    name: splitPath(rootPath).pop() || rootPath,
-    path: rootPath,
-    children: [],
-    isDir: true,
-  };
-
-  const folderMap = new Map<string, SortTreeNode>();
-  folderMap.set(rootPath, root);
-
-  const ensureFolder = (folderPath: string): SortTreeNode => {
-    if (folderMap.has(folderPath)) return folderMap.get(folderPath)!;
-
-    const segments = splitPath(folderPath);
-    const parentPath = segments.slice(0, -1).join("/") || rootPath;
-
-    const parent = ensureFolder(parentPath);
-
-    const node: SortTreeNode = {
-      name: segments[segments.length - 1],
-      path: folderPath,
-      children: [],
-      isDir: true,
-    };
-
-    parent.children!.push(node);
-    folderMap.set(folderPath, node);
-    return node;
-  };
-
-  for (const op of ops) {
-    const folder = ensureFolder(op.destinationFolder);
-
-    folder.children!.push({
-      name: op.fileName,
-      path: `${op.destinationFolder}/${op.fileName}`,
-      isDir: false,
-    });
-  }
-
-  return root;
-}
+import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);

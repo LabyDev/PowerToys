@@ -1,40 +1,58 @@
+import { sep } from "@tauri-apps/api/path";
 import { SortOperation, SortTreeNode } from "../../types/filesorter";
 
-// Helper to normalize paths and split into segments
-const splitPath = (path: string) => path.replace(/\\/g, "/").split("/");
+// Grab OS separator once
+const OS_SEP = sep();
 
+// Split a path using OS-specific separator
+export const splitPath = (path: string) => {
+  const normalized = path.replace(/[/\\]+/g, OS_SEP); // unify all slashes
+  if (normalized === OS_SEP) return [OS_SEP];
+  return normalized.split(OS_SEP).filter(Boolean);
+};
+
+// Build nested tree from preview
 export function buildSortPreviewTree(
   rootPath: string,
   ops: SortOperation[],
 ): SortTreeNode {
+  const normalizedRoot = rootPath
+    .replace(/[/\\]+/g, OS_SEP)
+    .replace(new RegExp(`${OS_SEP}+$`), "");
+  const rootSegments = splitPath(normalizedRoot);
+
   const root: SortTreeNode = {
-    name: splitPath(rootPath).pop() || rootPath,
-    path: rootPath,
+    name: rootSegments[rootSegments.length - 1] || normalizedRoot,
+    path: normalizedRoot,
     children: [],
     isDir: true,
   };
 
   const folderMap = new Map<string, SortTreeNode>();
-  folderMap.set(rootPath, root);
+  folderMap.set(normalizedRoot, root);
 
   const ensureFolder = (folderPath: string): SortTreeNode => {
-    if (folderMap.has(folderPath)) return folderMap.get(folderPath)!;
+    const normalizedFolderPath = folderPath
+      .replace(/[/\\]+/g, OS_SEP)
+      .replace(new RegExp(`${OS_SEP}+$`), "");
+    if (folderMap.has(normalizedFolderPath))
+      return folderMap.get(normalizedFolderPath)!;
 
-    const segments = splitPath(folderPath);
-    const parentPath = segments.slice(0, -1).join("/") || rootPath;
+    const segments = splitPath(normalizedFolderPath);
+    const parentPath =
+      segments.length > 1 ? segments.slice(0, -1).join(OS_SEP) : normalizedRoot;
 
     const parent = ensureFolder(parentPath);
 
     const node: SortTreeNode = {
       name: segments[segments.length - 1],
-      path: folderPath,
+      path: normalizedFolderPath,
       children: [],
       isDir: true,
-      operation: undefined, // folders don't have an operation
     };
 
     parent.children!.push(node);
-    folderMap.set(folderPath, node);
+    folderMap.set(normalizedFolderPath, node);
     return node;
   };
 
@@ -43,9 +61,8 @@ export function buildSortPreviewTree(
 
     folder.children!.push({
       name: op.fileName,
-      path: `${op.destinationFolder}/${op.fileName}`,
+      path: `${op.destinationFolder.replace(/[/\\]+/g, OS_SEP)}${OS_SEP}${op.fileName}`,
       isDir: false,
-      operation: op, // only files get a SortOperation
     });
   }
 

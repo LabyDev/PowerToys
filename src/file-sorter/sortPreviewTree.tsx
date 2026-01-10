@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { Stack, Group, Text } from "@mantine/core";
 import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
-
-export interface SortTreeNode {
-  name: string;
-  path: string;
-  children?: SortTreeNode[];
-}
+import { SortTreeNode } from "../types/filesorter";
 
 interface SortPreviewTreeProps {
   root: SortTreeNode;
@@ -26,8 +21,23 @@ interface TreeNodeProps {
 }
 
 const TreeNode = ({ node, depth }: TreeNodeProps) => {
-  const hasChildren = !!node.children && node.children.length > 0;
   const [expanded, setExpanded] = useState(true);
+
+  // Flatten chains of single-child folders (isDir === true)
+  let displayNode = node;
+  const nameChain = [displayNode.name];
+
+  while (
+    displayNode.isDir &&
+    displayNode.children &&
+    displayNode.children.length === 1 &&
+    displayNode.children[0].isDir // stop flattening if the child is a file
+  ) {
+    displayNode = displayNode.children[0];
+    nameChain.push(displayNode.name);
+  }
+
+  const hasChildren = !!displayNode.children && displayNode.children.length > 0;
 
   return (
     <>
@@ -39,25 +49,22 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
         }}
         onClick={() => hasChildren && setExpanded((e) => !e)}
       >
-        {hasChildren && (
-          <>
-            {expanded ? (
-              <CaretDownIcon size={14} />
-            ) : (
-              <CaretRightIcon size={14} />
-            )}
-          </>
-        )}
+        {hasChildren &&
+          (expanded ? (
+            <CaretDownIcon size={14} />
+          ) : (
+            <CaretRightIcon size={14} />
+          ))}
 
         <Text size="sm" fw={hasChildren ? 600 : 400}>
           {hasChildren ? "📁 " : "📄 "}
-          {node.name}
+          {nameChain.join("/")}
         </Text>
       </Group>
 
       {hasChildren && expanded && (
         <>
-          {node.children!.map((child) => (
+          {displayNode.children!.map((child) => (
             <TreeNode key={child.path} node={child} depth={depth + 1} />
           ))}
         </>
