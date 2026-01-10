@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Mutex};
 mod filerandomisercommands;
+mod filesortercommands;
 pub mod models;
 pub mod setting_commands;
 
@@ -43,6 +44,11 @@ pub fn run() {
             filerandomisercommands::get_presets,
             filerandomisercommands::save_preset,
             filerandomisercommands::open_path,
+            filesortercommands::get_sorter_state,
+            filesortercommands::select_sort_directory,
+            filesortercommands::get_sort_preview,
+            filesortercommands::sort_files,
+            filesortercommands::restore_last_sort
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

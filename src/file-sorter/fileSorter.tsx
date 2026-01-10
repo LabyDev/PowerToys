@@ -16,31 +16,46 @@ import { TerminalIcon } from "@phosphor-icons/react";
 import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
 import FiltersPanel from "../file-randomiser/filtersPanel";
-import { AppStateData } from "../types/filerandomiser";
+import { FilterRule } from "../types/common";
 import {
   restoreLastSort,
   selectSortDirectory,
   sortFiles,
 } from "../core/api/fileSorterApi";
+import { FileSorterState } from "../types/filesorter";
 
 const FileSorter = () => {
-  const [query, setQuery] = useState("");
-  const [similarity, setSimilarity] = useState(60);
-  const [currentPath, setCurrentPath] = useState<string | null>(null);
   const [showLoading, setShowLoading] = useState(false);
-  const [data, setData] = useState<AppStateData>({ filterRules: [] });
 
-  // Inside FileSorter component
+  // Single source of truth using FileSorterState
+  const [state, setState] = useState<FileSorterState>({
+    currentPath: null,
+    similarityThreshold: 60,
+    filterRules: [],
+    preview: [],
+    stats: {
+      filesToMove: 0,
+      foldersToCreate: 0,
+    },
+    hasRestorePoint: false,
+  });
+
   const handleSelectFolder = async () => {
     const path = await selectSortDirectory();
-    if (path) setCurrentPath(path);
+    if (path) {
+      setState((prev) => ({ ...prev, currentPath: path }));
+    }
   };
 
   const handleSort = async () => {
-    if (!currentPath) return;
+    if (!state.currentPath) return;
     setShowLoading(true);
     try {
-      await sortFiles(currentPath, similarity, data);
+      await sortFiles(
+        state.currentPath,
+        state.similarityThreshold,
+        state.filterRules,
+      );
     } finally {
       setShowLoading(false);
     }
@@ -48,8 +63,16 @@ const FileSorter = () => {
 
   const handleRestore = async () => {
     setShowLoading(true);
-    await restoreLastSort();
-    setShowLoading(false);
+    try {
+      await restoreLastSort();
+      setState((prev) => ({ ...prev, hasRestorePoint: false }));
+    } finally {
+      setShowLoading(false);
+    }
+  };
+
+  const updateFilters = (rules: FilterRule[]) => {
+    setState((prev) => ({ ...prev, filterRules: rules }));
   };
 
   return (
@@ -58,26 +81,36 @@ const FileSorter = () => {
 
       <Stack h="100%" gap="md">
         <FileSorterToolbar
-          query={query}
-          onQueryChange={setQuery}
-          onSort={() => {}}
-          onRefresh={() => {}}
-          onRestore={() => {}}
+          currentPath={state.currentPath}
           onSelectFolder={handleSelectFolder}
-          currentPath={currentPath}
-          hasRestorePoint={true}
+          onSort={handleSort}
+          onRestore={handleRestore}
+          onRefresh={() => {}}
+          hasRestorePoint={state.hasRestorePoint}
         />
 
-        <FiltersPanel data={data} updateData={async (u) => setData(u)} />
+        {/* FiltersPanel expects an object with filterRules; updateData returns that object */}
+        <FiltersPanel
+          data={{ filterRules: state.filterRules }}
+          updateData={async (u) => updateFilters(u.filterRules)}
+        />
 
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
           <Section title="Processing Preview" style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
-              <Code block>
-                {currentPath
-                  ? `Ready to sort: ${currentPath}`
-                  : "Select a directory to begin."}
-              </Code>
+              {state.preview.length > 0 ? (
+                state.preview.map((op, i) => (
+                  <Code block key={i} mb={4}>
+                    {`MOVING: ${op.fileName} -> ${op.destinationFolder} (${op.reason})`}
+                  </Code>
+                ))
+              ) : (
+                <Code block>
+                  {state.currentPath
+                    ? `Ready to sort: ${state.currentPath}`
+                    : "Select a directory."}
+                </Code>
+              )}
             </ScrollArea>
           </Section>
 
@@ -85,11 +118,13 @@ const FileSorter = () => {
             <Stack gap="md">
               <Box>
                 <Text size="sm" fw={500} mb="xs">
-                  Similarity: {similarity}%
+                  Similarity: {state.similarityThreshold}%
                 </Text>
                 <Slider
-                  value={similarity}
-                  onChange={setSimilarity}
+                  value={state.similarityThreshold}
+                  onChange={(val) =>
+                    setState((prev) => ({ ...prev, similarityThreshold: val }))
+                  }
                   min={10}
                   max={100}
                   step={5}
@@ -98,10 +133,13 @@ const FileSorter = () => {
               <Divider label="Stats" labelPosition="center" />
               <Stack gap="xs">
                 <Badge variant="light" fullWidth size="lg">
-                  Files to Move: 24
+                  Files to Move:{" "}
+                  {state.preview.length || state.stats.filesToMove}
                 </Badge>
                 <Badge color="cyan" variant="light" fullWidth size="lg">
-                  New Folders: 3
+                  New Folders:{" "}
+                  {new Set(state.preview.map((p) => p.destinationFolder))
+                    .size || state.stats.foldersToCreate}
                 </Badge>
               </Stack>
             </Stack>
@@ -118,11 +156,9 @@ const FileSorter = () => {
             <TerminalIcon size={14} color="white" />
           </Group>
           <ScrollArea h={100} p="xs">
-            <Text
-              size="xs"
-              ff="monospace"
-              c="blue.3"
-            >{`> ${currentPath ? `Directory set: ${currentPath}` : "Awaiting folder..."}`}</Text>
+            <Text size="xs" ff="monospace" c="blue.3">
+              {`> ${state.currentPath ? `Directory set: ${state.currentPath}` : "Awaiting folder..."}`}
+            </Text>
           </ScrollArea>
         </Paper>
       </Stack>

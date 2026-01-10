@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { AppStateData } from "../../types/filerandomiser";
+import { FileSorterState } from "../../types/filesorter";
 
 /**
  * Opens a native directory dialog and returns the selected path
@@ -14,7 +14,7 @@ export const selectSortDirectory = () => {
 export const sortFiles = (
   path: string,
   similarity: number,
-  filters: AppStateData,
+  filters: FileSorterState,
 ) => {
   return invoke<void>("sort_files", { path, similarity, filters });
 };
@@ -32,7 +32,7 @@ export const restoreLastSort = () => {
 export const getSortPreview = (
   path: string,
   similarity: number,
-  filters: AppStateData,
+  filters: FileSorterState,
 ) => {
   return invoke<string[]>("get_sort_preview", { path, similarity, filters });
 };
