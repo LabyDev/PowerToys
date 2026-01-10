@@ -4,7 +4,6 @@ import {
   TextInput,
   ActionIcon,
   Paper,
-  Menu,
   Tooltip,
   Indicator,
 } from "@mantine/core";
@@ -12,11 +11,7 @@ import {
   MagnifyingGlassIcon,
   XCircleIcon,
   ArrowsClockwiseIcon,
-  GearSixIcon,
-  ClockCounterClockwiseIcon,
   ArrowCounterClockwiseIcon,
-  ListBulletsIcon,
-  SquaresFourIcon,
 } from "@phosphor-icons/react";
 
 interface FileSorterToolbarProps {
@@ -26,8 +21,6 @@ interface FileSorterToolbarProps {
   onRefresh: () => void;
   onRestore: () => void;
   hasRestorePoint: boolean;
-  isCompact: boolean;
-  setIsCompact: (val: boolean) => void;
 }
 
 const FileSorterToolbar = ({
@@ -37,24 +30,20 @@ const FileSorterToolbar = ({
   onRefresh,
   onRestore,
   hasRestorePoint,
-  isCompact,
-  setIsCompact,
 }: FileSorterToolbarProps) => {
   return (
     <Paper withBorder radius="md" p="xs">
       <Group justify="space-between" wrap="nowrap">
-        {/* Left Side: Primary Actions */}
         <Group gap="xs">
           <Button
             leftSection={<ArrowsClockwiseIcon size={18} weight="bold" />}
             onClick={onSort}
-            variant="filled"
             color="blue"
           >
             Sort Files
           </Button>
 
-          <Tooltip label="Undo last move using the restore point">
+          <Tooltip label="Undo last move">
             <Indicator
               disabled={!hasRestorePoint}
               color="red"
@@ -73,19 +62,13 @@ const FileSorterToolbar = ({
             </Indicator>
           </Tooltip>
 
-          <ActionIcon
-            variant="subtle"
-            size="lg"
-            onClick={onRefresh}
-            title="Refresh Directory"
-          >
+          <ActionIcon variant="subtle" size="lg" onClick={onRefresh}>
             <ArrowsClockwiseIcon size={20} />
           </ActionIcon>
         </Group>
 
-        {/* Center: Search (Expanded) */}
         <TextInput
-          placeholder="Search by name, path, or extension..."
+          placeholder="Search files..."
           leftSection={<MagnifyingGlassIcon size={16} />}
           rightSection={
             query && (
@@ -99,49 +82,8 @@ const FileSorterToolbar = ({
           }
           value={query}
           onChange={(e) => onQueryChange(e.currentTarget.value)}
-          style={{ flex: 1, maxWidth: 400 }}
+          style={{ flex: 1, maxWidth: 500 }}
         />
-
-        {/* Right Side: Settings & View Options */}
-        <Group gap="xs">
-          <Tooltip
-            label={
-              isCompact ? "Switch to Relaxed View" : "Switch to Compact View"
-            }
-          >
-            <ActionIcon
-              variant="default"
-              size="lg"
-              onClick={() => setIsCompact(!isCompact)}
-            >
-              {isCompact ? (
-                <ListBulletsIcon size={20} />
-              ) : (
-                <SquaresFourIcon size={20} />
-              )}
-            </ActionIcon>
-          </Tooltip>
-
-          <Menu position="bottom-end" shadow="md" width={200}>
-            <Menu.Target>
-              <ActionIcon variant="default" size="lg">
-                <GearSixIcon size={20} />
-              </ActionIcon>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              <Menu.Label>Sorting Logic</Menu.Label>
-              <Menu.Item leftSection={<ClockCounterClockwiseIcon size={14} />}>
-                View History
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Label>Danger Zone</Menu.Label>
-              <Menu.Item color="red" leftSection={<XCircleIcon size={14} />}>
-                Clear All Metadata
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Group>
       </Group>
     </Paper>
   );
