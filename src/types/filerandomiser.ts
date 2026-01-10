@@ -1,17 +1,4 @@
-export type SavedPath = {
-  id: number;
-  name: string;
-  path: string;
-};
-
-export type FileEntry = {
-  id: number;
-  name: string;
-  path: string;
-  excluded: boolean;
-  bookmark?: BookmarkInfo;
-  hash: string;
-};
+import { FileEntry, FilterRule, SavedPath } from "./common";
 
 export type HistoryEntry = {
   id: number;
@@ -25,17 +12,6 @@ export type AppStateData = {
   files: FileEntry[];
   history: HistoryEntry[];
   filterRules: FilterRule[];
-};
-
-export type FilterAction = "include" | "exclude"; // inclusion or exclusion
-export type FilterMatchType = "contains" | "startsWith" | "endsWith" | "regex"; // match type
-
-export type FilterRule = {
-  id: string;
-  action: FilterAction;
-  type: FilterMatchType;
-  pattern: string; // string or regex pattern
-  caseSensitive?: boolean; // default false
 };
 
 export type RandomiserPreset = {
@@ -72,9 +48,4 @@ export type Bookmark = {
   path: string; // absolute path
   hash: string; // content hash of the file
   color?: string | null;
-};
-
-export type BookmarkInfo = {
-  color: string | null;
-  isGlobal: boolean;
 };

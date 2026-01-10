@@ -15,7 +15,6 @@ import {
   ArrowsClockwiseIcon,
   ArrowCounterClockwiseIcon,
   FolderOpenIcon,
-  CaretRightIcon,
 } from "@phosphor-icons/react";
 
 interface FileSorterToolbarProps {
@@ -105,7 +104,7 @@ const FileSorterToolbar = ({
                 </Text>
               </Group>
             ) : (
-              <Text size="sm" c="dimmed" italic>
+              <Text size="sm" c="dimmed">
                 No folder selected
               </Text>
             )}

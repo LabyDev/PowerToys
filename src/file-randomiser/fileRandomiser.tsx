@@ -4,14 +4,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
-import {
-  AppStateData,
-  Bookmark,
-  FileEntry,
-  FileTreeNode,
-  PresetState,
-  RandomiserPreset,
-} from "../types/filerandomiser";
 import { useAppSettings } from "../core/hooks/useAppSettings";
 import Section from "./section";
 import Toolbar from "./toolbar";
@@ -28,6 +20,14 @@ import { sep } from "@tauri-apps/api/path";
 import { useFileRandomiser } from "../core/hooks/fileRandomiserStateProvider";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "@mantine/hooks";
+import { FileEntry } from "../types/common";
+import {
+  AppStateData,
+  Bookmark,
+  RandomiserPreset,
+  PresetState,
+  FileTreeNode,
+} from "../types/filerandomiser";
 
 const FileRandomiser = () => {
   const { settings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
@@ -329,15 +329,15 @@ const FileRandomiser = () => {
           : (currentIndexInTree + 1) % treeFiles.length;
 
       file = treeFiles[nextIndex];
-      await randomiserApi.openFileById(file.id);
+      if (file) await randomiserApi.openFileById(file.id);
     }
 
-    const originalIndex = data.files.findIndex((f) => f.id === file.id);
+    const originalIndex = data.files.findIndex((f) => f.id === file?.id);
     setCurrentIndex(originalIndex);
     currentIndexRef.current = originalIndex;
 
     updateAndRefreshData();
-    if (file.id) fileTreeRef.current?.scrollToFile(file.id);
+    if (file?.id) fileTreeRef.current?.scrollToFile(file.id);
   }, [data.files, shuffle, tracking, hasStartedTracking]);
 
   useEffect(() => {

@@ -17,6 +17,11 @@ import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
 import FiltersPanel from "../file-randomiser/filtersPanel";
 import { AppStateData } from "../types/filerandomiser";
+import {
+  restoreLastSort,
+  selectSortDirectory,
+  sortFiles,
+} from "../core/api/fileSorterApi";
 
 const FileSorter = () => {
   const [query, setQuery] = useState("");
@@ -25,8 +30,26 @@ const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
   const [data, setData] = useState<AppStateData>({ filterRules: [] });
 
+  // Inside FileSorter component
   const handleSelectFolder = async () => {
-    /* Tauri invoke logic here */
+    const path = await selectSortDirectory();
+    if (path) setCurrentPath(path);
+  };
+
+  const handleSort = async () => {
+    if (!currentPath) return;
+    setShowLoading(true);
+    try {
+      await sortFiles(currentPath, similarity, data);
+    } finally {
+      setShowLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setShowLoading(true);
+    await restoreLastSort();
+    setShowLoading(false);
   };
 
   return (
