@@ -6,12 +6,16 @@ import {
   Paper,
   Tooltip,
   Indicator,
+  Divider,
+  Text,
 } from "@mantine/core";
 import {
   MagnifyingGlassIcon,
   XCircleIcon,
   ArrowsClockwiseIcon,
   ArrowCounterClockwiseIcon,
+  FolderOpenIcon,
+  CaretRightIcon,
 } from "@phosphor-icons/react";
 
 interface FileSorterToolbarProps {
@@ -20,6 +24,8 @@ interface FileSorterToolbarProps {
   onSort: () => void;
   onRefresh: () => void;
   onRestore: () => void;
+  onSelectFolder: () => void;
+  currentPath: string | null;
   hasRestorePoint: boolean;
 }
 
@@ -29,16 +35,20 @@ const FileSorterToolbar = ({
   onSort,
   onRefresh,
   onRestore,
+  onSelectFolder,
+  currentPath,
   hasRestorePoint,
 }: FileSorterToolbarProps) => {
   return (
     <Paper withBorder radius="md" p="xs">
       <Group justify="space-between" wrap="nowrap">
-        <Group gap="xs">
+        {/* 1. Action Group */}
+        <Group gap="xs" wrap="nowrap">
           <Button
             leftSection={<ArrowsClockwiseIcon size={18} weight="bold" />}
             onClick={onSort}
             color="blue"
+            disabled={!currentPath}
           >
             Sort Files
           </Button>
@@ -50,25 +60,61 @@ const FileSorterToolbar = ({
               size={8}
               offset={2}
             >
-              <Button
+              <ActionIcon
                 variant="light"
                 color="orange"
-                leftSection={<ArrowCounterClockwiseIcon size={18} />}
+                size="lg"
                 onClick={onRestore}
                 disabled={!hasRestorePoint}
               >
-                Restore
-              </Button>
+                <ArrowCounterClockwiseIcon size={20} />
+              </ActionIcon>
             </Indicator>
           </Tooltip>
 
-          <ActionIcon variant="subtle" size="lg" onClick={onRefresh}>
+          <ActionIcon
+            variant="subtle"
+            size="lg"
+            onClick={onRefresh}
+            disabled={!currentPath}
+          >
             <ArrowsClockwiseIcon size={20} />
           </ActionIcon>
+
+          <Divider orientation="vertical" />
+
+          {/* 2. Path Display - Integrated nicely */}
+          <Group gap={6} wrap="nowrap">
+            <Tooltip label="Change Folder">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                onClick={onSelectFolder}
+              >
+                <FolderOpenIcon size={20} />
+              </ActionIcon>
+            </Tooltip>
+
+            {currentPath ? (
+              <Group gap={4} wrap="nowrap">
+                <Text size="xs" c="dimmed" ff="monospace">
+                  /
+                </Text>
+                <Text size="sm" fw={500} truncate maw={200}>
+                  {currentPath.split(/[\\/]/).pop()}
+                </Text>
+              </Group>
+            ) : (
+              <Text size="sm" c="dimmed" italic>
+                No folder selected
+              </Text>
+            )}
+          </Group>
         </Group>
 
+        {/* 3. Search Filter */}
         <TextInput
-          placeholder="Search files..."
+          placeholder="Filter results..."
           leftSection={<MagnifyingGlassIcon size={16} />}
           rightSection={
             query && (
@@ -82,7 +128,8 @@ const FileSorterToolbar = ({
           }
           value={query}
           onChange={(e) => onQueryChange(e.currentTarget.value)}
-          style={{ flex: 1, maxWidth: 500 }}
+          style={{ width: 220 }}
+          disabled={!currentPath}
         />
       </Group>
     </Paper>

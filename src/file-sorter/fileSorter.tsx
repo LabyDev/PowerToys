@@ -21,17 +21,12 @@ import { AppStateData } from "../types/filerandomiser";
 const FileSorter = () => {
   const [query, setQuery] = useState("");
   const [similarity, setSimilarity] = useState(60);
+  const [currentPath, setCurrentPath] = useState<string | null>(null);
   const [showLoading, setShowLoading] = useState(false);
+  const [data, setData] = useState<AppStateData>({ filterRules: [] });
 
-  // State for the FiltersPanel
-  const [data, setData] = useState<AppStateData>({
-    filterRules: [], // These replace your "ignored.txt"
-    // ... add other necessary AppStateData fields here
-  });
-
-  const updateData = async (updated: AppStateData) => {
-    setData(updated);
-    // Optional: Sync to backend/Tauri here
+  const handleSelectFolder = async () => {
+    /* Tauri invoke logic here */
   };
 
   return (
@@ -45,26 +40,25 @@ const FileSorter = () => {
           onSort={() => {}}
           onRefresh={() => {}}
           onRestore={() => {}}
+          onSelectFolder={handleSelectFolder}
+          currentPath={currentPath}
           hasRestorePoint={true}
         />
 
-        {/* Integrated Filters Panel - Acts as your "Ignored Words" manager */}
-        <FiltersPanel data={data} updateData={updateData} />
+        <FiltersPanel data={data} updateData={async (u) => setData(u)} />
 
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
           <Section title="Processing Preview" style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
               <Code block>
-                {/* The logic here should now check:
-                   1. Is word in data.filterRules (action: 'exclude')?
-                   2. Similarity ratio >= similarity slider?
-                */}
-                {`[Rule Applied: Exclude "v1"] "Draft_v1_Final.docx" -> folder "Draft"`}
+                {currentPath
+                  ? `Ready to sort: ${currentPath}`
+                  : "Select a directory to begin."}
               </Code>
             </ScrollArea>
           </Section>
 
-          <Section title="Stats" style={{ width: 250 }}>
+          <Section title="Configuration" style={{ width: 250 }}>
             <Stack gap="md">
               <Box>
                 <Text size="sm" fw={500} mb="xs">
@@ -76,21 +70,15 @@ const FileSorter = () => {
                   min={10}
                   max={100}
                   step={5}
-                  label={(val) => `${val}%`}
                 />
               </Box>
-
-              <Divider label="Summary" labelPosition="center" />
-
+              <Divider label="Stats" labelPosition="center" />
               <Stack gap="xs">
                 <Badge variant="light" fullWidth size="lg">
                   Files to Move: 24
                 </Badge>
                 <Badge color="cyan" variant="light" fullWidth size="lg">
                   New Folders: 3
-                </Badge>
-                <Badge color="red" variant="light" fullWidth size="lg">
-                  Ignored: {data.filterRules.length}
                 </Badge>
               </Stack>
             </Stack>
@@ -101,17 +89,17 @@ const FileSorter = () => {
           withBorder
           radius="md"
           bg="dark.8"
-          style={{ height: 160, overflow: "hidden" }}
+          style={{ height: 140, overflow: "hidden" }}
         >
           <Group px="sm" py={6} bg="dark.9">
             <TerminalIcon size={14} color="white" />
           </Group>
-          <ScrollArea h={120} p="xs">
+          <ScrollArea h={100} p="xs">
             <Text
               size="xs"
               ff="monospace"
               c="blue.3"
-            >{`> Filter rules updated. Scanning with ${similarity}% threshold...`}</Text>
+            >{`> ${currentPath ? `Directory set: ${currentPath}` : "Awaiting folder..."}`}</Text>
           </ScrollArea>
         </Paper>
       </Stack>
