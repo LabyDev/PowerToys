@@ -1,4 +1,6 @@
 use std::{collections::HashMap, sync::Mutex};
+
+use crate::models::FileSorterState;
 mod filerandomisercommands;
 mod filesortercommands;
 pub mod models;
@@ -21,6 +23,7 @@ pub fn run() {
             last_picked_id: None,
             pick_counts: HashMap::new(),
         }))
+        .manage(Mutex::new(FileSorterState::default()))
         .invoke_handler(tauri::generate_handler![
             setting_commands::get_app_settings,
             setting_commands::set_app_settings,

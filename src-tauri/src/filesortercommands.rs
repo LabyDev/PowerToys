@@ -3,7 +3,6 @@ use std::sync::Mutex;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
-// Updated UndoStack to match the new move record structure
 pub struct UndoStack(pub Mutex<Vec<Vec<(String, String)>>>);
 
 #[tauri::command]

@@ -24,3 +24,14 @@ export type SortHistoryRecord = {
   originalPath: string;
   moves: { from: string; to: string }[];
 };
+
+// types/filesorterTree.ts
+export interface SortTreeNode {
+  name: string;
+  path: string;
+  children?: SortTreeNode[];
+
+  // optional metadata for later
+  operation?: "move" | "create" | "existing";
+  sourcePath?: string;
+}

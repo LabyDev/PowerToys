@@ -27,6 +27,21 @@ pub struct FileSorterState {
     pub stats: SortStats,
     pub has_restore_point: bool,
 }
+impl Default for FileSorterState {
+    fn default() -> Self {
+        Self {
+            current_path: None,
+            similarity_threshold: 80,
+            filter_rules: vec![],
+            preview: vec![],
+            stats: SortStats {
+                files_to_move: 0,
+                folders_to_create: 0,
+            },
+            has_restore_point: false,
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

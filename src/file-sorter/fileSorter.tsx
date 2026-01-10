@@ -22,10 +22,12 @@ import {
   selectSortDirectory,
   sortFiles,
 } from "../core/api/fileSorterApi";
-import { FileSorterState } from "../types/filesorter";
+import { FileSorterState, SortTreeNode } from "../types/filesorter";
+import SortPreviewTree from "./sortPreviewTree";
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
+  const [previewTree, setPreviewTree] = useState<SortTreeNode | null>(null);
 
   // Single source of truth using FileSorterState
   const [state, setState] = useState<FileSorterState>({
@@ -44,6 +46,8 @@ const FileSorter = () => {
     const path = await selectSortDirectory();
     if (path) {
       setState((prev) => ({ ...prev, currentPath: path }));
+      // TEMP: populate preview tree
+      setPreviewTree(buildMockTree(path));
     }
   };
 
@@ -75,6 +79,37 @@ const FileSorter = () => {
     setState((prev) => ({ ...prev, filterRules: rules }));
   };
 
+  const buildMockTree = (rootPath: string): SortTreeNode => ({
+    name: rootPath.split("/").pop() ?? rootPath,
+    path: rootPath,
+    children: [
+      {
+        name: "Images",
+        path: `${rootPath}/Images`,
+        children: [
+          {
+            name: "cat.jpg",
+            path: `${rootPath}/Images/cat.jpg`,
+          },
+          {
+            name: "dog.png",
+            path: `${rootPath}/Images/dog.png`,
+          },
+        ],
+      },
+      {
+        name: "Docs",
+        path: `${rootPath}/Docs`,
+        children: [
+          {
+            name: "readme.txt",
+            path: `${rootPath}/Docs/readme.txt`,
+          },
+        ],
+      },
+    ],
+  });
+
   return (
     <Box p="md" h="94vh">
       <LoadingOverlay visible={showLoading} />
@@ -87,6 +122,7 @@ const FileSorter = () => {
           onRestore={handleRestore}
           onRefresh={() => {}}
           hasRestorePoint={state.hasRestorePoint}
+          onQueryChange={() => {}}
         />
 
         {/* FiltersPanel expects an object with filterRules; updateData returns that object */}
@@ -98,16 +134,12 @@ const FileSorter = () => {
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
           <Section title="Processing Preview" style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
-              {state.preview.length > 0 ? (
-                state.preview.map((op, i) => (
-                  <Code block key={i} mb={4}>
-                    {`MOVING: ${op.fileName} -> ${op.destinationFolder} (${op.reason})`}
-                  </Code>
-                ))
+              {previewTree ? (
+                <SortPreviewTree root={previewTree} />
               ) : (
                 <Code block>
                   {state.currentPath
-                    ? `Ready to sort: ${state.currentPath}`
+                    ? "Ready to generate preview"
                     : "Select a directory."}
                 </Code>
               )}
