@@ -84,9 +84,10 @@ const TreeNode = ({
     <>
       <Group
         gap={6}
+        wrap="nowrap"
         style={{
           position: "relative",
-          paddingLeft: depth * 20,
+          paddingLeft: depth * 12,
           cursor: expandable ? "pointer" : "default",
           userSelect: "none",
           backgroundColor: isSourceFile ? "rgba(255, 255, 0, 0.3)" : bgColor,
@@ -94,15 +95,19 @@ const TreeNode = ({
         }}
         onClick={() => expandable && setExpanded((e) => !e)}
       >
-        {/* Folder/File icon */}
-        {displayNode.isDir &&
-          expandable &&
-          (expanded ? (
-            <CaretDownIcon size={14} />
-          ) : (
-            <CaretRightIcon size={14} />
-          ))}
-        {displayNode.isDir && !expandable && <MinusIcon size={14} />}
+        {/* Fixed-width Icon Container */}
+        <Group gap={0} justify="center" style={{ width: 16, flexShrink: 0 }}>
+          {displayNode.isDir &&
+            (expandable ? (
+              expanded ? (
+                <CaretDownIcon size={14} />
+              ) : (
+                <CaretRightIcon size={14} />
+              )
+            ) : (
+              <MinusIcon size={14} />
+            ))}
+        </Group>
 
         {/* Name */}
         <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
