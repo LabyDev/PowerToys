@@ -131,7 +131,7 @@ const TreeNode = ({
             openDelay={300}
           >
             <Badge size="xs" color="yellow" variant="light">
-              S
+              Source
             </Badge>
           </Tooltip>
         )}
