@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Group,
@@ -19,6 +19,7 @@ import { FilterRule } from "../types/common";
 import { FileSorterState } from "../types/filesorter";
 import SortPreviewTree from "./sortPreviewTree";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
 import ConsolePanel from "./consolePanel";
 
@@ -38,28 +39,52 @@ const FileSorter = () => {
   const [similarity, setSimilarity] = useState(state.similarityThreshold);
   const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
 
+  // Guards to avoid noisy logs
+  const lastSliderLogRef = useRef<number | null>(null);
+
+  const logFrontend = (message: string) => {
+    emit("file_sorter_log", `[ui] ${message}`);
+  };
+
   // Fetch initial state from backend
   const fetchState = async () => {
+    logFrontend("Fetching sorter state");
     const backendState: FileSorterState = await invoke("get_sorter_state");
     setState(backendState);
     setSimilarity(backendState.similarityThreshold);
+    logFrontend("Sorter state loaded");
   };
 
   useEffect(() => {
     fetchState();
   }, []);
 
+  // Slider UI logging (immediate, deduped)
+  useEffect(() => {
+    if (lastSliderLogRef.current === similarity) return;
+    lastSliderLogRef.current = similarity;
+    logFrontend(`Similarity threshold set to ${similarity}%`);
+  }, [similarity]);
+
   // Slider change -> update backend (debounced) and refresh preview
   useEffect(() => {
     const updateBackend = async () => {
       if (!state.currentPath) return;
+
+      logFrontend(
+        `Applying similarity threshold (${debouncedSimilarity}%) to backend`,
+      );
+
       setShowLoading(true);
       try {
         await invoke("set_similarity_threshold", {
           threshold: debouncedSimilarity,
         });
+
+        logFrontend("Refreshing sort preview");
         const updatedState: FileSorterState = await invoke("get_sort_preview");
         setState(updatedState);
+        logFrontend("Sort preview updated");
       } finally {
         setShowLoading(false);
       }
@@ -69,17 +94,23 @@ const FileSorter = () => {
   }, [debouncedSimilarity, state.currentPath]);
 
   const handleSelectFolder = async () => {
+    logFrontend("Opening directory picker");
     const path = await invoke<string | null>("select_sort_directory");
     if (path) {
       setState((prev) => ({ ...prev, currentPath: path }));
+      logFrontend("Directory selected");
+    } else {
+      logFrontend("Directory selection cancelled");
     }
   };
 
   const handleSort = async () => {
     if (!state.currentPath) return;
+    logFrontend("Starting file sort");
     setShowLoading(true);
     try {
       await invoke("sort_files");
+      logFrontend("File sort completed");
       await fetchState();
     } finally {
       setShowLoading(false);
@@ -87,9 +118,11 @@ const FileSorter = () => {
   };
 
   const handleRestore = async () => {
+    logFrontend("Restoring last sort");
     setShowLoading(true);
     try {
       await invoke("restore_last_sort");
+      logFrontend("Restore completed");
       await fetchState();
     } finally {
       setShowLoading(false);
@@ -98,6 +131,7 @@ const FileSorter = () => {
 
   const updateFilters = async (rules: FilterRule[]) => {
     setState((prev) => ({ ...prev, filterRules: rules }));
+    logFrontend(`Updated ${rules.length} filter rule(s)`);
   };
 
   const previewTree = state.currentPath
@@ -146,11 +180,11 @@ const FileSorter = () => {
             <Stack gap="md">
               <Box>
                 <Text size="sm" fw={500} mb="xs">
-                  Similarity: {similarity}%
+                  Match Threshold: {similarity}%
                 </Text>
                 <Slider
                   value={similarity}
-                  onChange={setSimilarity} // updates local state instantly
+                  onChange={setSimilarity}
                   min={10}
                   max={100}
                   step={5}
