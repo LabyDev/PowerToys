@@ -91,13 +91,6 @@ fn best_matching_folder(
     matcher: &mut Matcher,
 ) -> Option<PathBuf> {
     let file_norm = normalize_file_stem(filename);
-    let pattern = Pattern::new(
-        &file_norm,
-        CaseMatching::Ignore,
-        Normalization::Smart,
-        AtomKind::Fuzzy,
-    );
-
     let mut best_score = 0;
     let mut best_folder: Option<PathBuf> = None;
     let mut utf32_buf = Vec::new();
@@ -105,19 +98,31 @@ fn best_matching_folder(
     for folder in folders {
         if let Some(folder_name) = folder.file_name().and_then(|n| n.to_str()) {
             let folder_norm = folder_name.to_lowercase();
+
+            // DIRECT MATCH: If the folder name is contained in the file name,
+            // that's usually a 100% match for sorters.
+            if file_norm.contains(&folder_norm) || folder_norm.contains(&file_norm) {
+                return Some(folder.clone());
+            }
+
             let haystack = Utf32Str::new(&folder_norm, &mut utf32_buf);
+            let pattern = Pattern::new(
+                &file_norm,
+                CaseMatching::Ignore,
+                Normalization::Smart,
+                AtomKind::Fuzzy,
+            );
 
             if let Some(score) = pattern.score(haystack, matcher) {
-                let normalized = score as f64 / (file_norm.len().max(1) as f64 * 100.0);
-
-                if normalized >= threshold && score > best_score {
+                // Nucleo scores are typically large (e.g. 100+).
+                // Adjust threshold comparison or use a fixed boost for similar lengths.
+                if (score as f64) > (threshold * 100.0) && score > best_score {
                     best_score = score;
                     best_folder = Some(folder.clone());
                 }
             }
         }
     }
-
     best_folder
 }
 
@@ -133,7 +138,7 @@ fn build_sort_plan(
     let root_path = Path::new(root);
     let mut matcher = Matcher::default();
 
-    // Only top-level folders, subfolders are assumed sorted
+    // 1. Load existing folders
     let mut folders: Vec<PathBuf> = std::fs::read_dir(root_path)
         .map(|rd| {
             rd.filter_map(|e| e.ok())
@@ -147,20 +152,25 @@ fn build_sort_plan(
     let mut plan = Vec::new();
 
     for file in files.iter().filter(|f| !f.is_dir) {
-        // Only top-level files
         if Path::new(&file.path).parent() != Some(root_path) {
             continue;
         }
 
         let filename = Path::new(&file.path).file_name().unwrap().to_string_lossy();
 
+        // 2. Try to find a match in existing OR newly planned folders
         let destination_folder = if let Some(folder) =
             best_matching_folder(&filename, &folders, threshold, &mut matcher)
         {
             folder
         } else {
+            // 3. If no match, suggest a new folder based on this file
             let new_folder = root_path.join(normalize_file_stem(&filename));
-            folders.push(new_folder.clone());
+
+            // 4. IMPORTANT: Add this new folder to the list so ATEST2 can find ATEST
+            if !folders.contains(&new_folder) {
+                folders.push(new_folder.clone());
+            }
             new_folder
         };
 
