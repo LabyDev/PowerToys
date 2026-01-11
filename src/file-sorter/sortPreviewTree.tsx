@@ -10,11 +10,13 @@ import { SortTreeNode, SortOperation } from "../types/filesorter";
 interface SortPreviewTreeProps {
   root: SortTreeNode;
   plannedMovesBySource: Map<string, SortOperation[]>;
+  searchQuery?: string;
 }
 
 const SortPreviewTree = ({
   root,
   plannedMovesBySource,
+  searchQuery = "",
 }: SortPreviewTreeProps) => {
   return (
     <Stack gap={2}>
@@ -23,6 +25,7 @@ const SortPreviewTree = ({
         depth={0}
         plannedMovesBySource={plannedMovesBySource}
         ancestorsLastChild={[]}
+        searchQuery={searchQuery.toLowerCase()}
       />
     </Stack>
   );
@@ -35,16 +38,31 @@ interface TreeNodeProps {
   parentBg?: string;
   isLast?: boolean;
   ancestorsLastChild?: boolean[];
+  searchQuery?: string;
 }
 
-// Count files planned to move under this node
 function countPlannedMoves(node: SortTreeNode): number {
   if (!node.isDir) return node.operation ? 1 : 0;
   if (!node.children) return 0;
   return node.children.reduce((sum, c) => sum + countPlannedMoves(c), 0);
 }
 
-const TreeNode = ({ node, depth, plannedMovesBySource }: TreeNodeProps) => {
+const TreeNode = ({
+  node,
+  depth,
+  plannedMovesBySource,
+  searchQuery = "",
+}: TreeNodeProps) => {
+  // Filter children based on search query
+  const matchesSearch = (n: SortTreeNode): boolean => {
+    const nameMatch = n.name.toLowerCase().includes(searchQuery);
+    if (nameMatch) return true;
+    if (n.children) return n.children.some(matchesSearch);
+    return false;
+  };
+
+  if (searchQuery && !matchesSearch(node)) return null as any;
+
   let displayNode = node;
   const nameChain = [displayNode.name];
   while (
@@ -86,6 +104,23 @@ const TreeNode = ({ node, depth, plannedMovesBySource }: TreeNodeProps) => {
       return a.name.localeCompare(b.name);
     }) || [];
 
+  // Highlight matching part
+  const renderHighlighted = (name: string) => {
+    if (!searchQuery) return name;
+    const lcName = name.toLowerCase();
+    const index = lcName.indexOf(searchQuery);
+    if (index === -1) return name;
+    return (
+      <>
+        {name.slice(0, index)}
+        <Text span c="yellow.5">
+          {name.slice(index, index + searchQuery.length)}
+        </Text>
+        {name.slice(index + searchQuery.length)}
+      </>
+    );
+  };
+
   return (
     <>
       <Group
@@ -116,7 +151,12 @@ const TreeNode = ({ node, depth, plannedMovesBySource }: TreeNodeProps) => {
 
         <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
           {displayNode.isDir ? "📁 " : "📄 "}
-          {nameChain.join("/")}
+          {nameChain.map((n, i) => (
+            <span key={i}>
+              {renderHighlighted(n)}
+              {i < nameChain.length - 1 ? "/" : ""}
+            </span>
+          ))}
         </Text>
 
         {plannedMoves > 0 && displayNode.isDir && (
@@ -155,6 +195,7 @@ const TreeNode = ({ node, depth, plannedMovesBySource }: TreeNodeProps) => {
               node={child}
               depth={depth + 1}
               plannedMovesBySource={plannedMovesBySource}
+              searchQuery={searchQuery}
             />
           ))}
         </Stack>

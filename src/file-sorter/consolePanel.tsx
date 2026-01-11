@@ -3,25 +3,26 @@ import { Paper, Group, ScrollArea, Text } from "@mantine/core";
 import { TerminalIcon } from "@phosphor-icons/react";
 import { listen } from "@tauri-apps/api/event";
 
-const ConsolePanel = ({ currentPath }: { currentPath: string | null }) => {
+interface ConsolePanelProps {
+  currentPath: string | null;
+  searchQuery?: string;
+}
+
+const ConsolePanel = ({ currentPath, searchQuery = "" }: ConsolePanelProps) => {
   const [logs, setLogs] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // --- HARD GUARDS ---
   const listenerRegisteredRef = useRef(false);
   const lastLogRef = useRef<string | null>(null);
   const lastPathRef = useRef<string | null>(null);
   const didLogAwaitingRef = useRef(false);
 
   const pushLog = (message: string) => {
-    // Collapse identical consecutive logs
     if (message === lastLogRef.current) return;
-
     lastLogRef.current = message;
     setLogs((prev) => [...prev, `> ${message}`]);
   };
 
-  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -31,7 +32,6 @@ const ConsolePanel = ({ currentPath }: { currentPath: string | null }) => {
     }
   }, [logs]);
 
-  // Listen to backend logs — STRICTMODE SAFE
   useEffect(() => {
     if (listenerRegisteredRef.current) return;
     listenerRegisteredRef.current = true;
@@ -49,7 +49,6 @@ const ConsolePanel = ({ currentPath }: { currentPath: string | null }) => {
     };
   }, []);
 
-  // Path-based logging (fully deduped)
   useEffect(() => {
     if (!currentPath) {
       if (!didLogAwaitingRef.current) {
@@ -65,6 +64,23 @@ const ConsolePanel = ({ currentPath }: { currentPath: string | null }) => {
       pushLog(`Directory set: ${currentPath}`);
     }
   }, [currentPath]);
+
+  const renderHighlighted = (line: string) => {
+    if (!searchQuery) return line;
+    const lcLine = line.toLowerCase();
+    const lcQuery = searchQuery.toLowerCase();
+    const index = lcLine.indexOf(lcQuery);
+    if (index === -1) return line;
+    return (
+      <>
+        {line.slice(0, index)}
+        <Text span c="yellow.5">
+          {line.slice(index, index + searchQuery.length)}
+        </Text>
+        {line.slice(index + searchQuery.length)}
+      </>
+    );
+  };
 
   return (
     <Paper
@@ -90,13 +106,13 @@ const ConsolePanel = ({ currentPath }: { currentPath: string | null }) => {
         viewportRef={scrollRef}
         offsetScrollbars
       >
-        {logs.map((line, i) => (
-          <Text key={i} size="xs" ff="monospace" c="blue.3" mb={2}>
-            {line}
-          </Text>
-        ))}
-
-        {/* bottom breathing room */}
+        {logs
+          .filter((l) => l.toLowerCase().includes(searchQuery.toLowerCase()))
+          .map((line, i) => (
+            <Text key={i} size="xs" ff="monospace" c="blue.3" mb={2}>
+              {renderHighlighted(line)}
+            </Text>
+          ))}
         <div style={{ height: 12 }} />
       </ScrollArea>
     </Paper>

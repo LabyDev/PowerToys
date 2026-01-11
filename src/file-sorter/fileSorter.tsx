@@ -37,6 +37,7 @@ const FileSorter = () => {
 
   const [similarity, setSimilarity] = useState(state.similarityThreshold);
   const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
+  const [query, setQuery] = useState(""); // <-- search query
 
   const logFrontend = (message: string) => {
     emit("file_sorter_log", `[ui] ${message}`);
@@ -52,7 +53,6 @@ const FileSorter = () => {
     fetchState();
   }, []);
 
-  // Apply threshold when debounced value changes
   useEffect(() => {
     const applyThreshold = async () => {
       if (!state.currentPath) return;
@@ -81,6 +81,21 @@ const FileSorter = () => {
     if (path) {
       setState((prev) => ({ ...prev, currentPath: path }));
       logFrontend("Directory selected");
+      setQuery(""); // reset search on folder change
+    }
+  };
+
+  const handleRefresh = async () => {
+    // Refresh behaves like selecting the current folder
+    if (!state.currentPath) return;
+    setShowLoading(true);
+    logFrontend("Refreshing preview...");
+    try {
+      const updatedState: FileSorterState = await invoke("get_sort_preview");
+      setState(updatedState);
+      setQuery(""); // reset search on refresh
+    } finally {
+      setShowLoading(false);
     }
   };
 
@@ -112,8 +127,20 @@ const FileSorter = () => {
     logFrontend(`Filters updated (${rules.length})`);
   };
 
+  // Build preview tree
   const previewTree = state.currentPath
     ? buildSortPreviewTree(state.currentPath, state.files, state.preview)
+    : null;
+
+  // Apply search filtering
+  const filteredPreviewTree = previewTree
+    ? buildSortPreviewTree(
+        state.currentPath!,
+        state.files.filter((f) =>
+          f.name.toLowerCase().includes(query.toLowerCase()),
+        ),
+        state.preview,
+      )
     : null;
 
   return (
@@ -122,13 +149,14 @@ const FileSorter = () => {
 
       <Stack h="100%" gap="md">
         <FileSorterToolbar
+          query={query}
+          onQueryChange={setQuery}
           currentPath={state.currentPath}
           onSelectFolder={handleSelectFolder}
           onSort={handleSort}
           onRestore={handleRestore}
-          onRefresh={() => {}}
+          onRefresh={handleRefresh}
           hasRestorePoint={state.hasRestorePoint}
-          onQueryChange={() => {}}
         />
 
         <FiltersPanel
@@ -139,10 +167,13 @@ const FileSorter = () => {
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
           <Section title="Processing Preview" style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
-              {previewTree ? (
+              {filteredPreviewTree ? (
                 <SortPreviewTree
-                  root={previewTree.root}
-                  plannedMovesBySource={previewTree.plannedMovesBySource}
+                  root={filteredPreviewTree.root}
+                  plannedMovesBySource={
+                    filteredPreviewTree.plannedMovesBySource
+                  }
+                  searchQuery={query}
                 />
               ) : (
                 <Code block>
@@ -181,7 +212,7 @@ const FileSorter = () => {
           </Section>
         </Group>
 
-        <ConsolePanel currentPath={state.currentPath} />
+        <ConsolePanel currentPath={state.currentPath} searchQuery={query} />
       </Stack>
     </Box>
   );
