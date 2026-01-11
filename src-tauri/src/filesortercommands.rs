@@ -56,13 +56,16 @@ pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String
             continue;
         }
 
+        // Always set is_dir correctly
+        let is_dir = p.is_dir();
+
         entries.push(SorterFileEntry {
             path: p.to_string_lossy().to_string(),
             name: p
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default(),
-            is_dir: p.is_dir(),
+            is_dir,
         });
     }
 
@@ -144,8 +147,12 @@ fn build_sort_plan(
     let mut plan = Vec::new();
 
     for file in files.iter().filter(|f| !f.is_dir) {
-        let file_path = Path::new(&file.path);
-        let filename = file_path.file_name().unwrap().to_string_lossy();
+        // Only top-level files
+        if Path::new(&file.path).parent() != Some(root_path) {
+            continue;
+        }
+
+        let filename = Path::new(&file.path).file_name().unwrap().to_string_lossy();
 
         let destination_folder = if let Some(folder) =
             best_matching_folder(&filename, &folders, threshold, &mut matcher)

@@ -44,8 +44,11 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
     nameChain.push(displayNode.name);
   }
 
-  const hasChildren = !!displayNode.children && displayNode.children.length > 0;
   const plannedMoves = countPlannedMoves(displayNode);
+  const hasChildren = displayNode.isDir && !!displayNode.children?.length;
+
+  // Expandable only if there are children or planned moves
+  const expandable = hasChildren || plannedMoves > 0;
 
   return (
     <>
@@ -53,24 +56,25 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
         gap={6}
         style={{
           paddingLeft: depth * 16,
-          cursor: hasChildren ? "pointer" : "default",
+          cursor: expandable ? "pointer" : "default",
           userSelect: "none",
         }}
-        onClick={() => hasChildren && setExpanded((e) => !e)}
+        onClick={() => expandable && setExpanded((e) => !e)}
       >
-        {hasChildren &&
+        {/* Only show caret if expandable */}
+        {displayNode.isDir &&
+          expandable &&
           (expanded ? (
             <CaretDownIcon size={14} />
           ) : (
             <CaretRightIcon size={14} />
           ))}
 
-        <Text size="sm" fw={hasChildren ? 600 : 400} truncate>
-          {hasChildren ? "📁 " : "📄 "}
+        <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
+          {displayNode.isDir ? "📁 " : "📄 "}
           {nameChain.join("/")}
         </Text>
 
-        {/* Show badge for planned moves */}
         {plannedMoves > 0 && (
           <Tooltip
             label={
@@ -90,7 +94,7 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
         )}
       </Group>
 
-      {hasChildren && expanded && (
+      {expandable && expanded && hasChildren && (
         <Stack gap={2}>
           {displayNode.children!.map((child) => (
             <TreeNode key={child.path} node={child} depth={depth + 1} />

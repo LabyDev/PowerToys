@@ -57,7 +57,7 @@ export function buildSortPreviewTree(
     return node;
   };
 
-  // 1️⃣ Build tree from actual files
+  // Build tree from actual files
   for (const f of files) {
     const folder = f.isDir
       ? ensureFolder(f.path)
@@ -72,18 +72,15 @@ export function buildSortPreviewTree(
     }
   }
 
-  // 2️⃣ Overlay planned moves
+  // Overlay planned moves
   const opMap = new Map<string, SortOperation>();
   for (const op of ops) {
-    opMap.set(`${op.destinationFolder}${OS_SEP}${op.fileName}`, op);
+    opMap.set(op.sourcePath, op);
   }
 
   const attachOperations = (node: SortTreeNode) => {
-    if (!node.isDir) {
-      const key = `${node.path}`;
-      if (opMap.has(key)) {
-        node.operation = opMap.get(key)!;
-      }
+    if (!node.isDir && opMap.has(node.path)) {
+      node.operation = opMap.get(node.path)!;
     }
     node.children?.forEach(attachOperations);
   };
