@@ -12,6 +12,7 @@ import {
   Text,
   Divider,
 } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
 import { TerminalIcon } from "@phosphor-icons/react";
 import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
@@ -34,35 +35,49 @@ const FileSorter = () => {
     files: [],
   });
 
+  // Local slider value for instant UI response
+  const [similarity, setSimilarity] = useState(state.similarityThreshold);
+  const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
+
+  // Fetch initial state from backend
   const fetchState = async () => {
     const backendState: FileSorterState = await invoke("get_sorter_state");
     setState(backendState);
+    setSimilarity(backendState.similarityThreshold);
   };
 
   useEffect(() => {
     fetchState();
   }, []);
 
+  // Slider change -> update backend (debounced) and refresh preview
+  useEffect(() => {
+    const updateBackend = async () => {
+      if (!state.currentPath) return;
+      setShowLoading(true);
+      try {
+        await invoke("set_similarity_threshold", {
+          threshold: debouncedSimilarity,
+        });
+        const updatedState: FileSorterState = await invoke("get_sort_preview");
+        setState(updatedState);
+      } finally {
+        setShowLoading(false);
+      }
+    };
+
+    updateBackend();
+  }, [debouncedSimilarity, state.currentPath]);
+
   const handleSelectFolder = async () => {
     const path = await invoke<string | null>("select_sort_directory");
     if (path) {
       setState((prev) => ({ ...prev, currentPath: path }));
-      await handlePreview();
-    }
-  };
-
-  const handlePreview = async () => {
-    if (!state.currentPath) return;
-    setShowLoading(true);
-    try {
-      const updatedState: FileSorterState = await invoke("get_sort_preview");
-      setState(updatedState);
-    } finally {
-      setShowLoading(false);
     }
   };
 
   const handleSort = async () => {
+    if (!state.currentPath) return;
     setShowLoading(true);
     try {
       await invoke("sort_files");
@@ -84,7 +99,6 @@ const FileSorter = () => {
 
   const updateFilters = async (rules: FilterRule[]) => {
     setState((prev) => ({ ...prev, filterRules: rules }));
-    await handlePreview();
   };
 
   const previewTree = state.currentPath
@@ -101,7 +115,7 @@ const FileSorter = () => {
           onSelectFolder={handleSelectFolder}
           onSort={handleSort}
           onRestore={handleRestore}
-          onRefresh={handlePreview}
+          onRefresh={() => {}}
           hasRestorePoint={state.hasRestorePoint}
           onQueryChange={() => {}}
         />
@@ -133,14 +147,11 @@ const FileSorter = () => {
             <Stack gap="md">
               <Box>
                 <Text size="sm" fw={500} mb="xs">
-                  Similarity: {state.similarityThreshold}%
+                  Similarity: {similarity}%
                 </Text>
                 <Slider
-                  value={state.similarityThreshold}
-                  onChange={async (val) => {
-                    setState((prev) => ({ ...prev, similarityThreshold: val }));
-                    await handlePreview();
-                  }}
+                  value={similarity}
+                  onChange={setSimilarity} // updates local state instantly
                   min={10}
                   max={100}
                   step={5}
@@ -170,7 +181,11 @@ const FileSorter = () => {
           </Group>
           <ScrollArea h={100} p="xs">
             <Text size="xs" ff="monospace" c="blue.3">
-              {`> ${state.currentPath ? `Directory set: ${state.currentPath}` : "Awaiting folder..."}`}
+              {`> ${
+                state.currentPath
+                  ? `Directory set: ${state.currentPath}`
+                  : "Awaiting folder..."
+              }`}
             </Text>
           </ScrollArea>
         </Paper>

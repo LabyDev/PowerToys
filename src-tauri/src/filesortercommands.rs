@@ -273,3 +273,9 @@ pub fn restore_last_sort(undo_stack: State<'_, UndoStack>) -> Result<(), String>
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn set_similarity_threshold(state: State<'_, Mutex<FileSorterState>>, threshold: u8) {
+    let mut data = state.lock().unwrap();
+    data.similarity_threshold = threshold;
+}
