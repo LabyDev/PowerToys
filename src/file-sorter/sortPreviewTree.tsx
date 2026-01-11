@@ -44,13 +44,7 @@ function countPlannedMoves(node: SortTreeNode): number {
   return node.children.reduce((sum, c) => sum + countPlannedMoves(c), 0);
 }
 
-const TreeNode = ({
-  node,
-  depth,
-  parentBg,
-  plannedMovesBySource,
-}: TreeNodeProps) => {
-  // Flatten single-child folder chains
+const TreeNode = ({ node, depth, plannedMovesBySource }: TreeNodeProps) => {
   let displayNode = node;
   const nameChain = [displayNode.name];
   while (
@@ -70,8 +64,20 @@ const TreeNode = ({
   const expandable = hasChildren || plannedMoves > 0;
   const [expanded, setExpanded] = useState(hasChildren && plannedMoves > 0);
 
-  const bgColor =
-    parentBg || (displayNode.isNew ? "rgba(144, 238, 144, 0.3)" : undefined);
+  // Determine background
+  let bgColor: string | undefined;
+  if (!displayNode.isDir && displayNode.operation) {
+    // file being moved → green
+    bgColor = "rgba(144, 238, 144, 0.3)";
+  } else if (displayNode.isDir && displayNode.isNew) {
+    // new folder → green
+    bgColor = "rgba(144, 238, 144, 0.3)";
+  } else if (displayNode.isDir && depth > 0 && plannedMoves > 0) {
+    // existing folder receiving files → blue, but skip root (depth === 0)
+    bgColor = "rgba(173, 216, 230, 0.3)";
+  } else {
+    bgColor = undefined; // existing folder with nothing
+  }
 
   const sortedChildren =
     displayNode.children?.slice().sort((a, b) => {
@@ -95,7 +101,6 @@ const TreeNode = ({
         }}
         onClick={() => expandable && setExpanded((e) => !e)}
       >
-        {/* Fixed-width Icon Container */}
         <Group gap={0} justify="center" style={{ width: 16, flexShrink: 0 }}>
           {displayNode.isDir &&
             (expandable ? (
@@ -109,22 +114,14 @@ const TreeNode = ({
             ))}
         </Group>
 
-        {/* Name */}
         <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
           {displayNode.isDir ? "📁 " : "📄 "}
           {nameChain.join("/")}
         </Text>
 
-        {/* Planned moves badge */}
-        {plannedMoves > 0 && (
+        {plannedMoves > 0 && displayNode.isDir && (
           <Tooltip
-            label={
-              displayNode.children && displayNode.isDir
-                ? `${plannedMoves} file${plannedMoves > 1 ? "s" : ""} will move inside`
-                : displayNode.operation
-                  ? `Move to: ${displayNode.operation.destinationFolder} — Reason: ${displayNode.operation.reason}`
-                  : ""
-            }
+            label={`${plannedMoves} file${plannedMoves > 1 ? "s" : ""} will move inside`}
             withArrow
             openDelay={300}
           >
@@ -134,7 +131,6 @@ const TreeNode = ({
           </Tooltip>
         )}
 
-        {/* Source file badge */}
         {isSourceFile && (
           <Tooltip
             label={`Source file — planned move(s): ${plannedMovesBySource
@@ -158,7 +154,6 @@ const TreeNode = ({
               key={child.path}
               node={child}
               depth={depth + 1}
-              parentBg={bgColor}
               plannedMovesBySource={plannedMovesBySource}
             />
           ))}

@@ -142,7 +142,6 @@ fn build_sort_plan(
 
         for (path, norm) in &folders {
             let sim = calculate_similarity(&file_norm, norm);
-            // Tie-break: prefer the longer folder name if similarities are equal
             if sim >= threshold
                 && (sim > best_sim
                     || ((sim - best_sim).abs() < f64::EPSILON && norm.len() > best_folder_len))
@@ -161,13 +160,17 @@ fn build_sort_plan(
             new_folder
         };
 
+        let is_new_folder = !destination_folder.exists(); // <- mark new folder here
+
         plan.push(SortOperation {
             file_name: file.name.clone(),
             source_path: file.path.clone(),
             destination_folder: destination_folder.to_string_lossy().to_string(),
             reason: format!("Dice Match ({:.0}%)", best_sim * 100.0),
+            is_new_folder,
         });
     }
+
     plan
 }
 
@@ -228,15 +231,18 @@ pub fn get_sort_preview(
 
     data.files = crawl_sort_directory(root.clone())?;
     let plan = build_sort_plan(root, &data.files, data.similarity_threshold);
-
     data.preview = plan.clone();
+
+    let folders_to_create = plan
+        .iter()
+        .filter(|op| op.is_new_folder)
+        .map(|op| &op.destination_folder)
+        .collect::<HashSet<_>>()
+        .len();
+
     data.stats = SortStats {
         files_to_move: plan.len(),
-        folders_to_create: plan
-            .iter()
-            .map(|op| &op.destination_folder)
-            .collect::<HashSet<_>>()
-            .len(),
+        folders_to_create,
     };
 
     Ok(data)

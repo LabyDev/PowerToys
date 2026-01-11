@@ -33,10 +33,18 @@ export function buildSortPreviewTree(
   const folderMap = new Map<string, SortTreeNode>();
   folderMap.set(normalizedRoot, root);
 
+  // Track which folders exist in the original files
+  const existingFolders = new Set<string>();
+  for (const f of files) {
+    if (f.isDir) existingFolders.add(f.path.replace(/[/\\]+/g, OS_SEP));
+    else existingFolders.add(f.path.split(OS_SEP).slice(0, -1).join(OS_SEP));
+  }
+
   const ensureFolder = (folderPath: string): SortTreeNode => {
     const normalizedFolderPath = folderPath
       .replace(/[/\\]+/g, OS_SEP)
       .replace(new RegExp(`${OS_SEP}+$`), "");
+
     if (folderMap.has(normalizedFolderPath))
       return folderMap.get(normalizedFolderPath)!;
 
@@ -50,6 +58,7 @@ export function buildSortPreviewTree(
       path: normalizedFolderPath,
       children: [],
       isDir: true,
+      isNew: !existingFolders.has(normalizedFolderPath),
     };
 
     parent.children!.push(node);
@@ -59,9 +68,11 @@ export function buildSortPreviewTree(
 
   // Build tree from existing files
   for (const f of files) {
-    const folder = f.isDir
-      ? ensureFolder(f.path)
-      : ensureFolder(f.path.split(OS_SEP).slice(0, -1).join(OS_SEP));
+    const folderPath = f.isDir
+      ? f.path
+      : f.path.split(OS_SEP).slice(0, -1).join(OS_SEP);
+
+    const folder = ensureFolder(folderPath);
 
     if (!f.isDir) {
       folder.children!.push({
@@ -72,10 +83,10 @@ export function buildSortPreviewTree(
     }
   }
 
-  // Overlay planned moves (create virtual folders if needed)
+  // Overlay planned moves
   for (const op of ops) {
     const folder = ensureFolder(op.destinationFolder);
-    folder.isNew = true;
+
     folder.children!.push({
       name: op.fileName,
       path: `${op.destinationFolder}${OS_SEP}${op.fileName}`,

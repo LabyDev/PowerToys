@@ -7,6 +7,7 @@ export type SortOperation = {
   sourcePath: string;
   destinationFolder: string;
   reason: string;
+  isNewFolder: boolean;
 };
 
 export type SortTreeNode = {

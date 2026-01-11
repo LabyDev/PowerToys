@@ -16,6 +16,7 @@ pub struct SortOperation {
     pub source_path: String,
     pub destination_folder: String,
     pub reason: String,
+    pub is_new_folder: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
