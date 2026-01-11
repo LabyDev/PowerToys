@@ -1,19 +1,21 @@
 import { sep } from "@tauri-apps/api/path";
-import { SortOperation, SortTreeNode } from "../../types/filesorter";
+import {
+  SortOperation,
+  SortTreeNode,
+  SorterFileEntry,
+} from "../../types/filesorter";
 
-// Grab OS separator once
 const OS_SEP = sep();
 
-// Split a path using OS-specific separator
 export const splitPath = (path: string) => {
-  const normalized = path.replace(/[/\\]+/g, OS_SEP); // unify all slashes
+  const normalized = path.replace(/[/\\]+/g, OS_SEP);
   if (normalized === OS_SEP) return [OS_SEP];
   return normalized.split(OS_SEP).filter(Boolean);
 };
 
-// Build nested tree from preview
 export function buildSortPreviewTree(
   rootPath: string,
+  files: SorterFileEntry[],
   ops: SortOperation[],
 ): SortTreeNode {
   const normalizedRoot = rootPath
@@ -41,7 +43,6 @@ export function buildSortPreviewTree(
     const segments = splitPath(normalizedFolderPath);
     const parentPath =
       segments.length > 1 ? segments.slice(0, -1).join(OS_SEP) : normalizedRoot;
-
     const parent = ensureFolder(parentPath);
 
     const node: SortTreeNode = {
@@ -56,15 +57,38 @@ export function buildSortPreviewTree(
     return node;
   };
 
-  for (const op of ops) {
-    const folder = ensureFolder(op.destinationFolder);
+  // 1️⃣ Build tree from actual files
+  for (const f of files) {
+    const folder = f.isDir
+      ? ensureFolder(f.path)
+      : ensureFolder(f.path.split(OS_SEP).slice(0, -1).join(OS_SEP));
 
-    folder.children!.push({
-      name: op.fileName,
-      path: `${op.destinationFolder.replace(/[/\\]+/g, OS_SEP)}${OS_SEP}${op.fileName}`,
-      isDir: false,
-    });
+    if (!f.isDir) {
+      folder.children!.push({
+        name: f.name,
+        path: f.path,
+        isDir: false,
+      });
+    }
   }
+
+  // 2️⃣ Overlay planned moves
+  const opMap = new Map<string, SortOperation>();
+  for (const op of ops) {
+    opMap.set(`${op.destinationFolder}${OS_SEP}${op.fileName}`, op);
+  }
+
+  const attachOperations = (node: SortTreeNode) => {
+    if (!node.isDir) {
+      const key = `${node.path}`;
+      if (opMap.has(key)) {
+        node.operation = opMap.get(key)!;
+      }
+    }
+    node.children?.forEach(attachOperations);
+  };
+
+  attachOperations(root);
 
   return root;
 }

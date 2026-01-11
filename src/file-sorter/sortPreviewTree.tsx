@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Stack, Group, Text, Badge } from "@mantine/core";
+import { Stack, Group, Text, Badge, Tooltip } from "@mantine/core";
 import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { SortTreeNode } from "../types/filesorter";
 
@@ -20,6 +20,13 @@ interface TreeNodeProps {
   depth: number;
 }
 
+// Count files planned to move under this node
+function countPlannedMoves(node: SortTreeNode): number {
+  if (!node.isDir) return node.operation ? 1 : 0;
+  if (!node.children) return 0;
+  return node.children.reduce((sum, c) => sum + countPlannedMoves(c), 0);
+}
+
 const TreeNode = ({ node, depth }: TreeNodeProps) => {
   const [expanded, setExpanded] = useState(true);
 
@@ -38,9 +45,7 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
   }
 
   const hasChildren = !!displayNode.children && displayNode.children.length > 0;
-
-  // Count files under this node (for badges)
-  const fileCount = countFiles(displayNode);
+  const plannedMoves = countPlannedMoves(displayNode);
 
   return (
     <>
@@ -65,10 +70,23 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
           {nameChain.join("/")}
         </Text>
 
-        {hasChildren && !expanded && fileCount > 0 && (
-          <Badge size="xs" color="gray" variant="light">
-            {fileCount} file{fileCount > 1 ? "s" : ""}
-          </Badge>
+        {/* Show badge for planned moves */}
+        {plannedMoves > 0 && (
+          <Tooltip
+            label={
+              displayNode.children
+                ? `${plannedMoves} file${plannedMoves > 1 ? "s" : ""} will move inside`
+                : displayNode.operation
+                  ? `Move to: ${displayNode.operation.destinationFolder} — Reason: ${displayNode.operation.reason}`
+                  : ""
+            }
+            withArrow
+            openDelay={300}
+          >
+            <Badge size="xs" color="cyan" variant="light">
+              {plannedMoves}
+            </Badge>
+          </Tooltip>
         )}
       </Group>
 
@@ -82,12 +100,5 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
     </>
   );
 };
-
-// Recursively count all files under this node
-function countFiles(node: SortTreeNode): number {
-  if (!node.isDir) return 1;
-  if (!node.children || node.children.length === 0) return 0;
-  return node.children.reduce((sum, child) => sum + countFiles(child), 0);
-}
 
 export default SortPreviewTree;

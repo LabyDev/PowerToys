@@ -88,7 +88,7 @@ const FileSorter = () => {
   };
 
   const previewTree = state.currentPath
-    ? buildSortPreviewTree(state.currentPath, state.preview)
+    ? buildSortPreviewTree(state.currentPath, state.files, state.preview)
     : null;
 
   return (

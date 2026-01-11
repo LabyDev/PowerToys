@@ -36,7 +36,7 @@ pub fn select_sort_directory(
 }
 
 /* ===============================
-   Crawl directory
+   Crawl directory for full tree
 ================================ */
 
 #[tauri::command]
@@ -70,7 +70,7 @@ pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String
 }
 
 /* ===============================
-   Normalization helpers
+   Helpers
 ================================ */
 
 fn normalize_file_stem(name: &str) -> String {
@@ -81,10 +81,6 @@ fn normalize_file_stem(name: &str) -> String {
         .to_lowercase()
 }
 
-/* ===============================
-   Nucleo similarity logic
-================================ */
-
 fn best_matching_folder(
     filename: &str,
     folders: &[PathBuf],
@@ -92,7 +88,6 @@ fn best_matching_folder(
     matcher: &mut Matcher,
 ) -> Option<PathBuf> {
     let file_norm = normalize_file_stem(filename);
-
     let pattern = Pattern::new(
         &file_norm,
         CaseMatching::Ignore,
@@ -110,7 +105,6 @@ fn best_matching_folder(
             let haystack = Utf32Str::new(&folder_norm, &mut utf32_buf);
 
             if let Some(score) = pattern.score(haystack, matcher) {
-                // Nucleo scores are relative — we normalize against filename length
                 let normalized = score as f64 / (file_norm.len().max(1) as f64 * 100.0);
 
                 if normalized >= threshold && score > best_score {
@@ -125,7 +119,7 @@ fn best_matching_folder(
 }
 
 /* ===============================
-   Build sort plan (preview + run)
+   Build sort plan
 ================================ */
 
 fn build_sort_plan(
@@ -136,6 +130,7 @@ fn build_sort_plan(
     let root_path = Path::new(root);
     let mut matcher = Matcher::default();
 
+    // Only top-level folders, subfolders are assumed sorted
     let mut folders: Vec<PathBuf> = std::fs::read_dir(root_path)
         .map(|rd| {
             rd.filter_map(|e| e.ok())
@@ -205,10 +200,14 @@ pub fn get_sort_preview(
     let mut data = state.lock().unwrap().clone();
     let root = data.current_path.as_ref().ok_or("No folder selected")?;
 
+    // Crawl full tree
     data.files = crawl_sort_directory(root.clone())?;
+
+    // Build plan separately
     let plan = build_sort_plan(root, &data.files, data.similarity_threshold);
 
     data.preview = plan.clone();
+
     data.stats = SortStats {
         files_to_move: plan.len(),
         folders_to_create: plan
