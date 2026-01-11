@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Stack, Group, Text } from "@mantine/core";
+import { Stack, Group, Text, Badge } from "@mantine/core";
 import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { SortTreeNode } from "../types/filesorter";
 
@@ -23,7 +23,7 @@ interface TreeNodeProps {
 const TreeNode = ({ node, depth }: TreeNodeProps) => {
   const [expanded, setExpanded] = useState(true);
 
-  // Flatten chains of single-child folders (isDir === true)
+  // Flatten single-child folder chains
   let displayNode = node;
   const nameChain = [displayNode.name];
 
@@ -31,13 +31,16 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
     displayNode.isDir &&
     displayNode.children &&
     displayNode.children.length === 1 &&
-    displayNode.children[0].isDir // stop flattening if the child is a file
+    displayNode.children[0].isDir
   ) {
     displayNode = displayNode.children[0];
     nameChain.push(displayNode.name);
   }
 
   const hasChildren = !!displayNode.children && displayNode.children.length > 0;
+
+  // Count files under this node (for badges)
+  const fileCount = countFiles(displayNode);
 
   return (
     <>
@@ -46,6 +49,7 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
         style={{
           paddingLeft: depth * 16,
           cursor: hasChildren ? "pointer" : "default",
+          userSelect: "none",
         }}
         onClick={() => hasChildren && setExpanded((e) => !e)}
       >
@@ -56,21 +60,34 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
             <CaretRightIcon size={14} />
           ))}
 
-        <Text size="sm" fw={hasChildren ? 600 : 400}>
+        <Text size="sm" fw={hasChildren ? 600 : 400} truncate>
           {hasChildren ? "📁 " : "📄 "}
           {nameChain.join("/")}
         </Text>
+
+        {hasChildren && !expanded && fileCount > 0 && (
+          <Badge size="xs" color="gray" variant="light">
+            {fileCount} file{fileCount > 1 ? "s" : ""}
+          </Badge>
+        )}
       </Group>
 
       {hasChildren && expanded && (
-        <>
+        <Stack gap={2}>
           {displayNode.children!.map((child) => (
             <TreeNode key={child.path} node={child} depth={depth + 1} />
           ))}
-        </>
+        </Stack>
       )}
     </>
   );
 };
+
+// Recursively count all files under this node
+function countFiles(node: SortTreeNode): number {
+  if (!node.isDir) return 1;
+  if (!node.children || node.children.length === 0) return 0;
+  return node.children.reduce((sum, child) => sum + countFiles(child), 0);
+}
 
 export default SortPreviewTree;
