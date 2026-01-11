@@ -17,6 +17,7 @@ export type SortTreeNode = {
 
   // optional overlay from preview
   operation?: SortOperation;
+  isNew?: boolean;
 };
 
 import { FilterRule } from "./common";

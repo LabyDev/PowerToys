@@ -27,7 +27,11 @@ function countPlannedMoves(node: SortTreeNode): number {
   return node.children.reduce((sum, c) => sum + countPlannedMoves(c), 0);
 }
 
-const TreeNode = ({ node, depth }: TreeNodeProps) => {
+const TreeNode = ({
+  node,
+  depth,
+  parentBg,
+}: TreeNodeProps & { parentBg?: string }) => {
   const [expanded, setExpanded] = useState(true);
 
   // Flatten single-child folder chains
@@ -50,6 +54,10 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
   // Expandable only if there are children or planned moves
   const expandable = hasChildren || plannedMoves > 0;
 
+  // Background: green only for new folders/subtrees
+  const bgColor =
+    parentBg || (displayNode.isNew ? "rgba(144, 238, 144, 0.3)" : undefined);
+
   return (
     <>
       <Group
@@ -58,10 +66,11 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
           paddingLeft: depth * 16,
           cursor: expandable ? "pointer" : "default",
           userSelect: "none",
+          backgroundColor: bgColor,
+          borderRadius: 4,
         }}
         onClick={() => expandable && setExpanded((e) => !e)}
       >
-        {/* Only show caret if expandable */}
         {displayNode.isDir &&
           expandable &&
           (expanded ? (
@@ -97,7 +106,12 @@ const TreeNode = ({ node, depth }: TreeNodeProps) => {
       {expandable && expanded && hasChildren && (
         <Stack gap={2}>
           {displayNode.children!.map((child) => (
-            <TreeNode key={child.path} node={child} depth={depth + 1} />
+            <TreeNode
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              parentBg={bgColor} // propagate green to all children if folder is new
+            />
           ))}
         </Stack>
       )}
