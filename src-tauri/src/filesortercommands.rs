@@ -3,8 +3,6 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use nucleo::pattern::{AtomKind, CaseMatching, Normalization, Pattern};
-use nucleo::{Matcher, Utf32Str};
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
@@ -84,42 +82,58 @@ fn normalize_file_stem(name: &str) -> String {
         .to_lowercase()
 }
 
-fn best_matching_folder(
-    filename: &str,
-    folders: &[PathBuf],
-    threshold: f64,
-    matcher: &mut Matcher,
-) -> Option<PathBuf> {
+fn calculate_similarity(s1: &str, s2: &str) -> f64 {
+    if s1 == s2 {
+        return 1.0;
+    }
+
+    let pairs1: Vec<String> = s1
+        .chars()
+        .collect::<Vec<_>>()
+        .windows(2)
+        .map(|w| format!("{}{}", w[0], w[1]))
+        .collect();
+    let pairs2: Vec<String> = s2
+        .chars()
+        .collect::<Vec<_>>()
+        .windows(2)
+        .map(|w| format!("{}{}", w[0], w[1]))
+        .collect();
+
+    if pairs1.is_empty() || pairs2.is_empty() {
+        return 0.0;
+    }
+
+    let mut intersection = 0;
+    let mut used = vec![false; pairs2.len()];
+
+    for p1 in &pairs1 {
+        for (i, p2) in pairs2.iter().enumerate() {
+            if !used[i] && p1 == p2 {
+                intersection += 1;
+                used[i] = true;
+                break;
+            }
+        }
+    }
+
+    (2.0 * intersection as f64) / (pairs1.len() + pairs2.len()) as f64
+}
+
+fn best_matching_folder(filename: &str, folders: &[PathBuf], threshold: f64) -> Option<PathBuf> {
     let file_norm = normalize_file_stem(filename);
-    let mut best_score = 0;
+    let mut best_sim = 0.0;
     let mut best_folder: Option<PathBuf> = None;
-    let mut utf32_buf = Vec::new();
 
     for folder in folders {
         if let Some(folder_name) = folder.file_name().and_then(|n| n.to_str()) {
             let folder_norm = folder_name.to_lowercase();
 
-            // DIRECT MATCH: If the folder name is contained in the file name,
-            // that's usually a 100% match for sorters.
-            if file_norm.contains(&folder_norm) || folder_norm.contains(&file_norm) {
-                return Some(folder.clone());
-            }
+            let similarity = calculate_similarity(&file_norm, &folder_norm);
 
-            let haystack = Utf32Str::new(&folder_norm, &mut utf32_buf);
-            let pattern = Pattern::new(
-                &file_norm,
-                CaseMatching::Ignore,
-                Normalization::Smart,
-                AtomKind::Fuzzy,
-            );
-
-            if let Some(score) = pattern.score(haystack, matcher) {
-                // Nucleo scores are typically large (e.g. 100+).
-                // Adjust threshold comparison or use a fixed boost for similar lengths.
-                if (score as f64) > (threshold * 100.0) && score > best_score {
-                    best_score = score;
-                    best_folder = Some(folder.clone());
-                }
+            if similarity >= threshold && similarity > best_sim {
+                best_sim = similarity;
+                best_folder = Some(folder.clone());
             }
         }
     }
@@ -136,7 +150,6 @@ fn build_sort_plan(
     similarity_threshold: u8,
 ) -> Vec<SortOperation> {
     let root_path = Path::new(root);
-    let mut matcher = Matcher::default();
 
     // 1. Load existing folders
     let mut folders: Vec<PathBuf> = std::fs::read_dir(root_path)
@@ -159,20 +172,17 @@ fn build_sort_plan(
         let filename = Path::new(&file.path).file_name().unwrap().to_string_lossy();
 
         // 2. Try to find a match in existing OR newly planned folders
-        let destination_folder = if let Some(folder) =
-            best_matching_folder(&filename, &folders, threshold, &mut matcher)
-        {
-            folder
-        } else {
-            // 3. If no match, suggest a new folder based on this file
-            let new_folder = root_path.join(normalize_file_stem(&filename));
-
-            // 4. IMPORTANT: Add this new folder to the list so ATEST2 can find ATEST
-            if !folders.contains(&new_folder) {
-                folders.push(new_folder.clone());
-            }
-            new_folder
-        };
+        let destination_folder =
+            if let Some(folder) = best_matching_folder(&filename, &folders, threshold) {
+                folder
+            } else {
+                let new_folder = root_path.join(normalize_file_stem(&filename));
+                // Push so the next file (e.g., ATEST2) can match against this new folder
+                if !folders.contains(&new_folder) {
+                    folders.push(new_folder.clone());
+                }
+                new_folder
+            };
 
         plan.push(SortOperation {
             file_name: filename.to_string(),
