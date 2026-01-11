@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Group,
@@ -35,45 +35,30 @@ const FileSorter = () => {
     files: [],
   });
 
-  // Local slider value for instant UI response
   const [similarity, setSimilarity] = useState(state.similarityThreshold);
   const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
-
-  // Guards to avoid noisy logs
-  const lastSliderLogRef = useRef<number | null>(null);
 
   const logFrontend = (message: string) => {
     emit("file_sorter_log", `[ui] ${message}`);
   };
 
-  // Fetch initial state from backend
   const fetchState = async () => {
-    logFrontend("Fetching sorter state");
     const backendState: FileSorterState = await invoke("get_sorter_state");
     setState(backendState);
     setSimilarity(backendState.similarityThreshold);
-    logFrontend("Sorter state loaded");
   };
 
   useEffect(() => {
     fetchState();
   }, []);
 
-  // Slider UI logging (immediate, deduped)
+  // Apply threshold when debounced value changes
   useEffect(() => {
-    if (lastSliderLogRef.current === similarity) return;
-    lastSliderLogRef.current = similarity;
-    logFrontend(`Similarity threshold set to ${similarity}%`);
-  }, [similarity]);
-
-  // Slider change -> update backend (debounced) and refresh preview
-  useEffect(() => {
-    const updateBackend = async () => {
+    const applyThreshold = async () => {
       if (!state.currentPath) return;
+      if (debouncedSimilarity === state.similarityThreshold) return;
 
-      logFrontend(
-        `Applying similarity threshold (${debouncedSimilarity}%) to backend`,
-      );
+      logFrontend(`Applying similarity threshold: ${debouncedSimilarity}%`);
 
       setShowLoading(true);
       try {
@@ -81,36 +66,30 @@ const FileSorter = () => {
           threshold: debouncedSimilarity,
         });
 
-        logFrontend("Refreshing sort preview");
         const updatedState: FileSorterState = await invoke("get_sort_preview");
         setState(updatedState);
-        logFrontend("Sort preview updated");
       } finally {
         setShowLoading(false);
       }
     };
 
-    updateBackend();
+    applyThreshold();
   }, [debouncedSimilarity, state.currentPath]);
 
   const handleSelectFolder = async () => {
-    logFrontend("Opening directory picker");
     const path = await invoke<string | null>("select_sort_directory");
     if (path) {
       setState((prev) => ({ ...prev, currentPath: path }));
       logFrontend("Directory selected");
-    } else {
-      logFrontend("Directory selection cancelled");
     }
   };
 
   const handleSort = async () => {
     if (!state.currentPath) return;
-    logFrontend("Starting file sort");
+    logFrontend("Sorting files");
     setShowLoading(true);
     try {
       await invoke("sort_files");
-      logFrontend("File sort completed");
       await fetchState();
     } finally {
       setShowLoading(false);
@@ -122,7 +101,6 @@ const FileSorter = () => {
     setShowLoading(true);
     try {
       await invoke("restore_last_sort");
-      logFrontend("Restore completed");
       await fetchState();
     } finally {
       setShowLoading(false);
@@ -131,7 +109,7 @@ const FileSorter = () => {
 
   const updateFilters = async (rules: FilterRule[]) => {
     setState((prev) => ({ ...prev, filterRules: rules }));
-    logFrontend(`Updated ${rules.length} filter rule(s)`);
+    logFrontend(`Filters updated (${rules.length})`);
   };
 
   const previewTree = state.currentPath
