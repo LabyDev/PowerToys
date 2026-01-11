@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Stack, Group, Text, Badge, Tooltip } from "@mantine/core";
-import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
+import {
+  CaretRightIcon,
+  CaretDownIcon,
+  MinusIcon,
+} from "@phosphor-icons/react";
 import { SortTreeNode, SortOperation } from "../types/filesorter";
 
 interface SortPreviewTreeProps {
@@ -95,10 +99,7 @@ const TreeNode = ({
           ) : (
             <CaretRightIcon size={14} />
           ))}
-        {displayNode.isDir && !expandable && (
-          <span style={{ width: 14, display: "inline-block" }} />
-        )}{" "}
-        {/* placeholder for caret */}
+        {displayNode.isDir && !expandable && <MinusIcon size={14} />}{" "}
         <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
           {displayNode.isDir ? "📁 " : "📄 "}
           {nameChain.join("/")}
@@ -149,19 +150,6 @@ const TreeNode = ({
           ))}
         </Stack>
       )}
-
-      {/* Empty folder placeholder aligned with caret */}
-      {displayNode.isDir &&
-        (!displayNode.children || displayNode.children.length === 0) && (
-          <Group
-            gap={6}
-            style={{
-              paddingLeft: depth * 16,
-            }}
-          >
-            <span style={{ width: 14, display: "inline-block" }}>-</span>
-          </Group>
-        )}
     </>
   );
 };
