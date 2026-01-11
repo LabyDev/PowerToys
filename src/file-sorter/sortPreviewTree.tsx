@@ -46,8 +46,6 @@ const TreeNode = ({
   parentBg,
   plannedMovesBySource,
 }: TreeNodeProps & { parentBg?: string }) => {
-  const [expanded, setExpanded] = useState(true);
-
   // Flatten single-child folder chains
   let displayNode = node;
   const nameChain = [displayNode.name];
@@ -67,6 +65,9 @@ const TreeNode = ({
   const isSourceFile =
     !displayNode.isDir && plannedMovesBySource.has(displayNode.path);
 
+  // Collapse folders where nothing is planned by default
+  const [expanded, setExpanded] = useState(hasChildren && plannedMoves > 0);
+
   const expandable = hasChildren || plannedMoves > 0;
 
   const bgColor =
@@ -84,7 +85,8 @@ const TreeNode = ({
       <Group
         gap={6}
         style={{
-          paddingLeft: depth * 16,
+          position: "relative",
+          paddingLeft: depth * 20, // base indent per level
           cursor: expandable ? "pointer" : "default",
           userSelect: "none",
           backgroundColor: isSourceFile ? "rgba(255, 255, 0, 0.3)" : bgColor,
@@ -92,6 +94,34 @@ const TreeNode = ({
         }}
         onClick={() => expandable && setExpanded((e) => !e)}
       >
+        {/* Vertical lines for ancestors */}
+        {Array.from({ length: depth }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: i * 20 + 8, // line offset inside each level
+              top: 0,
+              bottom: 0,
+              width: 1,
+              backgroundColor: "rgba(0,0,0,0.15)",
+            }}
+          />
+        ))}
+        {/* Horizontal connector line to this node */}
+        {depth > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              left: depth * 20 - 12,
+              top: "50%",
+              width: 12,
+              height: 1,
+              backgroundColor: "rgba(0,0,0,0.15)",
+            }}
+          />
+        )}
+        {/* Folder/File icon */}
         {displayNode.isDir &&
           expandable &&
           (expanded ? (
@@ -100,10 +130,12 @@ const TreeNode = ({
             <CaretRightIcon size={14} />
           ))}
         {displayNode.isDir && !expandable && <MinusIcon size={14} />}{" "}
+        {/* Name */}
         <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
           {displayNode.isDir ? "📁 " : "📄 "}
           {nameChain.join("/")}
         </Text>
+        {/* Planned moves badge */}
         {plannedMoves > 0 && (
           <Tooltip
             label={
@@ -121,6 +153,7 @@ const TreeNode = ({
             </Badge>
           </Tooltip>
         )}
+        {/* Source file badge */}
         {isSourceFile && (
           <Tooltip
             label={`Source file — planned move(s): ${plannedMovesBySource
