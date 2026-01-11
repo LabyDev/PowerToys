@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use ignore::WalkBuilder;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
 pub struct UndoStack(pub Mutex<Vec<Vec<(String, String)>>>);
@@ -29,6 +29,8 @@ pub fn select_sort_directory(
     let mut data = state.lock().unwrap();
     data.current_path = Some(path_str.clone());
 
+    emit_log(&app, &format!("Directory selected: {}", path_str));
+
     Some(path_str)
 }
 
@@ -37,7 +39,9 @@ pub fn select_sort_directory(
 ================================ */
 
 #[tauri::command]
-pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String> {
+pub fn crawl_sort_directory(path: String, app: AppHandle) -> Result<Vec<SorterFileEntry>, String> {
+    emit_log(&app, &format!("Crawling directory: {}", path));
+
     let mut entries = Vec::new();
     let walker = WalkBuilder::new(&path).hidden(false).build();
 
@@ -57,6 +61,8 @@ pub fn crawl_sort_directory(path: String) -> Result<Vec<SorterFileEntry>, String
             is_dir: p.is_dir(),
         });
     }
+
+    emit_log(&app, &format!("Found {} entries", entries.len()));
     Ok(entries)
 }
 
@@ -106,6 +112,7 @@ fn build_sort_plan(
     root: &str,
     files: &[SorterFileEntry],
     similarity_threshold: u8,
+    app: Option<&AppHandle>,
 ) -> Vec<SortOperation> {
     let root_path = Path::new(root);
     let threshold = similarity_threshold as f64 / 100.0;
@@ -160,7 +167,20 @@ fn build_sort_plan(
             new_folder
         };
 
-        let is_new_folder = !destination_folder.exists(); // <- mark new folder here
+        let is_new_folder = !destination_folder.exists();
+
+        if let Some(app) = app {
+            emit_log(
+                app,
+                &format!(
+                    "Plan: {} -> {} (new folder: {}, sim: {:.0}%)",
+                    file.name,
+                    destination_folder.to_string_lossy(),
+                    is_new_folder,
+                    best_sim * 100.0
+                ),
+            );
+        }
 
         plan.push(SortOperation {
             file_name: file.name.clone(),
@@ -178,7 +198,10 @@ fn build_sort_plan(
    Execute plan (with Collision Protection)
 ================================ */
 
-fn execute_sort_plan(plan: &[SortOperation]) -> Result<Vec<(String, String)>, String> {
+fn execute_sort_plan(
+    plan: &[SortOperation],
+    app: Option<&AppHandle>,
+) -> Result<Vec<(String, String)>, String> {
     let mut moves = Vec::new();
 
     for op in plan {
@@ -212,6 +235,11 @@ fn execute_sort_plan(plan: &[SortOperation]) -> Result<Vec<(String, String)>, St
 
         let dest_str = dest_path.to_string_lossy().to_string();
         std::fs::rename(&op.source_path, &dest_path).map_err(|e| e.to_string())?;
+
+        if let Some(app) = app {
+            emit_log(app, &format!("Moved {} -> {}", op.source_path, dest_str));
+        }
+
         moves.push((op.source_path.clone(), dest_str));
     }
 
@@ -225,12 +253,13 @@ fn execute_sort_plan(plan: &[SortOperation]) -> Result<Vec<(String, String)>, St
 #[tauri::command]
 pub fn get_sort_preview(
     state: State<'_, Mutex<FileSorterState>>,
+    app: AppHandle,
 ) -> Result<FileSorterState, String> {
     let mut data = state.lock().unwrap().clone();
     let root = data.current_path.as_ref().ok_or("No folder selected")?;
 
-    data.files = crawl_sort_directory(root.clone())?;
-    let plan = build_sort_plan(root, &data.files, data.similarity_threshold);
+    data.files = crawl_sort_directory(root.clone(), app.clone())?;
+    let plan = build_sort_plan(root, &data.files, data.similarity_threshold, Some(&app));
     data.preview = plan.clone();
 
     let folders_to_create = plan
@@ -252,23 +281,27 @@ pub fn get_sort_preview(
 pub fn sort_files(
     state: State<'_, Mutex<FileSorterState>>,
     undo_stack: State<'_, UndoStack>,
+    app: AppHandle,
 ) -> Result<(), String> {
     let data = state.lock().unwrap();
     let root = data.current_path.as_ref().ok_or("No folder selected")?;
 
-    let plan = build_sort_plan(root, &data.files, data.similarity_threshold);
-    let moves = execute_sort_plan(&plan)?;
+    let plan = build_sort_plan(root, &data.files, data.similarity_threshold, Some(&app));
+    let moves = execute_sort_plan(&plan, Some(&app))?;
 
     undo_stack.0.lock().unwrap().push(moves);
+    emit_log(&app, "Sorting complete");
+
     Ok(())
 }
 
 #[tauri::command]
-pub fn restore_last_sort(undo_stack: State<'_, UndoStack>) -> Result<(), String> {
+pub fn restore_last_sort(undo_stack: State<'_, UndoStack>, app: AppHandle) -> Result<(), String> {
     let mut stack = undo_stack.0.lock().unwrap();
     if let Some(last_moves) = stack.pop() {
         for (original, current) in last_moves {
-            let _ = std::fs::rename(current, original);
+            let _ = std::fs::rename(current.clone(), original.clone());
+            emit_log(&app, &format!("Restored {} -> {}", current, original));
         }
     }
     Ok(())
@@ -278,4 +311,8 @@ pub fn restore_last_sort(undo_stack: State<'_, UndoStack>) -> Result<(), String>
 pub fn set_similarity_threshold(state: State<'_, Mutex<FileSorterState>>, threshold: u8) {
     let mut data = state.lock().unwrap();
     data.similarity_threshold = threshold;
+}
+
+fn emit_log(app: &AppHandle, message: &str) {
+    let _ = app.emit("file_sorter_log", message.to_string());
 }

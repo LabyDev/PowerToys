@@ -7,13 +7,11 @@ import {
   Badge,
   ScrollArea,
   Code,
-  Paper,
   Slider,
   Text,
   Divider,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
-import { TerminalIcon } from "@phosphor-icons/react";
 import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
 import FiltersPanel from "../file-randomiser/filtersPanel";
@@ -22,6 +20,7 @@ import { FileSorterState } from "../types/filesorter";
 import SortPreviewTree from "./sortPreviewTree";
 import { invoke } from "@tauri-apps/api/core";
 import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
+import ConsolePanel from "./consolePanel";
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
@@ -170,25 +169,7 @@ const FileSorter = () => {
           </Section>
         </Group>
 
-        <Paper
-          withBorder
-          radius="md"
-          bg="dark.8"
-          style={{ height: 140, overflow: "hidden" }}
-        >
-          <Group px="sm" py={6} bg="dark.9">
-            <TerminalIcon size={14} color="white" />
-          </Group>
-          <ScrollArea h={100} p="xs">
-            <Text size="xs" ff="monospace" c="blue.3">
-              {`> ${
-                state.currentPath
-                  ? `Directory set: ${state.currentPath}`
-                  : "Awaiting folder..."
-              }`}
-            </Text>
-          </ScrollArea>
-        </Paper>
+        <ConsolePanel currentPath={state.currentPath} />
       </Stack>
     </Box>
   );
