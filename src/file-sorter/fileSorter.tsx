@@ -160,7 +160,12 @@ const FileSorter = () => {
         />
 
         <FiltersPanel
-          data={{ filterRules: state.filterRules }}
+          data={{
+            filterRules: state.filterRules,
+            paths: [], // dummy
+            files: [], // dummy
+            history: [], // dummy
+          }}
           updateData={async (u) => updateFilters(u.filterRules)}
         />
 
