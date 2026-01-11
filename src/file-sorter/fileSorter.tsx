@@ -115,7 +115,10 @@ const FileSorter = () => {
           <Section title="Processing Preview" style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
               {previewTree ? (
-                <SortPreviewTree root={previewTree} />
+                <SortPreviewTree
+                  root={previewTree.root}
+                  plannedMovesBySource={previewTree.plannedMovesBySource}
+                />
               ) : (
                 <Code block>
                   {state.currentPath

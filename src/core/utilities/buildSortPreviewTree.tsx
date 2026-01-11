@@ -17,7 +17,7 @@ export function buildSortPreviewTree(
   rootPath: string,
   files: SorterFileEntry[],
   ops: SortOperation[],
-): SortTreeNode {
+): { root: SortTreeNode; plannedMovesBySource: Map<string, SortOperation[]> } {
   const normalizedRoot = rootPath
     .replace(/[/\\]+/g, OS_SEP)
     .replace(new RegExp(`${OS_SEP}+$`), "");
@@ -84,5 +84,14 @@ export function buildSortPreviewTree(
     });
   }
 
-  return root;
+  // Map source paths → operations for highlighting original files
+  const plannedMovesBySource = new Map<string, SortOperation[]>();
+  for (const op of ops) {
+    if (!plannedMovesBySource.has(op.sourcePath)) {
+      plannedMovesBySource.set(op.sourcePath, []);
+    }
+    plannedMovesBySource.get(op.sourcePath)!.push(op);
+  }
+
+  return { root, plannedMovesBySource };
 }
