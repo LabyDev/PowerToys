@@ -148,6 +148,20 @@ const FileSorter = () => {
       )
     : null;
 
+  function formatBytes(bytes: number, locale = navigator.language) {
+    if (bytes === 0) return "0 B";
+
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return (
+      new Intl.NumberFormat(locale, {
+        maximumFractionDigits: 2,
+      }).format(bytes / Math.pow(k, i)) + ` ${sizes[i]}`
+    );
+  }
+
   return (
     <Box p="md" h="94vh">
       <LoadingOverlay visible={showLoading} />
@@ -219,7 +233,7 @@ const FileSorter = () => {
                   </Badge>
                   <Badge color="orange" variant="light" fullWidth size="lg">
                     Total Size to Move:{" "}
-                    {(state.stats.totalSizeToMove / 1024 / 1024).toFixed(2)} MB
+                    {formatBytes(state.stats.totalSizeToMove)}
                   </Badge>
                 </Stack>
               </ScrollArea>
