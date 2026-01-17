@@ -91,7 +91,8 @@ const TreeNode = ({
   const hasChildren = displayNode.isDir && !!displayNode.children?.length;
   const isSourceFile =
     !displayNode.isDir && plannedMovesBySource.has(displayNode.path);
-  const expandable = hasChildren || plannedMoves > 0;
+  const expandable =
+    (hasChildren || plannedMoves > 0) && !displayNode.operation;
   const [expanded, setExpanded] = useState(hasChildren && plannedMoves > 0);
 
   const isExcluded = excludedPaths.has(displayNode.path);
