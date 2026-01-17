@@ -56,7 +56,8 @@ pub fn run() {
             filesortercommands::set_similarity_threshold,
             filesortercommands::include_path,
             filesortercommands::exclude_path,
-            filesortercommands::force_target
+            filesortercommands::force_target,
+            filesortercommands::reveal_in_explorer
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

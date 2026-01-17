@@ -439,3 +439,48 @@ pub fn force_target(
 
     Some(path_str)
 }
+
+#[tauri::command]
+pub fn reveal_in_explorer(path: String) -> Result<(), String> {
+    let path = std::path::Path::new(&path);
+
+    if !path.exists() {
+        return Err("File does not exist".into());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg("/select,")
+            .arg(path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let parent = path.parent().ok_or("Cannot get parent folder")?;
+        let fm_commands = ["xdg-open", "nautilus", "dolphin", "thunar"];
+        let mut opened = false;
+        for cmd in fm_commands {
+            if std::process::Command::new(cmd).arg(parent).spawn().is_ok() {
+                opened = true;
+                break;
+            }
+        }
+        if !opened {
+            return Err("No file manager found to reveal file".into());
+        }
+    }
+
+    Ok(())
+}

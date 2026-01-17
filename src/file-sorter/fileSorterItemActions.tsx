@@ -11,7 +11,6 @@ interface FileSorterItemActionsProps {
   path: string;
   isExcluded?: boolean;
   forcedTarget?: string;
-  onReveal?: (e: React.MouseEvent) => void;
   refreshPreview: () => Promise<void>;
 }
 
@@ -19,7 +18,6 @@ const FileSorterItemActions = ({
   path,
   isExcluded,
   forcedTarget,
-  onReveal,
   refreshPreview,
 }: FileSorterItemActionsProps) => {
   const handleExcludeInclude = async () => {
@@ -37,13 +35,21 @@ const FileSorterItemActions = ({
 
   const handleForceTarget = async () => {
     try {
-      // Calls Rust function that handles both picking and resetting
       await invoke("force_target", { path });
       await refreshPreview();
     } catch (err) {
       console.error("Failed to set/reset forced target:", err);
     }
   };
+
+  const handleReveal = async () => {
+    try {
+      await invoke("reveal_in_explorer", { path });
+    } catch (err) {
+      console.error("Failed to reveal file:", err);
+    }
+  };
+
   return (
     <Group gap={4} wrap="nowrap">
       {/* Exclude / Include */}
@@ -66,7 +72,12 @@ const FileSorterItemActions = ({
       </Tooltip>
 
       {/* Force target folder */}
-      <Tooltip label="Force target folder" withArrow>
+      <Tooltip
+        label={
+          forcedTarget ? `Forced to: ${forcedTarget}` : "Force target folder"
+        }
+        withArrow
+      >
         <ActionIcon
           size="xs"
           color={forcedTarget ? "blue" : "gray"}
@@ -82,22 +93,20 @@ const FileSorterItemActions = ({
       </Tooltip>
 
       {/* Reveal in file explorer */}
-      {onReveal && (
-        <Tooltip label="Reveal in file explorer" withArrow>
-          <ActionIcon
-            size="xs"
-            color="gray"
-            variant="subtle"
-            className="item-action"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReveal(e);
-            }}
-          >
-            <FolderOpenIcon size={14} />
-          </ActionIcon>
-        </Tooltip>
-      )}
+      <Tooltip label="Reveal in file explorer" withArrow>
+        <ActionIcon
+          size="xs"
+          color="gray"
+          variant="subtle"
+          className="item-action"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleReveal();
+          }}
+        >
+          <FolderOpenIcon size={14} />
+        </ActionIcon>
+      </Tooltip>
     </Group>
   );
 };
