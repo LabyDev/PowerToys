@@ -6,6 +6,7 @@ import {
   FolderOpenIcon,
 } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 
 interface FileSorterItemActionsProps {
   path: string;
@@ -20,8 +21,13 @@ const FileSorterItemActions = ({
   forcedTarget,
   refreshPreview,
 }: FileSorterItemActionsProps) => {
+  const [tooltipKey, setTooltipKey] = useState(0);
+
   const handleExcludeInclude = async () => {
     try {
+      // Force remount of tooltip to prevent stuck state
+      setTooltipKey((k) => k + 1);
+
       if (isExcluded) {
         await invoke("include_path", { path });
       } else {
@@ -35,6 +41,7 @@ const FileSorterItemActions = ({
 
   const handleForceTarget = async () => {
     try {
+      setTooltipKey((k) => k + 1);
       await invoke("force_target", { path });
       await refreshPreview();
     } catch (err) {
@@ -44,6 +51,7 @@ const FileSorterItemActions = ({
 
   const handleReveal = async () => {
     try {
+      setTooltipKey((k) => k + 1);
       await invoke("reveal_in_explorer", { path });
     } catch (err) {
       console.error("Failed to reveal file:", err);
@@ -52,8 +60,31 @@ const FileSorterItemActions = ({
 
   return (
     <Group gap={4} wrap="nowrap">
+      {/* Force target folder */}
+      <Tooltip
+        key={`force-${tooltipKey}`}
+        label={
+          forcedTarget ? `Forced to: ${forcedTarget}` : "Force target folder"
+        }
+        withArrow
+      >
+        <ActionIcon
+          size="xs"
+          color={forcedTarget ? "blue" : "gray"}
+          variant="subtle"
+          className={forcedTarget ? undefined : "item-action"}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleForceTarget();
+          }}
+        >
+          <FolderSimplePlusIcon size={14} />
+        </ActionIcon>
+      </Tooltip>
+
       {/* Exclude / Include */}
       <Tooltip
+        key={`exclude-${tooltipKey}`}
         label={isExcluded ? "Include file again" : "Exclude file"}
         withArrow
       >
@@ -71,29 +102,12 @@ const FileSorterItemActions = ({
         </ActionIcon>
       </Tooltip>
 
-      {/* Force target folder */}
+      {/* Reveal in file explorer */}
       <Tooltip
-        label={
-          forcedTarget ? `Forced to: ${forcedTarget}` : "Force target folder"
-        }
+        key={`reveal-${tooltipKey}`}
+        label="Reveal in file explorer"
         withArrow
       >
-        <ActionIcon
-          size="xs"
-          color={forcedTarget ? "blue" : "gray"}
-          variant="subtle"
-          className="item-action"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleForceTarget();
-          }}
-        >
-          <FolderSimplePlusIcon size={14} />
-        </ActionIcon>
-      </Tooltip>
-
-      {/* Reveal in file explorer */}
-      <Tooltip label="Reveal in file explorer" withArrow>
         <ActionIcon
           size="xs"
           color="gray"
