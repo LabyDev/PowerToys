@@ -28,7 +28,12 @@ const FileSorter = () => {
     similarityThreshold: 60,
     filterRules: [],
     preview: [],
-    stats: { filesToMove: 0, foldersToCreate: 0 },
+    stats: {
+      filesToMove: 0,
+      foldersToCreate: 0,
+      totalFoldersAffected: 0,
+      totalSizeToMove: 0,
+    },
     hasRestorePoint: false,
     files: [],
     excludedPaths: new Set(),
@@ -198,14 +203,23 @@ const FileSorter = () => {
                 />
               </Box>
               <Divider label="Stats" labelPosition="center" />
-              <Stack gap="xs">
-                <Badge variant="light" fullWidth size="lg">
-                  Files to Move: {state.stats.filesToMove}
-                </Badge>
-                <Badge color="cyan" variant="light" fullWidth size="lg">
-                  New Folders: {state.stats.foldersToCreate}
-                </Badge>
-              </Stack>
+              <ScrollArea style={{ flex: 1 }}>
+                <Stack gap="xs">
+                  <Badge variant="light" fullWidth size="lg">
+                    Files to Move: {state.stats.filesToMove}
+                  </Badge>
+                  <Badge color="cyan" variant="light" fullWidth size="lg">
+                    New Folders: {state.stats.foldersToCreate}
+                  </Badge>
+                  <Badge color="green" variant="light" fullWidth size="lg">
+                    Total Folders Affected: {state.stats.totalFoldersAffected}
+                  </Badge>
+                  <Badge color="orange" variant="light" fullWidth size="lg">
+                    Total Size to Move:{" "}
+                    {(state.stats.totalSizeToMove / 1024 / 1024).toFixed(2)} MB
+                  </Badge>
+                </Stack>
+              </ScrollArea>
             </Stack>
           </Section>
         </Group>

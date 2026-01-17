@@ -9,6 +9,7 @@ pub struct SorterFileEntry {
     pub path: String,
     pub name: String,
     pub is_dir: bool,
+    pub size: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -26,6 +27,8 @@ pub struct SortOperation {
 pub struct SortStats {
     pub files_to_move: usize,
     pub folders_to_create: usize,
+    pub total_size_to_move: u64,
+    pub total_folders_affected: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -53,6 +56,8 @@ impl Default for FileSorterState {
             stats: SortStats {
                 files_to_move: 0,
                 folders_to_create: 0,
+                total_size_to_move: 0,
+                total_folders_affected: 0,
             },
             has_restore_point: false,
             excluded_paths: HashSet::new(),

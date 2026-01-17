@@ -51,7 +51,7 @@ pub fn crawl_sort_directory(path: String, app: AppHandle) -> Result<Vec<SorterFi
         if p == Path::new(&path) {
             continue;
         }
-
+        let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
         entries.push(SorterFileEntry {
             path: p.to_string_lossy().to_string(),
             name: p
@@ -59,6 +59,7 @@ pub fn crawl_sort_directory(path: String, app: AppHandle) -> Result<Vec<SorterFi
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default(),
             is_dir: p.is_dir(),
+            size,
         });
     }
 
@@ -274,8 +275,10 @@ pub fn get_sort_preview(
         None => return Err("No folder selected".into()),
     };
 
+    // Crawl directory
     data.files = crawl_sort_directory(root.clone(), app.clone())?;
 
+    // Build the sort plan
     data.preview = build_sort_plan(
         &root,
         &data.files,
@@ -285,6 +288,7 @@ pub fn get_sort_preview(
         Some(&app),
     );
 
+    // Folders to create (existing logic)
     let folders_to_create = data
         .preview
         .iter()
@@ -293,9 +297,33 @@ pub fn get_sort_preview(
         .collect::<HashSet<_>>()
         .len();
 
+    // Total size to move: sum of all files in the preview
+    let total_size_to_move: u64 = data
+        .preview
+        .iter()
+        .map(|op| {
+            data.files
+                .iter()
+                .find(|f| f.path == op.source_path)
+                .map(|f| f.size)
+                .unwrap_or(0)
+        })
+        .sum();
+
+    // Total folders affected: unique target folders in preview
+    let total_folders_affected = data
+        .preview
+        .iter()
+        .map(|op| op.destination_folder.clone())
+        .collect::<HashSet<_>>()
+        .len();
+
+    // Update stats
     data.stats = SortStats {
         files_to_move: data.preview.len(),
         folders_to_create,
+        total_size_to_move,
+        total_folders_affected,
     };
 
     Ok(data.clone())
@@ -328,6 +356,8 @@ pub fn sort_files(
     data.stats = SortStats {
         files_to_move: 0,
         folders_to_create: 0,
+        total_size_to_move: 0,
+        total_folders_affected: 0,
     };
 
     emit_log(&app, "Sorting complete");

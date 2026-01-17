@@ -1,6 +1,8 @@
 import { FileEntryBase } from "./common";
 
-export type SorterFileEntry = FileEntryBase;
+export type SorterFileEntry = FileEntryBase & {
+  size: number;
+};
 
 export type SortOperation = {
   fileName: string;
@@ -36,6 +38,8 @@ export type FileSorterState = {
   stats: {
     filesToMove: number;
     foldersToCreate: number;
+    totalFoldersAffected: number;
+    totalSizeToMove: number;
   };
 
   hasRestorePoint: boolean;
