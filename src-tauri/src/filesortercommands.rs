@@ -301,12 +301,10 @@ pub fn sort_files(
     undo_stack.0.lock().unwrap().push(moves);
     data.has_restore_point = true;
 
-    // Re-crawl after move to keep UI consistent
     if let Some(root) = &data.current_path {
         data.files = crawl_sort_directory(root.clone(), app.clone())?;
     }
 
-    // Clear preview & stats after execution
     data.preview.clear();
     data.stats = SortStats {
         files_to_move: 0,
@@ -331,15 +329,38 @@ pub fn restore_last_sort(
 
     emit_log(&app, "Restoring last sort");
 
-    for (original, current) in last_moves {
-        std::fs::rename(&current, &original).map_err(|e| format!("Restore failed: {}", e))?;
+    let mut affected_dirs = HashSet::new();
+
+    for (original, current) in &last_moves {
+        if let Some(parent) = Path::new(current).parent() {
+            affected_dirs.insert(parent.to_path_buf());
+        }
+
+        std::fs::rename(current, original).map_err(|e| format!("Restore failed: {}", e))?;
         emit_log(&app, &format!("Restored {} -> {}", current, original));
+    }
+
+    let mut dirs: Vec<_> = affected_dirs.into_iter().collect();
+    dirs.sort_by_key(|d| std::cmp::Reverse(d.components().count()));
+
+    for dir in dirs {
+        if dir
+            .read_dir()
+            .map(|mut i| i.next().is_none())
+            .unwrap_or(false)
+        {
+            if std::fs::remove_dir(&dir).is_ok() {
+                emit_log(
+                    &app,
+                    &format!("Removed empty folder {}", dir.to_string_lossy()),
+                );
+            }
+        }
     }
 
     let mut data = state.lock().unwrap();
     data.has_restore_point = !stack.is_empty();
 
-    // Refresh files after restore
     if let Some(root) = &data.current_path {
         data.files = crawl_sort_directory(root.clone(), app.clone())?;
     }
