@@ -255,11 +255,16 @@ pub fn get_sort_preview(
     state: State<'_, Mutex<FileSorterState>>,
     app: AppHandle,
 ) -> Result<FileSorterState, String> {
-    let mut data = state.lock().unwrap().clone();
-    let root = data.current_path.as_ref().ok_or("No folder selected")?;
+    let mut data = state.lock().unwrap();
+
+    let root = match data.current_path.clone() {
+        Some(p) => p,
+        None => return Err("No folder selected".into()),
+    };
 
     data.files = crawl_sort_directory(root.clone(), app.clone())?;
-    let plan = build_sort_plan(root, &data.files, data.similarity_threshold, Some(&app));
+    let plan = build_sort_plan(&root, &data.files, data.similarity_threshold, Some(&app));
+
     data.preview = plan.clone();
 
     let folders_to_create = plan
@@ -274,7 +279,7 @@ pub fn get_sort_preview(
         folders_to_create,
     };
 
-    Ok(data)
+    Ok(data.clone())
 }
 
 #[tauri::command]
@@ -283,27 +288,62 @@ pub fn sort_files(
     undo_stack: State<'_, UndoStack>,
     app: AppHandle,
 ) -> Result<(), String> {
-    let data = state.lock().unwrap();
-    let root = data.current_path.as_ref().ok_or("No folder selected")?;
+    let mut data = state.lock().unwrap();
 
-    let plan = build_sort_plan(root, &data.files, data.similarity_threshold, Some(&app));
-    let moves = execute_sort_plan(&plan, Some(&app))?;
+    if data.preview.is_empty() {
+        return Err("No sort plan available".into());
+    }
+
+    emit_log(&app, "Executing sort plan");
+
+    let moves = execute_sort_plan(&data.preview, Some(&app))?;
 
     undo_stack.0.lock().unwrap().push(moves);
-    emit_log(&app, "Sorting complete");
+    data.has_restore_point = true;
 
+    // Re-crawl after move to keep UI consistent
+    if let Some(root) = &data.current_path {
+        data.files = crawl_sort_directory(root.clone(), app.clone())?;
+    }
+
+    // Clear preview & stats after execution
+    data.preview.clear();
+    data.stats = SortStats {
+        files_to_move: 0,
+        folders_to_create: 0,
+    };
+
+    emit_log(&app, "Sorting complete");
     Ok(())
 }
 
 #[tauri::command]
-pub fn restore_last_sort(undo_stack: State<'_, UndoStack>, app: AppHandle) -> Result<(), String> {
+pub fn restore_last_sort(
+    state: State<'_, Mutex<FileSorterState>>,
+    undo_stack: State<'_, UndoStack>,
+    app: AppHandle,
+) -> Result<(), String> {
     let mut stack = undo_stack.0.lock().unwrap();
-    if let Some(last_moves) = stack.pop() {
-        for (original, current) in last_moves {
-            let _ = std::fs::rename(current.clone(), original.clone());
-            emit_log(&app, &format!("Restored {} -> {}", current, original));
-        }
+
+    let Some(last_moves) = stack.pop() else {
+        return Ok(());
+    };
+
+    emit_log(&app, "Restoring last sort");
+
+    for (original, current) in last_moves {
+        std::fs::rename(&current, &original).map_err(|e| format!("Restore failed: {}", e))?;
+        emit_log(&app, &format!("Restored {} -> {}", current, original));
     }
+
+    let mut data = state.lock().unwrap();
+    data.has_restore_point = !stack.is_empty();
+
+    // Refresh files after restore
+    if let Some(root) = &data.current_path {
+        data.files = crawl_sort_directory(root.clone(), app.clone())?;
+    }
+
     Ok(())
 }
 

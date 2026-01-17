@@ -23,6 +23,7 @@ pub fn run() {
             last_picked_id: None,
             pick_counts: HashMap::new(),
         }))
+        .manage(filesortercommands::UndoStack(Mutex::new(Vec::new())))
         .manage(Mutex::new(FileSorterState::default()))
         .invoke_handler(tauri::generate_handler![
             setting_commands::get_app_settings,
