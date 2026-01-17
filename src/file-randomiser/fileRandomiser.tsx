@@ -28,7 +28,6 @@ import {
   FileTreeNode,
   FileEntry,
 } from "../types/filerandomiser";
-import { GlobeHemisphereWestIcon } from "@phosphor-icons/react";
 
 const FileRandomiser = () => {
   const { settings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
@@ -797,6 +796,8 @@ const FileRandomiser = () => {
               data={filteredHistory}
               itemContent={(_, item) => {
                 const file = data.files.find((f) => f.path === item.path);
+                const isGlobal = file?.bookmark?.isGlobal;
+                const color = file?.bookmark?.color;
 
                 return (
                   <Group
@@ -810,7 +811,6 @@ const FileRandomiser = () => {
                       cursor: file ? "pointer" : "default",
                     }}
                     onClick={(e) => {
-                      // Only scroll if we aren't clicking an action button
                       if (
                         file &&
                         !(e.target as HTMLElement).closest(".item-action")
@@ -819,37 +819,33 @@ const FileRandomiser = () => {
                       }
                     }}
                   >
-                    {/* Color strip background indicator */}
-                    {file?.bookmark?.color && (
+                    {/* Integrated Strip: Bookmark Color + Blue Global Accent */}
+                    {color && (
                       <Box
                         style={{
                           position: "absolute",
                           left: 0,
-                          top: 2,
-                          bottom: 2,
-                          width: 4,
-                          backgroundColor: file.bookmark.color, // Using the raw hex/color string
+                          top: 4,
+                          bottom: 4,
+                          width: 5,
                           borderRadius: "0 2px 2px 0",
+                          background: isGlobal
+                            ? `linear-gradient(to bottom, 
+                              var(--mantine-color-blue-6) 0%, 
+                              var(--mantine-color-blue-6) 30%, 
+                              rgba(0,0,0,0.2) 30%, 
+                              rgba(0,0,0,0.2) 35%, 
+                              ${color} 35%, 
+                              ${color} 100%)`
+                            : color,
                         }}
                       />
                     )}
 
                     <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
-                      <Group gap={6} wrap="nowrap" align="center">
-                        <ClampedTooltipText size="sm" fw={500}>
-                          {item.name}
-                        </ClampedTooltipText>
-
-                        {file?.bookmark?.isGlobal && (
-                          <GlobeHemisphereWestIcon
-                            size={14}
-                            weight="fill"
-                            color="var(--mantine-color-blue-6)"
-                            style={{ flexShrink: 0 }}
-                          />
-                        )}
-                      </Group>
-
+                      <ClampedTooltipText size="sm" fw={color ? 600 : 400}>
+                        {item.name}
+                      </ClampedTooltipText>
                       <ClampedTooltipText size="xs" c="dimmed">
                         {item.path}
                       </ClampedTooltipText>
