@@ -14,8 +14,6 @@ import {
 import { useDebouncedValue } from "@mantine/hooks";
 import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
-import FiltersPanel from "../file-randomiser/filtersPanel";
-import { FilterRule } from "../types/common";
 import { FileSorterState } from "../types/filesorter";
 import SortPreviewTree from "./sortPreviewTree";
 import { invoke } from "@tauri-apps/api/core";
@@ -130,11 +128,6 @@ const FileSorter = () => {
     }
   };
 
-  const updateFilters = async (rules: FilterRule[]) => {
-    setState((prev) => ({ ...prev, filterRules: rules }));
-    logFrontend(`Filters updated (${rules.length})`);
-  };
-
   const previewTree = state.currentPath
     ? buildSortPreviewTree(state.currentPath, state.files, state.preview)
     : null;
@@ -163,16 +156,6 @@ const FileSorter = () => {
           onRestore={handleRestore}
           onRefresh={handleRefresh}
           hasRestorePoint={state.hasRestorePoint}
-        />
-
-        <FiltersPanel
-          data={{
-            filterRules: state.filterRules,
-            paths: [],
-            files: [],
-            history: [],
-          }}
-          updateData={async (u) => updateFilters(u.filterRules)}
         />
 
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
