@@ -185,27 +185,31 @@ const TreeNode = ({
 
         {!displayNode.isDir && (
           <>
-            {isSourceFile && (
-              <Tooltip
-                label={`Source file — planned move(s): ${plannedMovesBySource
-                  .get(displayNode.path)!
-                  .map((op) => op.destinationFolder)
-                  .join(", ")}`}
-                withArrow
-                openDelay={300}
-              >
-                <Badge size="xs" color="yellow" variant="light">
-                  Source
-                </Badge>
-              </Tooltip>
-            )}
+            {!displayNode.isDir && !displayNode.operation && (
+              <>
+                {isSourceFile && (
+                  <Tooltip
+                    label={`Source file — planned move(s): ${plannedMovesBySource
+                      .get(displayNode.path)!
+                      .map((op) => op.destinationFolder)
+                      .join(", ")}`}
+                    withArrow
+                    openDelay={300}
+                  >
+                    <Badge size="xs" color="yellow" variant="light">
+                      Source
+                    </Badge>
+                  </Tooltip>
+                )}
 
-            <FileSorterItemActions
-              path={displayNode.path}
-              isExcluded={isExcluded}
-              forcedTarget={forcedTarget}
-              refreshPreview={refreshPreview}
-            />
+                <FileSorterItemActions
+                  path={displayNode.path}
+                  isExcluded={isExcluded}
+                  forcedTarget={forcedTarget}
+                  refreshPreview={refreshPreview}
+                />
+              </>
+            )}
           </>
         )}
       </Group>
