@@ -86,28 +86,36 @@ pub fn crawl_paths(
     ) -> bool {
         let hash_str = format!("{:x}", hash_val);
 
-        // --- New Bookmark Logic ---
+        // --- Bookmark Logic ---
         if let FilterMatchType::Bookmarks = rule.match_type {
             let p = rule.pattern.to_lowercase().replace('@', "");
             // Split by ':' to get strict tokens: ["bookmarks", "global", "red,blue"]
             let tokens: Vec<&str> = p.split(':').map(|s| s.trim()).collect();
 
-            // Determine scope based on explicit tokens
             let has_global_token = tokens.contains(&"global");
             let has_nonglobal_token = tokens.contains(&"nonglobal");
 
-            // If neither is specified, check both. If one is specified, check only that one.
             let check_global = has_global_token || !has_nonglobal_token;
             let check_local = has_nonglobal_token || !has_global_token;
 
-            // Collect colors from any token that isn't a reserved keyword
-            let colors: Vec<&str> = tokens
+            // Map human names to your specific hex codes
+            let color_map = |name: &str| -> String {
+                match name {
+                    "gold" | "yellow" => "#ffd700".to_string(),
+                    "red" => "#ff6b6b".to_string(),
+                    "green" => "#6bcb77".to_string(),
+                    "blue" => "#4d96ff".to_string(),
+                    _ => name.to_string(), // Allow direct hex input too
+                }
+            };
+
+            let target_colors: Vec<String> = tokens
                 .iter()
                 .filter(|&&s| {
                     s != "bookmarks" && s != "global" && s != "nonglobal" && !s.is_empty()
                 })
                 .flat_map(|s| s.split(','))
-                .map(|s| s.trim())
+                .map(|s| color_map(s.trim()))
                 .collect();
 
             let matches_list = |list: &[Bookmark]| {
@@ -115,19 +123,19 @@ pub fn crawl_paths(
                     if bm.hash.to_lowercase() != hash_str {
                         return false;
                     }
-                    if colors.is_empty() {
+                    if target_colors.is_empty() {
                         return true;
                     }
+                    // Match the hex code (case-insensitive)
                     bm.color
                         .as_ref()
-                        .map(|c| colors.contains(&c.to_lowercase().as_str()))
+                        .map(|c| target_colors.contains(&c.to_lowercase()))
                         .unwrap_or(false)
                 })
             };
 
             return (check_global && matches_list(global)) || (check_local && matches_list(local));
         }
-
         // --- Original Logic ---
         let text = if rule.case_sensitive {
             path.to_string()
