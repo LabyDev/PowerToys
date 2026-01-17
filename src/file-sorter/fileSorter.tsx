@@ -188,8 +188,8 @@ const FileSorter = () => {
             </ScrollArea>
           </Section>
 
-          <Section title="Configuration" style={{ width: 250 }}>
-            <Stack gap="md">
+          <Section title="Configuration" style={{ width: 250, minWidth: 250 }}>
+            <Stack gap="md" style={{ height: "100%" }}>
               <Box>
                 <Text size="sm" fw={500} mb="xs">
                   Match Threshold: {similarity}%
@@ -202,8 +202,11 @@ const FileSorter = () => {
                   step={5}
                 />
               </Box>
+
               <Divider label="Stats" labelPosition="center" />
-              <ScrollArea style={{ flex: 1 }}>
+
+              {/* Scrollable stats with max height */}
+              <ScrollArea style={{ maxHeight: "calc(100% - 100px)" }}>
                 <Stack gap="xs">
                   <Badge variant="light" fullWidth size="lg">
                     Files to Move: {state.stats.filesToMove}
