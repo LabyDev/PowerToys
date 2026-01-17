@@ -1,5 +1,10 @@
 export type FilterAction = "include" | "exclude";
-export type FilterMatchType = "contains" | "startsWith" | "endsWith" | "regex";
+export type FilterMatchType =
+  | "contains"
+  | "startsWith"
+  | "endsWith"
+  | "regex"
+  | "bookmarks";
 
 export type FilterRule = {
   id: string;

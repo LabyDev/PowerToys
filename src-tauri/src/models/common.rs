@@ -15,6 +15,7 @@ pub enum FilterMatchType {
     StartsWith,
     EndsWith,
     Regex,
+    Bookmarks,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -72,13 +72,23 @@ const FiltersPanel = ({
   const addRule = async () => {
     if (!newRule.pattern.trim()) return;
 
-    const rule: FilterRule = { ...newRule, id: crypto.randomUUID() };
+    // Detect trigger and force type at the moment of addition
+    const finalType = newRule.pattern.startsWith("@bookmarks")
+      ? ("bookmarks" as FilterMatchType)
+      : newRule.type;
+
+    const rule: FilterRule = {
+      ...newRule,
+      type: finalType,
+      id: crypto.randomUUID(),
+    };
 
     await updateData({ ...data, filterRules: [...data.filterRules, rule] });
 
+    // Reset back to previous manual selection
     setNewRule({
       action: "exclude",
-      type: "contains",
+      type: newRule.type,
       pattern: "",
       caseSensitive: false,
     });

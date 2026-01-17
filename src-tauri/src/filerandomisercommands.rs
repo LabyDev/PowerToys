@@ -1,5 +1,5 @@
 use crate::models::{
-    AppStateData, FileEntry, FilterMatchType, FilterRule, HistoryEntry, SavedPath,
+    AppStateData, Bookmark, FileEntry, FilterMatchType, FilterRule, HistoryEntry, SavedPath,
 };
 use crate::models::{FilterAction, RandomiserPreset};
 use crate::setting_commands::get_app_settings;
@@ -65,7 +65,11 @@ pub fn remove_path(app_data: State<'_, Mutex<AppStateData>>, id: u64) -> bool {
 }
 
 #[tauri::command]
-pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
+pub fn crawl_paths(
+    app_data: State<'_, Mutex<AppStateData>>,
+    global_bookmarks: Vec<Bookmark>,
+    local_bookmarks: Vec<Bookmark>,
+) -> Vec<FileEntry> {
     let mut data = app_data.lock().unwrap();
     data.files.clear();
 
@@ -73,7 +77,58 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
     let filter_rules = data.filter_rules.clone();
     let next_id = AtomicU64::new(1);
 
-    fn matches_rule(path: &str, rule: &FilterRule) -> bool {
+    fn matches_rule(
+        path: &str,
+        hash_val: u64,
+        rule: &FilterRule,
+        global: &[Bookmark],
+        local: &[Bookmark],
+    ) -> bool {
+        let hash_str = format!("{:x}", hash_val);
+
+        // --- New Bookmark Logic ---
+        if let FilterMatchType::Bookmarks = rule.match_type {
+            let p = rule.pattern.to_lowercase().replace('@', "");
+            // Split by ':' to get strict tokens: ["bookmarks", "global", "red,blue"]
+            let tokens: Vec<&str> = p.split(':').map(|s| s.trim()).collect();
+
+            // Determine scope based on explicit tokens
+            let has_global_token = tokens.contains(&"global");
+            let has_nonglobal_token = tokens.contains(&"nonglobal");
+
+            // If neither is specified, check both. If one is specified, check only that one.
+            let check_global = has_global_token || !has_nonglobal_token;
+            let check_local = has_nonglobal_token || !has_global_token;
+
+            // Collect colors from any token that isn't a reserved keyword
+            let colors: Vec<&str> = tokens
+                .iter()
+                .filter(|&&s| {
+                    s != "bookmarks" && s != "global" && s != "nonglobal" && !s.is_empty()
+                })
+                .flat_map(|s| s.split(','))
+                .map(|s| s.trim())
+                .collect();
+
+            let matches_list = |list: &[Bookmark]| {
+                list.iter().any(|bm| {
+                    if bm.hash.to_lowercase() != hash_str {
+                        return false;
+                    }
+                    if colors.is_empty() {
+                        return true;
+                    }
+                    bm.color
+                        .as_ref()
+                        .map(|c| colors.contains(&c.to_lowercase().as_str()))
+                        .unwrap_or(false)
+                })
+            };
+
+            return (check_global && matches_list(global)) || (check_local && matches_list(local));
+        }
+
+        // --- Original Logic ---
         let text = if rule.case_sensitive {
             path.to_string()
         } else {
@@ -91,14 +146,22 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
             FilterMatchType::Regex => regex::Regex::new(&rule.pattern)
                 .map(|r| r.is_match(path))
                 .unwrap_or(false),
+            _ => false,
         }
     }
 
-    fn should_exclude(path: &std::path::Path, rules: &[FilterRule]) -> bool {
+    fn should_exclude(
+        path: &std::path::Path,
+        hash_val: u64,
+        rules: &[FilterRule],
+        global: &[Bookmark],
+        local: &[Bookmark],
+    ) -> bool {
         let s = path.to_string_lossy();
-        rules
-            .iter()
-            .any(|r| matches_rule(&s, r) && matches!(r.action, FilterAction::Exclude))
+        rules.iter().any(|r| {
+            matches_rule(&s, hash_val, r, global, local)
+                && matches!(r.action, FilterAction::Exclude)
+        })
     }
 
     fn is_system_file(path: &std::path::Path) -> bool {
@@ -120,7 +183,6 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
         false
     }
 
-    // Fast non-cryptographic hash for bookmarks
     fn fast_file_id(path: &std::path::Path) -> u64 {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
@@ -134,9 +196,8 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                 .as_secs();
             let size = meta.len();
 
-            // Include file name + extension in hash
             let mut hasher = DefaultHasher::new();
-            path.file_name().hash(&mut hasher); // includes extension
+            path.file_name().hash(&mut hasher);
             size.hash(&mut hasher);
             modified.hash(&mut hasher);
 
@@ -173,14 +234,23 @@ pub fn crawl_paths(app_data: State<'_, Mutex<AppStateData>>) -> Vec<FileEntry> {
                 .file_name()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or("unknown".to_string());
-            let excluded = should_exclude(&path, &filter_rules);
-            let hash = if excluded { 0 } else { fast_file_id(&path) };
+
+            // Calculate hash first so we can use it for filter matching
+            let hash_val = fast_file_id(&path);
+            let excluded = should_exclude(
+                &path,
+                hash_val,
+                &filter_rules,
+                &global_bookmarks,
+                &local_bookmarks,
+            );
+
             FileEntry {
                 id,
                 name,
                 path: FilePath::Path(path),
                 excluded,
-                hash: Some(format!("{:x}", hash)), // convert u64 to hex string
+                hash: Some(format!("{:x}", hash_val)),
             }
         })
         .collect();

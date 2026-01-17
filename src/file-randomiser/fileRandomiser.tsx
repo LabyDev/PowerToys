@@ -271,7 +271,10 @@ const FileRandomiser = () => {
   const handleCrawl = async () => {
     setIsCrawling(true);
     try {
-      await randomiserApi.crawlPaths();
+      const globalBms = globalBookmarks ?? [];
+      const localBms =
+        lastAppliedPresetRef.current?.bookmarks ?? presetState.bookmarks ?? [];
+      await randomiserApi.crawlPaths(globalBms, localBms);
       const latest = await randomiserApi.getAppState();
 
       const structureChanged =
