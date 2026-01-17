@@ -6,6 +6,7 @@ import {
   MinusIcon,
 } from "@phosphor-icons/react";
 import { SortTreeNode, SortOperation } from "../types/filesorter";
+import FileSorterItemActions from "./fileSorterItemActions";
 
 interface SortPreviewTreeProps {
   root: SortTreeNode;
@@ -126,6 +127,7 @@ const TreeNode = ({
       <Group
         gap={6}
         wrap="nowrap"
+        className="item-actions"
         style={{
           position: "relative",
           paddingLeft: depth * 12,
@@ -171,19 +173,40 @@ const TreeNode = ({
           </Tooltip>
         )}
 
-        {isSourceFile && (
-          <Tooltip
-            label={`Source file — planned move(s): ${plannedMovesBySource
-              .get(displayNode.path)!
-              .map((op) => op.destinationFolder)
-              .join(", ")}`}
-            withArrow
-            openDelay={300}
-          >
-            <Badge size="xs" color="yellow" variant="light">
-              Source
-            </Badge>
-          </Tooltip>
+        {!displayNode.isDir && (
+          <>
+            {/* Source badge */}
+            {isSourceFile && (
+              <Tooltip
+                label={`Source file — planned move(s): ${plannedMovesBySource
+                  .get(displayNode.path)!
+                  .map((op) => op.destinationFolder)
+                  .join(", ")}`}
+                withArrow
+                openDelay={300}
+              >
+                <Badge size="xs" color="yellow" variant="light">
+                  Source
+                </Badge>
+              </Tooltip>
+            )}
+
+            {/* File actions */}
+            <FileSorterItemActions
+              onExclude={(e) => {
+                e.stopPropagation();
+                console.log("Exclude", displayNode.path);
+              }}
+              onForceTarget={(e) => {
+                e.stopPropagation();
+                console.log("Force Target", displayNode.path);
+              }}
+              onReveal={(e) => {
+                e.stopPropagation();
+                console.log("Reveal", displayNode.path);
+              }}
+            />
+          </>
         )}
       </Group>
 

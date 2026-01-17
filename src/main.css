@@ -25,3 +25,22 @@ body {
     background-color: #2f2f2f;
   }
 }
+
+/* Default: hide all */
+.item-action {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Always show bookmark */
+.item-action--bookmark {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Show all on hover */
+.item-actions:hover .item-action {
+  visibility: visible;
+  opacity: 1;
+}
