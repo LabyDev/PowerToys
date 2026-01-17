@@ -25,15 +25,15 @@ const FileSorterItemActions = ({
 
   const handleExcludeInclude = async () => {
     try {
-      // Force remount of tooltip to prevent stuck state
-      setTooltipKey((k) => k + 1);
-
       if (isExcluded) {
         await invoke("include_path", { path });
       } else {
         await invoke("exclude_path", { path });
       }
       await refreshPreview();
+
+      // Force remount AFTER refresh
+      setTooltipKey((k) => k + 1);
     } catch (err) {
       console.error("Failed to toggle exclude/include:", err);
     }
@@ -41,9 +41,10 @@ const FileSorterItemActions = ({
 
   const handleForceTarget = async () => {
     try {
-      setTooltipKey((k) => k + 1);
       await invoke("force_target", { path });
       await refreshPreview();
+
+      setTooltipKey((k) => k + 1);
     } catch (err) {
       console.error("Failed to set/reset forced target:", err);
     }
@@ -51,8 +52,8 @@ const FileSorterItemActions = ({
 
   const handleReveal = async () => {
     try {
-      setTooltipKey((k) => k + 1);
       await invoke("reveal_in_explorer", { path });
+      setTooltipKey((k) => k + 1);
     } catch (err) {
       console.error("Failed to reveal file:", err);
     }
