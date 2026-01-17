@@ -28,6 +28,7 @@ import {
   FileTreeNode,
   FileEntry,
 } from "../types/filerandomiser";
+import { GlobeHemisphereWestIcon } from "@phosphor-icons/react";
 
 const FileRandomiser = () => {
   const { settings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
@@ -804,17 +805,54 @@ const FileRandomiser = () => {
                     align="center"
                     gap={8}
                     className="item-actions"
+                    style={{
+                      position: "relative",
+                      cursor: file ? "pointer" : "default",
+                    }}
+                    onClick={(e) => {
+                      // Only scroll if we aren't clicking an action button
+                      if (
+                        file &&
+                        !(e.target as HTMLElement).closest(".item-action")
+                      ) {
+                        fileTreeRef.current?.scrollToFile(file.id);
+                      }
+                    }}
                   >
+                    {/* Color strip background indicator */}
+                    {file?.bookmark?.color && (
+                      <Box
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          top: 2,
+                          bottom: 2,
+                          width: 4,
+                          backgroundColor: file.bookmark.color, // Using the raw hex/color string
+                          borderRadius: "0 2px 2px 0",
+                        }}
+                      />
+                    )}
+
                     <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
-                      <ClampedTooltipText size="sm">
-                        {item.name}
-                      </ClampedTooltipText>
+                      <Group gap={6} wrap="nowrap" align="center">
+                        <ClampedTooltipText size="sm" fw={500}>
+                          {item.name}
+                        </ClampedTooltipText>
+
+                        {file?.bookmark?.isGlobal && (
+                          <GlobeHemisphereWestIcon
+                            size={14}
+                            weight="fill"
+                            color="var(--mantine-color-blue-6)"
+                            style={{ flexShrink: 0 }}
+                          />
+                        )}
+                      </Group>
+
                       <ClampedTooltipText size="xs" c="dimmed">
                         {item.path}
                       </ClampedTooltipText>
-                      <Text size="xs" c="dimmed" tt="italic">
-                        Opened at: {new Date(item.openedAt).toLocaleString()}
-                      </Text>
                     </Stack>
 
                     <ItemActions
@@ -822,11 +860,6 @@ const FileRandomiser = () => {
                       onOpenFolder={async () => {
                         const folder = await dirname(item.path);
                         randomiserApi.openPath(folder);
-                      }}
-                      currentBookmark={file?.bookmark}
-                      onBookmarkChange={() => {
-                        if (!file) return;
-                        fileTreeRef.current?.scrollToFile(file.id);
                       }}
                     />
                   </Group>
