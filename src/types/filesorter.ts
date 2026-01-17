@@ -39,4 +39,6 @@ export type FileSorterState = {
   };
 
   hasRestorePoint: boolean;
+  excludedPaths: Set<string>;
+  forcedTargets: Map<string, string>;
 };

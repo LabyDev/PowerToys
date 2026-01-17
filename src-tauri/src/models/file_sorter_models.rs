@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use crate::models::common::FilterRule;
 use serde::{Deserialize, Serialize};
 
@@ -36,6 +38,8 @@ pub struct FileSorterState {
     pub preview: Vec<SortOperation>,
     pub stats: SortStats,
     pub has_restore_point: bool,
+    pub excluded_paths: HashSet<String>,
+    pub forced_targets: HashMap<String, String>,
 }
 
 impl Default for FileSorterState {
@@ -51,6 +55,8 @@ impl Default for FileSorterState {
                 folders_to_create: 0,
             },
             has_restore_point: false,
+            excluded_paths: HashSet::new(),
+            forced_targets: HashMap::new(),
         }
     }
 }

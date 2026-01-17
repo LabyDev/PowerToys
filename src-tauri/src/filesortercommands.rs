@@ -1,5 +1,5 @@
 use crate::models::{FileSorterState, SortOperation, SortStats, SorterFileEntry};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -112,6 +112,8 @@ fn build_sort_plan(
     root: &str,
     files: &[SorterFileEntry],
     similarity_threshold: u8,
+    excluded_paths: &HashSet<String>,
+    forced_targets: &HashMap<String, String>,
     app: Option<&AppHandle>,
 ) -> Vec<SortOperation> {
     let root_path = Path::new(root);
@@ -137,34 +139,45 @@ fn build_sort_plan(
     let mut plan = Vec::new();
 
     for file in files.iter().filter(|f| !f.is_dir) {
+        if excluded_paths.contains(&file.path) {
+            continue; // skip excluded files
+        }
+
         let file_path = Path::new(&file.path);
         if file_path.parent() != Some(root_path) {
             continue;
         }
 
         let file_norm = normalize_name(&file.name);
-        let mut best_sim = 0.0;
-        let mut best_folder = None;
-        let mut best_folder_len = 0;
 
-        for (path, norm) in &folders {
-            let sim = calculate_similarity(&file_norm, norm);
-            if sim >= threshold
-                && (sim > best_sim
-                    || ((sim - best_sim).abs() < f64::EPSILON && norm.len() > best_folder_len))
-            {
-                best_sim = sim;
-                best_folder = Some(path.clone());
-                best_folder_len = norm.len();
-            }
-        }
-
-        let destination_folder = if let Some(folder) = best_folder {
-            folder
+        // Determine destination folder
+        let destination_folder = if let Some(forced) = forced_targets.get(&file.path) {
+            PathBuf::from(forced)
         } else {
-            let new_folder = root_path.join(&file_norm);
-            folders.push((new_folder.clone(), file_norm.clone()));
-            new_folder
+            // Compute as usual using similarity
+            let mut best_sim = 0.0;
+            let mut best_folder = None;
+            let mut best_folder_len = 0;
+
+            for (path, norm) in &folders {
+                let sim = calculate_similarity(&file_norm, norm);
+                if sim >= threshold
+                    && (sim > best_sim
+                        || ((sim - best_sim).abs() < f64::EPSILON && norm.len() > best_folder_len))
+                {
+                    best_sim = sim;
+                    best_folder = Some(path.clone());
+                    best_folder_len = norm.len();
+                }
+            }
+
+            if let Some(folder) = best_folder {
+                folder
+            } else {
+                let new_folder = root_path.join(&file_norm);
+                folders.push((new_folder.clone(), file_norm.clone()));
+                new_folder
+            }
         };
 
         let is_new_folder = !destination_folder.exists();
@@ -173,11 +186,10 @@ fn build_sort_plan(
             emit_log(
                 app,
                 &format!(
-                    "Plan: {} -> {} (new folder: {}, sim: {:.0}%)",
+                    "Plan: {} -> {} (new folder: {})",
                     file.name,
                     destination_folder.to_string_lossy(),
-                    is_new_folder,
-                    best_sim * 100.0
+                    is_new_folder
                 ),
             );
         }
@@ -186,7 +198,7 @@ fn build_sort_plan(
             file_name: file.name.clone(),
             source_path: file.path.clone(),
             destination_folder: destination_folder.to_string_lossy().to_string(),
-            reason: format!("Dice Match ({:.0}%)", best_sim * 100.0),
+            reason: "Dice Match".into(),
             is_new_folder,
         });
     }
@@ -257,17 +269,24 @@ pub fn get_sort_preview(
 ) -> Result<FileSorterState, String> {
     let mut data = state.lock().unwrap();
 
-    let root = match data.current_path.clone() {
-        Some(p) => p,
+    let root = match &data.current_path {
+        Some(p) => p.clone(),
         None => return Err("No folder selected".into()),
     };
 
     data.files = crawl_sort_directory(root.clone(), app.clone())?;
-    let plan = build_sort_plan(&root, &data.files, data.similarity_threshold, Some(&app));
 
-    data.preview = plan.clone();
+    data.preview = build_sort_plan(
+        &root,
+        &data.files,
+        data.similarity_threshold,
+        &data.excluded_paths,
+        &data.forced_targets,
+        Some(&app),
+    );
 
-    let folders_to_create = plan
+    let folders_to_create = data
+        .preview
         .iter()
         .filter(|op| op.is_new_folder)
         .map(|op| &op.destination_folder)
@@ -275,7 +294,7 @@ pub fn get_sort_preview(
         .len();
 
     data.stats = SortStats {
-        files_to_move: plan.len(),
+        files_to_move: data.preview.len(),
         folders_to_create,
     };
 
@@ -376,4 +395,47 @@ pub fn set_similarity_threshold(state: State<'_, Mutex<FileSorterState>>, thresh
 
 fn emit_log(app: &AppHandle, message: &str) {
     let _ = app.emit("file_sorter_log", message.to_string());
+}
+
+#[tauri::command]
+pub fn exclude_path(state: State<'_, Mutex<FileSorterState>>, path: String) -> Result<(), String> {
+    let mut data = state.lock().unwrap();
+    data.excluded_paths.insert(path);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn include_path(state: State<'_, Mutex<FileSorterState>>, path: String) -> Result<(), String> {
+    let mut data = state.lock().unwrap();
+    data.excluded_paths.remove(&path);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn force_target(
+    app: AppHandle,
+    state: State<'_, Mutex<FileSorterState>>,
+    path: String,
+) -> Option<String> {
+    let mut data = state.lock().unwrap();
+
+    // If a forced target already exists, reset it
+    if data.forced_targets.contains_key(&path) {
+        data.forced_targets.remove(&path);
+        emit_log(&app, &format!("Forced target reset for: {}", path));
+        return Some(String::new());
+    }
+
+    // Otherwise, pick a new folder
+    let folder = app.dialog().file().blocking_pick_folder()?;
+    let path_str = folder.to_string();
+
+    data.forced_targets.insert(path.clone(), path_str.clone());
+
+    emit_log(
+        &app,
+        &format!("Forced target set for {}: {}", path, path_str),
+    );
+
+    Some(path_str)
 }

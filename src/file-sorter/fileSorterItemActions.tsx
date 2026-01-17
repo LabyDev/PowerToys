@@ -1,61 +1,98 @@
 import { ActionIcon, Group, Tooltip } from "@mantine/core";
 import {
   MinusIcon,
+  PlusIcon,
   FolderSimplePlusIcon,
   FolderOpenIcon,
 } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface FileSorterItemActionsProps {
-  onExclude?: (e: React.MouseEvent) => void;
-  onForceTarget?: (e: React.MouseEvent) => void;
+  path: string;
+  isExcluded?: boolean;
+  forcedTarget?: string;
   onReveal?: (e: React.MouseEvent) => void;
+  refreshPreview: () => Promise<void>;
 }
 
 const FileSorterItemActions = ({
-  onExclude,
-  onForceTarget,
+  path,
+  isExcluded,
+  forcedTarget,
   onReveal,
+  refreshPreview,
 }: FileSorterItemActionsProps) => {
-  if (!onExclude && !onForceTarget && !onReveal) return null;
+  const handleExcludeInclude = async () => {
+    try {
+      if (isExcluded) {
+        await invoke("include_path", { path });
+      } else {
+        await invoke("exclude_path", { path });
+      }
+      await refreshPreview();
+    } catch (err) {
+      console.error("Failed to toggle exclude/include:", err);
+    }
+  };
 
+  const handleForceTarget = async () => {
+    try {
+      // Calls Rust function that handles both picking and resetting
+      await invoke("force_target", { path });
+      await refreshPreview();
+    } catch (err) {
+      console.error("Failed to set/reset forced target:", err);
+    }
+  };
   return (
     <Group gap={4} wrap="nowrap">
-      {onExclude && (
-        <Tooltip label="Exclude file" withArrow position="top">
-          <ActionIcon
-            size="xs"
-            color="red"
-            variant="subtle"
-            className="item-action"
-            onClick={onExclude}
-          >
-            <MinusIcon size={14} />
-          </ActionIcon>
-        </Tooltip>
-      )}
+      {/* Exclude / Include */}
+      <Tooltip
+        label={isExcluded ? "Include file again" : "Exclude file"}
+        withArrow
+      >
+        <ActionIcon
+          size="xs"
+          color={isExcluded ? "green" : "red"}
+          variant="subtle"
+          className="item-action"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleExcludeInclude();
+          }}
+        >
+          {isExcluded ? <PlusIcon size={14} /> : <MinusIcon size={14} />}
+        </ActionIcon>
+      </Tooltip>
 
-      {onForceTarget && (
-        <Tooltip label="Force target folder" withArrow position="top">
-          <ActionIcon
-            size="xs"
-            color="blue"
-            variant="subtle"
-            className="item-action"
-            onClick={onForceTarget}
-          >
-            <FolderSimplePlusIcon size={14} />
-          </ActionIcon>
-        </Tooltip>
-      )}
+      {/* Force target folder */}
+      <Tooltip label="Force target folder" withArrow>
+        <ActionIcon
+          size="xs"
+          color={forcedTarget ? "blue" : "gray"}
+          variant="subtle"
+          className="item-action"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleForceTarget();
+          }}
+        >
+          <FolderSimplePlusIcon size={14} />
+        </ActionIcon>
+      </Tooltip>
 
+      {/* Reveal in file explorer */}
       {onReveal && (
-        <Tooltip label="Reveal in file explorer" withArrow position="top">
+        <Tooltip label="Reveal in file explorer" withArrow>
           <ActionIcon
             size="xs"
             color="gray"
             variant="subtle"
             className="item-action"
-            onClick={onReveal}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReveal(e);
+            }}
           >
             <FolderOpenIcon size={14} />
           </ActionIcon>

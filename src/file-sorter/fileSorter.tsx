@@ -16,10 +16,10 @@ import Section from "../file-randomiser/section";
 import FileSorterToolbar from "./toolbar";
 import { FileSorterState } from "../types/filesorter";
 import SortPreviewTree from "./sortPreviewTree";
-import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
 import ConsolePanel from "./consolePanel";
+import { invoke } from "@tauri-apps/api/core";
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
@@ -31,8 +31,9 @@ const FileSorter = () => {
     stats: { filesToMove: 0, foldersToCreate: 0 },
     hasRestorePoint: false,
     files: [],
+    excludedPaths: new Set(),
+    forcedTargets: new Map(),
   });
-
   const [similarity, setSimilarity] = useState(state.similarityThreshold);
   const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
   const [query, setQuery] = useState("");
@@ -42,8 +43,16 @@ const FileSorter = () => {
   };
 
   const fetchFullState = async () => {
-    const backendState: FileSorterState = await invoke("get_sort_preview");
-    setState(backendState);
+    const backendState: FileSorterState & {
+      excludedPaths?: string[];
+      forcedTargets?: Record<string, string>;
+    } = await invoke("get_sort_preview");
+
+    setState({
+      ...backendState,
+      excludedPaths: new Set(backendState.excludedPaths || []),
+      forcedTargets: new Map(Object.entries(backendState.forcedTargets || {})),
+    });
     setSimilarity(backendState.similarityThreshold);
   };
 
@@ -63,7 +72,6 @@ const FileSorter = () => {
         await invoke("set_similarity_threshold", {
           threshold: debouncedSimilarity,
         });
-
         await fetchFullState();
       } finally {
         setShowLoading(false);
@@ -73,44 +81,38 @@ const FileSorter = () => {
     applyThreshold();
   }, [debouncedSimilarity, state.currentPath]);
 
+  const refreshPreview = async () => {
+    setShowLoading(true);
+    try {
+      await fetchFullState();
+    } finally {
+      setShowLoading(false);
+    }
+  };
+
   const handleSelectFolder = async () => {
     const path = await invoke<string | null>("select_sort_directory");
     if (!path) return;
 
     logFrontend("Directory selected");
     setQuery("");
-    setShowLoading(true);
-
-    try {
-      await fetchFullState();
-    } finally {
-      setShowLoading(false);
-    }
+    await refreshPreview();
   };
 
   const handleRefresh = async () => {
     if (!state.currentPath) return;
-
     logFrontend("Refreshing preview...");
     setQuery("");
-    setShowLoading(true);
-
-    try {
-      await fetchFullState();
-    } finally {
-      setShowLoading(false);
-    }
+    await refreshPreview();
   };
 
   const handleSort = async () => {
     if (!state.currentPath) return;
-
     logFrontend("Sorting files");
     setShowLoading(true);
-
     try {
       await invoke("sort_files");
-      await fetchFullState();
+      await refreshPreview();
     } finally {
       setShowLoading(false);
     }
@@ -119,10 +121,9 @@ const FileSorter = () => {
   const handleRestore = async () => {
     logFrontend("Restoring last sort");
     setShowLoading(true);
-
     try {
       await invoke("restore_last_sort");
-      await fetchFullState();
+      await refreshPreview();
     } finally {
       setShowLoading(false);
     }
@@ -168,6 +169,9 @@ const FileSorter = () => {
                     filteredPreviewTree.plannedMovesBySource
                   }
                   searchQuery={query}
+                  excludedPaths={state.excludedPaths}
+                  forcedTargets={state.forcedTargets}
+                  refreshPreview={refreshPreview}
                 />
               ) : (
                 <Code block>

@@ -53,7 +53,10 @@ pub fn run() {
             filesortercommands::get_sort_preview,
             filesortercommands::sort_files,
             filesortercommands::restore_last_sort,
-            filesortercommands::set_similarity_threshold
+            filesortercommands::set_similarity_threshold,
+            filesortercommands::include_path,
+            filesortercommands::exclude_path,
+            filesortercommands::force_target
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

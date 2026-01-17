@@ -11,12 +11,18 @@ import FileSorterItemActions from "./fileSorterItemActions";
 interface SortPreviewTreeProps {
   root: SortTreeNode;
   plannedMovesBySource: Map<string, SortOperation[]>;
+  excludedPaths: Set<string>;
+  forcedTargets: Map<string, string>;
+  refreshPreview: () => Promise<void>;
   searchQuery?: string;
 }
 
 const SortPreviewTree = ({
   root,
   plannedMovesBySource,
+  excludedPaths,
+  forcedTargets,
+  refreshPreview,
   searchQuery = "",
 }: SortPreviewTreeProps) => {
   return (
@@ -25,7 +31,9 @@ const SortPreviewTree = ({
         node={root}
         depth={0}
         plannedMovesBySource={plannedMovesBySource}
-        ancestorsLastChild={[]}
+        excludedPaths={excludedPaths}
+        forcedTargets={forcedTargets}
+        refreshPreview={refreshPreview}
         searchQuery={searchQuery.toLowerCase()}
       />
     </Stack>
@@ -36,9 +44,9 @@ interface TreeNodeProps {
   node: SortTreeNode;
   depth: number;
   plannedMovesBySource: Map<string, SortOperation[]>;
-  parentBg?: string;
-  isLast?: boolean;
-  ancestorsLastChild?: boolean[];
+  excludedPaths: Set<string>;
+  forcedTargets: Map<string, string>;
+  refreshPreview: () => Promise<void>;
   searchQuery?: string;
 }
 
@@ -52,6 +60,9 @@ const TreeNode = ({
   node,
   depth,
   plannedMovesBySource,
+  excludedPaths,
+  forcedTargets,
+  refreshPreview,
   searchQuery = "",
 }: TreeNodeProps) => {
   // Filter children based on search query
@@ -83,19 +94,19 @@ const TreeNode = ({
   const expandable = hasChildren || plannedMoves > 0;
   const [expanded, setExpanded] = useState(hasChildren && plannedMoves > 0);
 
+  const isExcluded = excludedPaths.has(displayNode.path);
+  const forcedTarget = forcedTargets.get(displayNode.path);
+
   // Determine background
   let bgColor: string | undefined;
   if (!displayNode.isDir && displayNode.operation) {
-    // file being moved → green
     bgColor = "rgba(144, 238, 144, 0.3)";
   } else if (displayNode.isDir && displayNode.isNew) {
-    // new folder → green
     bgColor = "rgba(144, 238, 144, 0.3)";
   } else if (displayNode.isDir && depth > 0 && plannedMoves > 0) {
-    // existing folder receiving files → blue, but skip root (depth === 0)
     bgColor = "rgba(173, 216, 230, 0.3)";
   } else {
-    bgColor = undefined; // existing folder with nothing
+    bgColor = undefined;
   }
 
   const sortedChildren =
@@ -105,7 +116,6 @@ const TreeNode = ({
       return a.name.localeCompare(b.name);
     }) || [];
 
-  // Highlight matching part
   const renderHighlighted = (name: string) => {
     if (!searchQuery) return name;
     const lcName = name.toLowerCase();
@@ -175,7 +185,6 @@ const TreeNode = ({
 
         {!displayNode.isDir && (
           <>
-            {/* Source badge */}
             {isSourceFile && (
               <Tooltip
                 label={`Source file — planned move(s): ${plannedMovesBySource
@@ -191,20 +200,11 @@ const TreeNode = ({
               </Tooltip>
             )}
 
-            {/* File actions */}
             <FileSorterItemActions
-              onExclude={(e) => {
-                e.stopPropagation();
-                console.log("Exclude", displayNode.path);
-              }}
-              onForceTarget={(e) => {
-                e.stopPropagation();
-                console.log("Force Target", displayNode.path);
-              }}
-              onReveal={(e) => {
-                e.stopPropagation();
-                console.log("Reveal", displayNode.path);
-              }}
+              path={displayNode.path}
+              isExcluded={isExcluded}
+              forcedTarget={forcedTarget}
+              refreshPreview={refreshPreview}
             />
           </>
         )}
@@ -218,6 +218,9 @@ const TreeNode = ({
               node={child}
               depth={depth + 1}
               plannedMovesBySource={plannedMovesBySource}
+              excludedPaths={excludedPaths}
+              forcedTargets={forcedTargets}
+              refreshPreview={refreshPreview}
               searchQuery={searchQuery}
             />
           ))}
