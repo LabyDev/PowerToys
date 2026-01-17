@@ -794,34 +794,44 @@ const FileRandomiser = () => {
           >
             <Virtuoso
               data={filteredHistory}
-              itemContent={(_, item) => (
-                <Group
-                  px="sm"
-                  py={6}
-                  align="center"
-                  gap={8}
-                  className="item-actions"
-                >
-                  <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
-                    <ClampedTooltipText size="sm">
-                      {item.name}
-                    </ClampedTooltipText>
-                    <ClampedTooltipText size="xs" c="dimmed">
-                      {item.path}
-                    </ClampedTooltipText>
-                    <Text size="xs" c="dimmed" tt="italic">
-                      Opened at: {new Date(item.openedAt).toLocaleString()}
-                    </Text>
-                  </Stack>
-                  <ItemActions
-                    onOpen={async () => randomiserApi.openPath(item.path)}
-                    onOpenFolder={async () => {
-                      const folder = await dirname(item.path);
-                      randomiserApi.openPath(folder);
-                    }}
-                  />
-                </Group>
-              )}
+              itemContent={(_, item) => {
+                const file = data.files.find((f) => f.path === item.path);
+
+                return (
+                  <Group
+                    px="sm"
+                    py={6}
+                    align="center"
+                    gap={8}
+                    className="item-actions"
+                  >
+                    <Stack gap={0} style={{ flex: 1, overflow: "hidden" }}>
+                      <ClampedTooltipText size="sm">
+                        {item.name}
+                      </ClampedTooltipText>
+                      <ClampedTooltipText size="xs" c="dimmed">
+                        {item.path}
+                      </ClampedTooltipText>
+                      <Text size="xs" c="dimmed" tt="italic">
+                        Opened at: {new Date(item.openedAt).toLocaleString()}
+                      </Text>
+                    </Stack>
+
+                    <ItemActions
+                      onOpen={async () => randomiserApi.openPath(item.path)}
+                      onOpenFolder={async () => {
+                        const folder = await dirname(item.path);
+                        randomiserApi.openPath(folder);
+                      }}
+                      currentBookmark={file?.bookmark}
+                      onBookmarkChange={() => {
+                        if (!file) return;
+                        fileTreeRef.current?.scrollToFile(file.id);
+                      }}
+                    />
+                  </Group>
+                );
+              }}
             />
           </Section>
         </Group>
