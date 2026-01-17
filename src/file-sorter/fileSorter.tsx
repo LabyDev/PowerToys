@@ -37,20 +37,20 @@ const FileSorter = () => {
 
   const [similarity, setSimilarity] = useState(state.similarityThreshold);
   const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
-  const [query, setQuery] = useState(""); // <-- search query
+  const [query, setQuery] = useState("");
 
   const logFrontend = (message: string) => {
     emit("file_sorter_log", `[ui] ${message}`);
   };
 
-  const fetchState = async () => {
-    const backendState: FileSorterState = await invoke("get_sorter_state");
+  const fetchFullState = async () => {
+    const backendState: FileSorterState = await invoke("get_sort_preview");
     setState(backendState);
     setSimilarity(backendState.similarityThreshold);
   };
 
   useEffect(() => {
-    fetchState();
+    fetchFullState();
   }, []);
 
   useEffect(() => {
@@ -66,8 +66,7 @@ const FileSorter = () => {
           threshold: debouncedSimilarity,
         });
 
-        const updatedState: FileSorterState = await invoke("get_sort_preview");
-        setState(updatedState);
+        await fetchFullState();
       } finally {
         setShowLoading(false);
       }
@@ -78,22 +77,28 @@ const FileSorter = () => {
 
   const handleSelectFolder = async () => {
     const path = await invoke<string | null>("select_sort_directory");
-    if (path) {
-      setState((prev) => ({ ...prev, currentPath: path }));
-      logFrontend("Directory selected");
-      setQuery(""); // reset search on folder change
+    if (!path) return;
+
+    logFrontend("Directory selected");
+    setQuery("");
+    setShowLoading(true);
+
+    try {
+      await fetchFullState();
+    } finally {
+      setShowLoading(false);
     }
   };
 
   const handleRefresh = async () => {
-    // Refresh behaves like selecting the current folder
     if (!state.currentPath) return;
-    setShowLoading(true);
+
     logFrontend("Refreshing preview...");
+    setQuery("");
+    setShowLoading(true);
+
     try {
-      const updatedState: FileSorterState = await invoke("get_sort_preview");
-      setState(updatedState);
-      setQuery(""); // reset search on refresh
+      await fetchFullState();
     } finally {
       setShowLoading(false);
     }
@@ -101,11 +106,13 @@ const FileSorter = () => {
 
   const handleSort = async () => {
     if (!state.currentPath) return;
+
     logFrontend("Sorting files");
     setShowLoading(true);
+
     try {
       await invoke("sort_files");
-      await fetchState();
+      await fetchFullState();
     } finally {
       setShowLoading(false);
     }
@@ -114,9 +121,10 @@ const FileSorter = () => {
   const handleRestore = async () => {
     logFrontend("Restoring last sort");
     setShowLoading(true);
+
     try {
       await invoke("restore_last_sort");
-      await fetchState();
+      await fetchFullState();
     } finally {
       setShowLoading(false);
     }
@@ -127,12 +135,10 @@ const FileSorter = () => {
     logFrontend(`Filters updated (${rules.length})`);
   };
 
-  // Build preview tree
   const previewTree = state.currentPath
     ? buildSortPreviewTree(state.currentPath, state.files, state.preview)
     : null;
 
-  // Apply search filtering
   const filteredPreviewTree = previewTree
     ? buildSortPreviewTree(
         state.currentPath!,
@@ -162,9 +168,9 @@ const FileSorter = () => {
         <FiltersPanel
           data={{
             filterRules: state.filterRules,
-            paths: [], // dummy
-            files: [], // dummy
-            history: [], // dummy
+            paths: [],
+            files: [],
+            history: [],
           }}
           updateData={async (u) => updateFilters(u.filterRules)}
         />
