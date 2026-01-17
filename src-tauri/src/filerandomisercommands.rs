@@ -281,7 +281,7 @@ pub fn pick_random_file(
     randomness: Option<u8>, // 0–100
 ) -> Option<FileEntry> {
     let randomness = randomness.unwrap_or(50) as f64 / 100.0;
-    let temperature = (1.0 - randomness).max(0.05); // avoid extreme spikes
+    let temperature = (1.0 - randomness).max(0.05);
 
     let mut data = app_data.lock().unwrap();
 
@@ -294,28 +294,40 @@ pub fn pick_random_file(
 
     let mut rng = rand::rng();
 
-    // Remove order bias
+    // ---- RECENCY WINDOW (hard anti-repeat) ----
+    const RECENT_WINDOW: usize = 5;
+
+    let recent_ids: Vec<u64> = data
+        .history
+        .iter()
+        .rev()
+        .take(RECENT_WINDOW)
+        .map(|h| h.id)
+        .collect();
+
+    // Randomise base order to avoid static bias
     available_files.shuffle(&mut rng);
 
-    // Build weights
     let weights: Vec<f64> = available_files
         .iter()
         .enumerate()
         .map(|(i, file)| {
-            // base positional bias (soft)
+            // Base positional soft bias
             let pos = i as f64 / (available_files.len().saturating_sub(1).max(1)) as f64;
             let mut weight = (pos / temperature).exp();
 
-            // avoid immediate repeat
-            if Some(file.id) == data.last_picked_id {
-                weight *= 0.1;
+            // ---- STRONG RECENCY PENALTY ----
+            if let Some(idx) = recent_ids.iter().position(|id| *id == file.id) {
+                // Exponential decay: most recent ≈ zero chance
+                let decay = (idx + 1) as f64;
+                weight *= 0.01_f64.powf(1.0 / decay);
             }
 
-            // penalize frequently picked files
+            // ---- LONG-TERM FREQUENCY PENALTY ----
             let picks = *data.pick_counts.get(&file.id).unwrap_or(&0) as f64;
-            weight /= 1.0 + picks;
+            weight /= 1.0 + (picks * 0.75);
 
-            weight.max(0.0001)
+            weight.max(0.000001)
         })
         .collect();
 
@@ -323,7 +335,7 @@ pub fn pick_random_file(
     let idx = dist.sample(&mut rng);
     let file = available_files[idx].clone();
 
-    // update history
+    // Update tracking
     data.last_picked_id = Some(file.id);
     *data.pick_counts.entry(file.id).or_insert(0) += 1;
 
