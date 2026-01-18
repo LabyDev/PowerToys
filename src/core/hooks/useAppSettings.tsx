@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { AppSettings, LanguageOption } from "../../types/settings";
-import { Bookmark } from "../../types/filerandomiser";
+import { Bookmark } from "../../types/common";
 
 export function useAppSettings() {
   const [settings, setSettingsState] = useState<AppSettings>({

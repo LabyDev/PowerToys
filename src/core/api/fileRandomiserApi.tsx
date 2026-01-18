@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { AppStateData, Bookmark } from "../../types/filerandomiser";
+import { AppStateData } from "../../types/filerandomiser";
+import { Bookmark } from "../../types/common";
 
 export const getAppState = () => {
   return invoke<AppStateData>("get_app_state");
