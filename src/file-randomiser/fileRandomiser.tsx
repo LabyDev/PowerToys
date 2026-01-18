@@ -5,17 +5,10 @@ import { listen } from "@tauri-apps/api/event";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
 import { useAppSettings } from "../core/hooks/useAppSettings";
-import Section from "./section";
-import Toolbar from "./toolbar";
-import FiltersPanel from "./filtersPanel";
 import "./fileRandomiser.css";
-import PresetControls from "./presetControls";
 import * as presetApi from "../core/api/presetsApi";
 import * as randomiserApi from "../core/api/fileRandomiserApi";
 import { arraysEqual } from "../core/utilities/deepCompare";
-import FileTree, { FileTreeHandle } from "./fileTree";
-import ClampedTooltipText from "./clampedTooltipText";
-import ItemActions from "./itemActions";
 import { sep } from "@tauri-apps/api/path";
 import { useFileRandomiser } from "../core/hooks/fileRandomiserStateProvider";
 import { useTranslation } from "react-i18next";
@@ -28,6 +21,13 @@ import {
   FileTreeNode,
   FileEntry,
 } from "../types/filerandomiser";
+import Toolbar from "./components/toolbar";
+import ClampedTooltipText from "./components/clampedTooltipText";
+import FileTree, { FileTreeHandle } from "./components/fileTree";
+import FiltersPanel from "./components/filtersPanel";
+import ItemActions from "./components/itemActions";
+import PresetControls from "./components/presetControls";
+import Section from "./components/section";
 
 const FileRandomiser = () => {
   const { settings, globalBookmarks, setGlobalBookmarks } = useAppSettings();

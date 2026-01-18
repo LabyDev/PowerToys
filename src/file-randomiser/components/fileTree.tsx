@@ -14,10 +14,10 @@ import {
   FileEntry,
   FileTreeNode,
   FlattenedNode,
-} from "../types/filerandomiser";
+} from "../../types/filerandomiser";
 import ClampedTooltipText from "./clampedTooltipText";
 import ItemActions from "./itemActions";
-import * as randomiserApi from "../core/api/fileRandomiserApi";
+import * as randomiserApi from "../../core/api/fileRandomiserApi";
 import { sep } from "@tauri-apps/api/path";
 
 interface FileTreeProps {

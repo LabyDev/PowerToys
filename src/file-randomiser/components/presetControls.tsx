@@ -7,7 +7,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { FloppyDiskIcon, FolderOpenIcon } from "@phosphor-icons/react";
-import { RandomiserPreset } from "../types/filerandomiser";
+import { RandomiserPreset } from "../../types/filerandomiser";
 import { useTranslation } from "react-i18next";
 
 interface PresetControlsProps {

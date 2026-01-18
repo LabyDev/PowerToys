@@ -27,14 +27,13 @@ const ClampedTooltipText = ({
     setIsOverflowing(el.scrollWidth > el.clientWidth);
   }, []);
 
-  // Check overflow on mount, children change, and window resize
   useEffect(() => {
     checkOverflow();
     window.addEventListener("resize", checkOverflow);
     return () => window.removeEventListener("resize", checkOverflow);
   }, [children, checkOverflow]);
 
-  const text = (
+  const textElement = (
     <Text
       ref={ref}
       size={size}
@@ -63,12 +62,12 @@ const ClampedTooltipText = ({
           },
         })}
       >
-        {text}
+        {textElement}
       </Tooltip>
     );
   }
 
-  return text;
+  return textElement;
 };
 
 export default ClampedTooltipText;

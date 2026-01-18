@@ -1,7 +1,7 @@
 import { Badge, Group, Text, ActionIcon } from "@mantine/core";
 import { TrashIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
-import { FilterRule } from "../types/common";
+import { FilterRule } from "../../types/common";
 
 function RuleBadge({
   rule,
