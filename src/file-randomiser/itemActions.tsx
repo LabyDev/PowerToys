@@ -70,7 +70,7 @@ const ItemActions = ({
     return null;
 
   return (
-    <Group gap={4} wrap="nowrap">
+    <Group gap={4} wrap="nowrap" mr={2}>
       {onOpenFolder && (
         <Tooltip
           label={t("fileRandomiser.itemActions.openFolder")}

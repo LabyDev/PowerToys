@@ -852,6 +852,10 @@ const FileRandomiser = () => {
                       <ClampedTooltipText size="xs" c="dimmed">
                         {item.path}
                       </ClampedTooltipText>
+                      <Text size="10px" c="dimmed" fs="italic">
+                        {t("fileRandomiser.openedAt")}:{" "}
+                        {new Date(item.openedAt).toLocaleString()}
+                      </Text>
                     </Stack>
 
                     <ItemActions
