@@ -3,23 +3,20 @@ import { TrashIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { FilterRule } from "../../types/common";
 
-function RuleBadge({
-  rule,
-  onRemove,
-}: {
+interface RuleBadgeProps {
   rule: FilterRule;
   onRemove: () => void;
-}) {
+}
+
+const RuleBadge = ({ rule, onRemove }: RuleBadgeProps) => {
   const { t } = useTranslation();
   const isExclude = rule.action === "exclude";
+  const badgeColor = isExclude ? "red" : "green";
+
+  const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
 
   return (
-    <Badge
-      color={isExclude ? "red" : "green"}
-      variant="light"
-      radius="sm"
-      px="xs"
-    >
+    <Badge color={badgeColor} variant="light" radius="sm" px="xs">
       <Group gap={6} wrap="nowrap">
         {/* Include / Exclude symbol */}
         <Text size="xs" fw={700}>
@@ -45,17 +42,15 @@ function RuleBadge({
           </Text>
         )}
 
-        {/* Delete */}
+        {/* Delete action */}
         <ActionIcon
           size="xs"
           variant="subtle"
-          color={isExclude ? "red" : "green"}
-          onPointerDown={(event) => event.stopPropagation()}
-          onMouseDown={(event) => {
-            event.stopPropagation();
-          }}
+          color={badgeColor}
+          onPointerDown={stopPropagation}
+          onMouseDown={stopPropagation}
           onClick={(e) => {
-            e.stopPropagation();
+            stopPropagation(e);
             onRemove();
           }}
         >
@@ -64,6 +59,6 @@ function RuleBadge({
       </Group>
     </Badge>
   );
-}
+};
 
 export default RuleBadge;

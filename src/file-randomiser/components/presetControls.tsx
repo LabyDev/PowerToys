@@ -35,6 +35,70 @@ const PresetControls = ({
 }: PresetControlsProps) => {
   const { t } = useTranslation();
 
+  const renderSaveButton = () =>
+    dirty ? (
+      <Tooltip label={t("fileRandomiser.presetControls.savePreset")}>
+        <ActionIcon size="sm" color="blue" variant="filled" onClick={onSave}>
+          <FloppyDiskIcon size={14} />
+        </ActionIcon>
+      </Tooltip>
+    ) : null;
+
+  const renderClearButton = () => (
+    <div style={{ width: 28, display: "flex", justifyContent: "center" }}>
+      {appliedPreset ? (
+        <Tooltip label={t("fileRandomiser.presetControls.clearPreset")}>
+          <ActionIcon
+            size="sm"
+            color="red"
+            variant="filled"
+            onClick={onPresetClear}
+          >
+            ✕
+          </ActionIcon>
+        </Tooltip>
+      ) : (
+        <ActionIcon size="sm" style={{ visibility: "hidden" }}>
+          ✕
+        </ActionIcon>
+      )}
+    </div>
+  );
+
+  // ------------------- Preset dropdown menu -------------------
+  const renderPresetMenu = () => (
+    <Menu withinPortal>
+      <Menu.Target>
+        <Button size="sm" variant="light">
+          {t("fileRandomiser.presetControls.presetsButton")}
+        </Button>
+      </Menu.Target>
+
+      <Menu.Dropdown>
+        {presets.length > 0 ? (
+          presets.map((p) => (
+            <Menu.Item key={p.id} onClick={() => onSelect(p)}>
+              {p.name}
+            </Menu.Item>
+          ))
+        ) : (
+          <Menu.Item disabled>
+            {t("fileRandomiser.presetControls.noPresetsFound")}
+          </Menu.Item>
+        )}
+
+        <Menu.Divider />
+
+        <Menu.Item
+          leftSection={<FolderOpenIcon size={14} />}
+          onClick={onOpenFolder}
+        >
+          {t("fileRandomiser.presetControls.openPresetsFolder")}
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
+  );
+
   return (
     <Group gap="xs" align="center">
       {/* Preset Name Input */}
@@ -47,77 +111,15 @@ const PresetControls = ({
           input: {
             width: 220,
             fontWeight: 500,
-            paddingRight: 36, // space for save button only
+            paddingRight: 36, // space for save button
           },
         }}
-        rightSection={
-          dirty ? (
-            <Tooltip label={t("fileRandomiser.presetControls.savePreset")}>
-              <ActionIcon
-                size="sm"
-                color="blue"
-                variant="filled"
-                onClick={onSave}
-              >
-                <FloppyDiskIcon size={14} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null
-        }
+        rightSection={renderSaveButton()}
       />
 
-      {/* Clear Preset Button (space reserved, tooltip only when applied) */}
-      <div style={{ width: 28, display: "flex", justifyContent: "center" }}>
-        {appliedPreset !== null ? (
-          <Tooltip label={t("fileRandomiser.presetControls.clearPreset")}>
-            <ActionIcon
-              size="sm"
-              color="red"
-              variant="filled"
-              onClick={onPresetClear}
-            >
-              ✕
-            </ActionIcon>
-          </Tooltip>
-        ) : (
-          // Invisible placeholder to reserve space
-          <ActionIcon size="sm" style={{ visibility: "hidden" }}>
-            ✕
-          </ActionIcon>
-        )}
-      </div>
+      {renderClearButton()}
 
-      {/* Preset Dropdown */}
-      <Menu withinPortal>
-        <Menu.Target>
-          <Button size="sm" variant="light">
-            {t("fileRandomiser.presetControls.presetsButton")}
-          </Button>
-        </Menu.Target>
-
-        <Menu.Dropdown>
-          {presets.length > 0 ? (
-            presets.map((p) => (
-              <Menu.Item key={p.id} onClick={() => onSelect(p)}>
-                {p.name}
-              </Menu.Item>
-            ))
-          ) : (
-            <Menu.Item disabled>
-              {t("fileRandomiser.presetControls.noPresetsFound")}
-            </Menu.Item>
-          )}
-
-          <Menu.Divider />
-
-          <Menu.Item
-            leftSection={<FolderOpenIcon size={14} />}
-            onClick={onOpenFolder}
-          >
-            {t("fileRandomiser.presetControls.openPresetsFolder")}
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      {renderPresetMenu()}
     </Group>
   );
 };

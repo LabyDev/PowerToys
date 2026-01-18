@@ -47,83 +47,92 @@ const Toolbar = ({
 }: ToolbarProps) => {
   const { t } = useTranslation();
 
+  // ------------------- Left + middle buttons -------------------
+  const renderButtons = () => (
+    <Group gap="sm" ml="xl">
+      <Button leftSection={<FolderPlusIcon size={16} />} onClick={onAddPath}>
+        {t("fileRandomiser.toolbar.addPath")}
+      </Button>
+      <Button
+        variant="light"
+        leftSection={<ArrowsClockwiseIcon size={16} />}
+        onClick={onCrawl}
+      >
+        {t("fileRandomiser.toolbar.crawl")}
+      </Button>
+      <Tooltip
+        label={
+          hasStartedTracking
+            ? t("fileRandomiser.toolbar.pickFileDisabledTracking")
+            : ""
+        }
+        disabled={!hasStartedTracking}
+        withArrow
+        position="bottom"
+      >
+        <Button
+          variant="filled"
+          leftSection={<ShuffleIcon size={16} />}
+          onClick={onPickFile}
+          disabled={hasStartedTracking}
+        >
+          {shuffle
+            ? t("fileRandomiser.toolbar.randomFile")
+            : t("fileRandomiser.toolbar.nextFile")}
+        </Button>
+      </Tooltip>
+    </Group>
+  );
+
+  // ------------------- Right checkboxes -------------------
+  const renderCheckboxes = () => (
+    <Group gap="sm">
+      <Checkbox
+        label={t("fileRandomiser.toolbar.shuffle")}
+        checked={shuffle}
+        onChange={(e) => onShuffleChange(e.currentTarget.checked)}
+      />
+      {allowTracking && (
+        <Checkbox
+          label={t("fileRandomiser.toolbar.tracking")}
+          checked={tracking}
+          onChange={(e) => onTrackingChange(e.currentTarget.checked)}
+        />
+      )}
+    </Group>
+  );
+
+  // ------------------- Search input -------------------
+  const renderSearchInput = () => (
+    <TextInput
+      placeholder={t("fileRandomiser.toolbar.searchPlaceholder")}
+      leftSection={<MagnifyingGlassIcon size={16} />}
+      rightSection={
+        query && (
+          <ActionIcon onClick={() => onQueryChange("")}>
+            <XCircleIcon size={16} />
+          </ActionIcon>
+        )
+      }
+      value={query}
+      onChange={(e) => onQueryChange(e.currentTarget.value)}
+    />
+  );
+
   return (
     <>
       <Paper withBorder radius="md" p="md">
         <Group justify="space-between" align="center" wrap="nowrap">
-          {/* Left + middle buttons */}
           <Group gap="md" align="center" wrap="nowrap">
             {presetControls}
-
-            <Group gap="sm" ml="xl">
-              <Button
-                leftSection={<FolderPlusIcon size={16} />}
-                onClick={onAddPath}
-              >
-                {t("fileRandomiser.toolbar.addPath")}
-              </Button>
-              <Button
-                variant="light"
-                leftSection={<ArrowsClockwiseIcon size={16} />}
-                onClick={onCrawl}
-              >
-                {t("fileRandomiser.toolbar.crawl")}
-              </Button>
-              <Tooltip
-                label={
-                  hasStartedTracking
-                    ? t("fileRandomiser.toolbar.pickFileDisabledTracking")
-                    : ""
-                }
-                disabled={!hasStartedTracking} // only show when disabled
-                withArrow
-                position="bottom"
-              >
-                <Button
-                  variant="filled"
-                  leftSection={<ShuffleIcon size={16} />}
-                  onClick={onPickFile}
-                  disabled={hasStartedTracking}
-                >
-                  {shuffle
-                    ? t("fileRandomiser.toolbar.randomFile")
-                    : t("fileRandomiser.toolbar.nextFile")}
-                </Button>
-              </Tooltip>
-            </Group>
+            {renderButtons()}
           </Group>
 
-          {/* Right: checkboxes */}
-          <Group gap="sm">
-            <Checkbox
-              label={t("fileRandomiser.toolbar.shuffle")}
-              checked={shuffle}
-              onChange={(e) => onShuffleChange(e.currentTarget.checked)}
-            />
-            {allowTracking && (
-              <Checkbox
-                label={t("fileRandomiser.toolbar.tracking")}
-                checked={tracking}
-                onChange={(e) => onTrackingChange(e.currentTarget.checked)}
-              />
-            )}
-          </Group>
+          {renderCheckboxes()}
         </Group>
       </Paper>
 
-      <TextInput
-        placeholder={t("fileRandomiser.toolbar.searchPlaceholder")}
-        leftSection={<MagnifyingGlassIcon size={16} />}
-        rightSection={
-          query && (
-            <ActionIcon onClick={() => onQueryChange("")}>
-              <XCircleIcon size={16} />
-            </ActionIcon>
-          )
-        }
-        value={query}
-        onChange={(e) => onQueryChange(e.currentTarget.value)}
-      />
+      {renderSearchInput()}
     </>
   );
 };

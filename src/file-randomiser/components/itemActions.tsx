@@ -17,14 +17,14 @@ type ItemActionsProps = {
   onOpen?: () => void;
   onBookmarkChange?: (color: string | null) => void;
   onBookmarkChangeGlobal?: (color: string | null) => void;
-  currentBookmark?: BookmarkInfo | undefined;
+  currentBookmark?: BookmarkInfo;
 };
 
 const bookmarkCycle = [
   null,
-  "#FFD700", // gold
   "#FF6B6B", // red
   "#6BCB77", // green
+  "#FFD700", // gold
   "#4D96FF", // blue
 ] as const;
 
@@ -41,10 +41,10 @@ const ItemActions = ({
 }: ItemActionsProps) => {
   const { t } = useTranslation();
 
+  // ------------------- Bookmark cycling -------------------
   const cycleBookmark = (event: React.MouseEvent) => {
     if (!onBookmarkChange) return;
 
-    // Determine if we are in "global lock" mode
     const isGlobalLocked = currentBookmark?.isGlobal ?? false;
 
     const currentColor: BookmarkCycleColor = bookmarkCycle.includes(
@@ -53,85 +53,69 @@ const ItemActions = ({
       ? (currentBookmark!.color as BookmarkCycleColor)
       : null;
 
-    const currentIndex = bookmarkCycle.indexOf(currentColor);
-    const nextIndex = (currentIndex + 1) % bookmarkCycle.length;
-    const nextColor = bookmarkCycle[nextIndex];
+    const nextColor =
+      bookmarkCycle[
+        (bookmarkCycle.indexOf(currentColor) + 1) % bookmarkCycle.length
+      ];
 
-    // If shift is pressed → always global
     if (event.shiftKey || isGlobalLocked) {
-      if (!onBookmarkChangeGlobal) return;
-      onBookmarkChangeGlobal(nextColor);
+      onBookmarkChangeGlobal?.(nextColor);
     } else {
       onBookmarkChange(nextColor);
     }
   };
 
+  // ------------------- Early return if no actions -------------------
   if (!onOpenFolder && !onExclude && !onRemove && !onOpen && !onBookmarkChange)
     return null;
 
+  // ------------------- Render individual action button -------------------
+  const renderAction = (
+    icon: JSX.Element,
+    label: string,
+    onClick?: () => void,
+    color?: string,
+  ) => (
+    <Tooltip label={label} withArrow position="top">
+      <ActionIcon
+        variant="subtle"
+        onClick={onClick}
+        color={color}
+        className="item-action"
+      >
+        {icon}
+      </ActionIcon>
+    </Tooltip>
+  );
+
   return (
     <Group gap={4} wrap="nowrap" mr={2}>
-      {onOpenFolder && (
-        <Tooltip
-          label={t("fileRandomiser.itemActions.openFolder")}
-          withArrow
-          position="top"
-        >
-          <ActionIcon
-            variant="subtle"
-            onClick={onOpenFolder}
-            className="item-action"
-          >
-            <FolderOpenIcon size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-
-      {onOpen && (
-        <Tooltip
-          label={t("fileRandomiser.itemActions.openFile")}
-          withArrow
-          position="top"
-        >
-          <ActionIcon variant="subtle" onClick={onOpen} className="item-action">
-            <FileArrowUpIcon size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-
-      {onExclude && (
-        <Tooltip
-          label={t("fileRandomiser.itemActions.exclude")}
-          withArrow
-          position="top"
-        >
-          <ActionIcon
-            color="orange"
-            variant="subtle"
-            onClick={onExclude}
-            className="item-action"
-          >
-            <PlusIcon size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-
-      {onRemove && (
-        <Tooltip
-          label={t("fileRandomiser.itemActions.remove")}
-          withArrow
-          position="top"
-        >
-          <ActionIcon
-            color="red"
-            variant="subtle"
-            onClick={onRemove}
-            className="item-action"
-          >
-            <TrashIcon size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
+      {onOpenFolder &&
+        renderAction(
+          <FolderOpenIcon size={16} />,
+          t("fileRandomiser.itemActions.openFolder"),
+          onOpenFolder,
+        )}
+      {onOpen &&
+        renderAction(
+          <FileArrowUpIcon size={16} />,
+          t("fileRandomiser.itemActions.openFile"),
+          onOpen,
+        )}
+      {onExclude &&
+        renderAction(
+          <PlusIcon size={16} />,
+          t("fileRandomiser.itemActions.exclude"),
+          onExclude,
+          "orange",
+        )}
+      {onRemove &&
+        renderAction(
+          <TrashIcon size={16} />,
+          t("fileRandomiser.itemActions.remove"),
+          onRemove,
+          "red",
+        )}
 
       {onBookmarkChange && (
         <Tooltip
@@ -143,8 +127,8 @@ const ItemActions = ({
             <ActionIcon
               variant="subtle"
               onClick={cycleBookmark}
-              className={`item-action ${currentBookmark?.color ? "item-action--bookmark" : ""}`}
               color={currentBookmark?.color ?? "var(--mantine-color-gray-6)"}
+              className={`item-action ${currentBookmark?.color ? "item-action--bookmark" : ""}`}
             >
               <BookmarkIcon
                 weight={currentBookmark?.color ? "fill" : "regular"}

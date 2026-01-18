@@ -69,12 +69,12 @@ const FiltersPanel = ({
     { value: "regex", label: t("fileRandomiser.filtersPanel.ruleTypes.regex") },
   ];
 
+  // ------------------- CRUD for rules -------------------
   const addRule = async () => {
     if (!newRule.pattern.trim()) return;
 
-    // Detect trigger and force type at the moment of addition
-    const finalType = newRule.pattern.startsWith("@bookmarks")
-      ? ("bookmarks" as FilterMatchType)
+    const finalType: FilterMatchType = newRule.pattern.startsWith("@bookmarks")
+      ? "bookmarks"
       : newRule.type;
 
     const rule: FilterRule = {
@@ -85,13 +85,8 @@ const FiltersPanel = ({
 
     await updateData({ ...data, filterRules: [...data.filterRules, rule] });
 
-    // Reset back to previous manual selection
-    setNewRule({
-      action: "exclude",
-      type: newRule.type,
-      pattern: "",
-      caseSensitive: false,
-    });
+    // Reset pattern while keeping manual type selection
+    setNewRule({ ...newRule, pattern: "", action: "exclude" });
   };
 
   const removeRule = async (id: string) => {
@@ -114,27 +109,29 @@ const FiltersPanel = ({
     });
   };
 
-  // Sortable wrapper for RuleBadge
-  function SortableRuleBadge({
+  // ------------------- Sortable wrapper -------------------
+  const SortableRuleBadge = ({
     rule,
     onRemove,
   }: {
     rule: FilterRule;
     onRemove: () => void;
-  }) {
+  }) => {
     const { attributes, listeners, setNodeRef, transform, transition } =
       useSortable({ id: rule.id });
     const style: React.CSSProperties = {
       transform: CSS.Transform.toString(transform),
       transition,
     };
+
     return (
       <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
         <RuleBadge rule={rule} onRemove={onRemove} />
       </div>
     );
-  }
+  };
 
+  // ------------------- JSX -------------------
   return (
     <Paper withBorder radius="md" p="sm">
       <Group
@@ -208,6 +205,7 @@ const FiltersPanel = ({
 
           <Divider />
 
+          {/* Existing rules */}
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
