@@ -12,7 +12,7 @@ import {
   Divider,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
-import Section from "../file-randomiser/components/section";
+import Section from "../common/section";
 import FileSorterToolbar from "./toolbar";
 import { FileSorterState } from "../types/filesorter";
 import SortPreviewTree from "./sortPreviewTree";

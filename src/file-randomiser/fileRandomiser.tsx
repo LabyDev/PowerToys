@@ -27,7 +27,7 @@ import FileTree, { FileTreeHandle } from "./components/fileTree";
 import FiltersPanel from "./components/filtersPanel";
 import ItemActions from "./components/itemActions";
 import PresetControls from "./components/presetControls";
-import Section from "./components/section";
+import Section from "../common/section";
 
 const FileRandomiser = () => {
   const { settings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
