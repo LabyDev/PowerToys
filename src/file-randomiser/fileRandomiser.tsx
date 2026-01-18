@@ -22,10 +22,10 @@ import {
   FileEntry,
 } from "../types/filerandomiser";
 import Toolbar from "./components/toolbar";
-import ClampedTooltipText from "./components/clampedTooltipText";
-import FileTree, { FileTreeHandle } from "./components/fileTree";
-import FiltersPanel from "./components/filtersPanel";
-import ItemActions from "./components/itemActions";
+import ClampedTooltipText from "../common/clampedTooltipText";
+import FileTree, { FileTreeHandle } from "./components/tree/fileTree";
+import FiltersPanel from "./components/filter/filtersPanel";
+import ItemActions from "./components/tree/itemActions";
 import PresetControls from "./components/presetControls";
 import Section from "../common/section";
 

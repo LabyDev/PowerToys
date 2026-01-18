@@ -12,7 +12,7 @@ import {
   Select,
 } from "@mantine/core";
 import { FunnelIcon, PlusIcon } from "@phosphor-icons/react";
-import { AppStateData } from "../../types/filerandomiser";
+import { AppStateData } from "../../../types/filerandomiser";
 import RuleBadge from "./ruleBadge";
 
 import {
@@ -32,7 +32,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { useTranslation } from "react-i18next";
-import { FilterMatchType, FilterRule } from "../../types/common";
+import { FilterMatchType, FilterRule } from "../../../types/common";
 
 const FiltersPanel = ({
   data,

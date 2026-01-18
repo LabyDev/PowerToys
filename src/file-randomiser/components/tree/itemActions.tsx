@@ -8,7 +8,7 @@ import {
   GlobeHemisphereWestIcon,
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
-import { BookmarkInfo } from "../../types/filerandomiser";
+import { BookmarkInfo } from "../../../types/filerandomiser";
 
 type ItemActionsProps = {
   onOpenFolder?: () => void;

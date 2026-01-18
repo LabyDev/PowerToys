@@ -15,10 +15,10 @@ import {
   FileEntry,
   FileTreeNode,
   FlattenedNode,
-} from "../../types/filerandomiser";
-import ClampedTooltipText from "./clampedTooltipText";
+} from "../../../types/filerandomiser";
+import ClampedTooltipText from "../../../common/clampedTooltipText";
 import ItemActions from "./itemActions";
-import * as randomiserApi from "../../core/api/fileRandomiserApi";
+import * as randomiserApi from "../../../core/api/fileRandomiserApi";
 
 interface FileTreeProps {
   nodes: FileTreeNode[];
