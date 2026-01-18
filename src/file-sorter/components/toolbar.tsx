@@ -38,11 +38,14 @@ const FileSorterToolbar = ({
   currentPath,
   hasRestorePoint,
 }: FileSorterToolbarProps) => {
+  const folderName = currentPath?.split(/[\\/]/).pop() ?? "";
+
   return (
     <Paper withBorder radius="md" p="xs">
       <Group justify="space-between" wrap="nowrap">
-        {/* 1. Action Group */}
+        {/* Action Group */}
         <Group gap="xs" wrap="nowrap">
+          {/* Sort Button */}
           <Button
             leftSection={<ArrowsClockwiseIcon size={18} weight="bold" />}
             onClick={onSort}
@@ -52,6 +55,7 @@ const FileSorterToolbar = ({
             Sort Files
           </Button>
 
+          {/* Undo Last Move */}
           <Tooltip label="Undo last move">
             <Indicator
               disabled={!hasRestorePoint}
@@ -71,6 +75,7 @@ const FileSorterToolbar = ({
             </Indicator>
           </Tooltip>
 
+          {/* Refresh */}
           <ActionIcon
             variant="subtle"
             size="lg"
@@ -82,7 +87,7 @@ const FileSorterToolbar = ({
 
           <Divider orientation="vertical" />
 
-          {/* 2. Path Display - Integrated nicely */}
+          {/* Path Display */}
           <Group gap={6} wrap="nowrap">
             <Tooltip label="Change Folder">
               <ActionIcon
@@ -100,7 +105,7 @@ const FileSorterToolbar = ({
                   /
                 </Text>
                 <Text size="sm" fw={500} truncate maw={200}>
-                  {currentPath.split(/[\\/]/).pop()}
+                  {folderName}
                 </Text>
               </Group>
             ) : (
@@ -111,7 +116,7 @@ const FileSorterToolbar = ({
           </Group>
         </Group>
 
-        {/* 3. Search Filter */}
+        {/* Search Filter */}
         <TextInput
           placeholder="Filter results..."
           leftSection={<MagnifyingGlassIcon size={16} />}

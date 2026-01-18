@@ -13,12 +13,12 @@ import {
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import Section from "../common/section";
-import FileSorterToolbar from "./toolbar";
+import FileSorterToolbar from "./components/toolbar";
 import { FileSorterState } from "../types/filesorter";
-import SortPreviewTree from "./sortPreviewTree";
+import SortPreviewTree from "./components/sortPreviewTree";
 import { emit } from "@tauri-apps/api/event";
 import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
-import ConsolePanel from "./consolePanel";
+import ConsolePanel from "./components/consolePanel";
 import { invoke } from "@tauri-apps/api/core";
 
 const FileSorter = () => {

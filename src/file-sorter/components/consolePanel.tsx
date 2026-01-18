@@ -23,6 +23,7 @@ const ConsolePanel = ({ currentPath, searchQuery = "" }: ConsolePanelProps) => {
     setLogs((prev) => [...prev, `> ${message}`]);
   };
 
+  // Auto-scroll on new logs
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -32,23 +33,23 @@ const ConsolePanel = ({ currentPath, searchQuery = "" }: ConsolePanelProps) => {
     }
   }, [logs]);
 
+  // Listen to Tauri log events
   useEffect(() => {
     if (listenerRegisteredRef.current) return;
     listenerRegisteredRef.current = true;
 
     let unlisten: (() => void) | null = null;
 
-    listen<string>("file_sorter_log", (event) => {
-      pushLog(event.payload);
-    }).then((fn) => {
-      unlisten = fn;
-    });
+    listen<string>("file_sorter_log", (event) => pushLog(event.payload)).then(
+      (fn) => (unlisten = fn),
+    );
 
     return () => {
       if (unlisten) unlisten();
     };
   }, []);
 
+  // Handle currentPath changes
   useEffect(() => {
     if (!currentPath) {
       if (!didLogAwaitingRef.current) {
@@ -65,12 +66,16 @@ const ConsolePanel = ({ currentPath, searchQuery = "" }: ConsolePanelProps) => {
     }
   }, [currentPath]);
 
+  // Highlight search matches
   const renderHighlighted = (line: string) => {
     if (!searchQuery) return line;
+
     const lcLine = line.toLowerCase();
     const lcQuery = searchQuery.toLowerCase();
     const index = lcLine.indexOf(lcQuery);
+
     if (index === -1) return line;
+
     return (
       <>
         {line.slice(0, index)}

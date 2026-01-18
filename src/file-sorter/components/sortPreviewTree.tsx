@@ -5,7 +5,7 @@ import {
   CaretDownIcon,
   MinusIcon,
 } from "@phosphor-icons/react";
-import { SortTreeNode, SortOperation } from "../types/filesorter";
+import { SortTreeNode, SortOperation } from "../../types/filesorter";
 import FileSorterItemActions from "./fileSorterItemActions";
 
 interface SortPreviewTreeProps {
@@ -24,21 +24,19 @@ const SortPreviewTree = ({
   forcedTargets,
   refreshPreview,
   searchQuery = "",
-}: SortPreviewTreeProps) => {
-  return (
-    <Stack gap={2}>
-      <TreeNode
-        node={root}
-        depth={0}
-        plannedMovesBySource={plannedMovesBySource}
-        excludedPaths={excludedPaths}
-        forcedTargets={forcedTargets}
-        refreshPreview={refreshPreview}
-        searchQuery={searchQuery.toLowerCase()}
-      />
-    </Stack>
-  );
-};
+}: SortPreviewTreeProps) => (
+  <Stack gap={2}>
+    <TreeNode
+      node={root}
+      depth={0}
+      plannedMovesBySource={plannedMovesBySource}
+      excludedPaths={excludedPaths}
+      forcedTargets={forcedTargets}
+      refreshPreview={refreshPreview}
+      searchQuery={searchQuery.toLowerCase()}
+    />
+  </Stack>
+);
 
 interface TreeNodeProps {
   node: SortTreeNode;
@@ -50,6 +48,7 @@ interface TreeNodeProps {
   searchQuery?: string;
 }
 
+// Count total planned moves inside a node recursively
 function countPlannedMoves(node: SortTreeNode): number {
   if (!node.isDir) return node.operation ? 1 : 0;
   if (!node.children) return 0;
@@ -65,22 +64,20 @@ const TreeNode = ({
   refreshPreview,
   searchQuery = "",
 }: TreeNodeProps) => {
-  // Filter children based on search query
+  // Filter nodes based on search query
   const matchesSearch = (n: SortTreeNode): boolean => {
-    const nameMatch = n.name.toLowerCase().includes(searchQuery);
-    if (nameMatch) return true;
-    if (n.children) return n.children.some(matchesSearch);
-    return false;
+    if (n.name.toLowerCase().includes(searchQuery)) return true;
+    return n.children?.some(matchesSearch) ?? false;
   };
 
   if (searchQuery && !matchesSearch(node)) return null as any;
 
+  // Flatten single-child directory chains
   let displayNode = node;
   const nameChain = [displayNode.name];
   while (
     displayNode.isDir &&
-    displayNode.children &&
-    displayNode.children.length === 1 &&
+    displayNode.children?.length === 1 &&
     displayNode.children[0].isDir
   ) {
     displayNode = displayNode.children[0];
@@ -98,29 +95,29 @@ const TreeNode = ({
   const isExcluded = excludedPaths.has(displayNode.path);
   const forcedTarget = forcedTargets.get(displayNode.path);
 
-  // Determine background
+  // Determine background color
   let bgColor: string | undefined;
   if (!displayNode.isDir && displayNode.operation) {
-    bgColor = "rgba(144, 238, 144, 0.3)";
+    bgColor = "rgba(144, 238, 144, 0.3)"; // light green
   } else if (displayNode.isDir && displayNode.isNew) {
     bgColor = "rgba(144, 238, 144, 0.3)";
   } else if (displayNode.isDir && depth > 0 && plannedMoves > 0) {
-    bgColor = "rgba(173, 216, 230, 0.3)";
-  } else {
-    bgColor = undefined;
+    bgColor = "rgba(173, 216, 230, 0.3)"; // light blue
   }
 
-  const sortedChildren =
-    displayNode.children?.slice().sort((a, b) => {
-      if (a.isDir && !b.isDir) return -1;
-      if (!a.isDir && b.isDir) return 1;
-      return a.name.localeCompare(b.name);
-    }) || [];
+  // Sort children: directories first, then files
+  const sortedChildren = displayNode.children
+    ? [...displayNode.children].sort((a, b) => {
+        if (a.isDir && !b.isDir) return -1;
+        if (!a.isDir && b.isDir) return 1;
+        return a.name.localeCompare(b.name);
+      })
+    : [];
 
+  // Highlight search matches
   const renderHighlighted = (name: string) => {
     if (!searchQuery) return name;
-    const lcName = name.toLowerCase();
-    const index = lcName.indexOf(searchQuery);
+    const index = name.toLowerCase().indexOf(searchQuery);
     if (index === -1) return name;
     return (
       <>
@@ -149,6 +146,7 @@ const TreeNode = ({
         }}
         onClick={() => expandable && setExpanded((e) => !e)}
       >
+        {/* Expand/Collapse Icon */}
         <Group gap={0} justify="center" style={{ width: 16, flexShrink: 0 }}>
           {displayNode.isDir &&
             (expandable ? (
@@ -162,6 +160,7 @@ const TreeNode = ({
             ))}
         </Group>
 
+        {/* Node Name */}
         <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
           {displayNode.isDir ? "📁 " : "📄 "}
           {nameChain.map((n, i) => (
@@ -172,6 +171,7 @@ const TreeNode = ({
           ))}
         </Text>
 
+        {/* Planned Moves Badge */}
         {plannedMoves > 0 && displayNode.isDir && (
           <Tooltip
             label={`${plannedMoves} file${plannedMoves > 1 ? "s" : ""} will move inside`}
@@ -184,37 +184,35 @@ const TreeNode = ({
           </Tooltip>
         )}
 
-        {!displayNode.isDir && (
+        {/* File Actions */}
+        {!displayNode.isDir && !displayNode.operation && (
           <>
-            {!displayNode.isDir && !displayNode.operation && (
-              <>
-                {isSourceFile && (
-                  <Tooltip
-                    label={`Source file — planned move(s): ${plannedMovesBySource
-                      .get(displayNode.path)!
-                      .map((op) => op.destinationFolder)
-                      .join(", ")}`}
-                    withArrow
-                    openDelay={300}
-                  >
-                    <Badge size="xs" color="yellow" variant="light">
-                      Source
-                    </Badge>
-                  </Tooltip>
-                )}
-
-                <FileSorterItemActions
-                  path={displayNode.path}
-                  isExcluded={isExcluded}
-                  forcedTarget={forcedTarget}
-                  refreshPreview={refreshPreview}
-                />
-              </>
+            {isSourceFile && (
+              <Tooltip
+                label={`Source file — planned move(s): ${plannedMovesBySource
+                  .get(displayNode.path)!
+                  .map((op) => op.destinationFolder)
+                  .join(", ")}`}
+                withArrow
+                openDelay={300}
+              >
+                <Badge size="xs" color="yellow" variant="light">
+                  Source
+                </Badge>
+              </Tooltip>
             )}
+
+            <FileSorterItemActions
+              path={displayNode.path}
+              isExcluded={isExcluded}
+              forcedTarget={forcedTarget}
+              refreshPreview={refreshPreview}
+            />
           </>
         )}
       </Group>
 
+      {/* Render Children */}
       {expandable && expanded && hasChildren && (
         <Stack gap={2}>
           {sortedChildren.map((child) => (

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ActionIcon, Group, Tooltip } from "@mantine/core";
 import {
   MinusIcon,
@@ -6,7 +7,6 @@ import {
   FolderOpenIcon,
 } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
 
 interface FileSorterItemActionsProps {
   path: string;
@@ -31,8 +31,6 @@ const FileSorterItemActions = ({
         await invoke("exclude_path", { path });
       }
       await refreshPreview();
-
-      // Force remount AFTER refresh
       setTooltipKey((k) => k + 1);
     } catch (err) {
       console.error("Failed to toggle exclude/include:", err);
@@ -43,7 +41,6 @@ const FileSorterItemActions = ({
     try {
       await invoke("force_target", { path });
       await refreshPreview();
-
       setTooltipKey((k) => k + 1);
     } catch (err) {
       console.error("Failed to set/reset forced target:", err);
