@@ -135,14 +135,6 @@ const FileRandomiser = () => {
     };
   }, [isCrawling]);
 
-  // Then use `showLoading` for the overlay:
-  <LoadingOverlay
-    visible={showLoading}
-    zIndex={1000}
-    overlayProps={{ blur: 2 }}
-    loaderProps={{ type: "dots" }}
-  />;
-
   // ------------------------ Data Handling ------------------------
   const updateAndRefreshData = async (updatedData?: AppStateData) => {
     if (updatedData) await randomiserApi.updateAppState(updatedData);
@@ -347,7 +339,6 @@ const FileRandomiser = () => {
     let unlisten: (() => void) | null = null;
 
     listen("file-closed", async () => {
-      // Use the REF here, not the state variable
       if (trackingRef.current) {
         await handlePickFile();
       } else {
@@ -410,7 +401,7 @@ const FileRandomiser = () => {
     setPresetState({
       currentId: preset.id,
       name: preset.name,
-      dirty: false, // freshly applied preset → not dirty
+      dirty: false, // freshly applied preset -> not dirty
       bookmarks: preset.bookmarks,
     });
 
@@ -424,7 +415,7 @@ const FileRandomiser = () => {
   const savePreset = async () => {
     const preset = lastAppliedPresetRef.current;
 
-    // No current preset ID or name changed → save as new
+    // No current preset ID or name changed -> save as new
     if (!presetState.currentId || presetState.name !== preset?.name) {
       return savePresetAs();
     }
@@ -633,6 +624,14 @@ const FileRandomiser = () => {
     () => buildFileTree(filteredFiles),
     [filteredFiles],
   );
+
+  // Then use `showLoading` for the overlay:
+  <LoadingOverlay
+    visible={showLoading}
+    zIndex={1000}
+    overlayProps={{ blur: 2 }}
+    loaderProps={{ type: "dots" }}
+  />;
 
   return (
     <Box p="md" h="94vh">
