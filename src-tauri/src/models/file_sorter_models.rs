@@ -1,6 +1,4 @@
 use std::collections::{HashMap, HashSet};
-
-use crate::models::common::FilterRule;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -37,7 +35,6 @@ pub struct FileSorterState {
     pub current_path: Option<String>,
     pub files: Vec<SorterFileEntry>,
     pub similarity_threshold: u8,
-    pub filter_rules: Vec<FilterRule>,
     pub preview: Vec<SortOperation>,
     pub stats: SortStats,
     pub has_restore_point: bool,
@@ -51,7 +48,6 @@ impl Default for FileSorterState {
             current_path: None,
             files: vec![],
             similarity_threshold: 80,
-            filter_rules: vec![],
             preview: vec![],
             stats: SortStats {
                 files_to_move: 0,

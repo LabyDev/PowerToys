@@ -1,9 +1,11 @@
 import { FileEntryBase } from "./common";
 
+/** File entry used in sorter */
 export type SorterFileEntry = FileEntryBase & {
   size: number;
 };
 
+/** Individual file move operation */
 export type SortOperation = {
   fileName: string;
   sourcePath: string;
@@ -12,6 +14,7 @@ export type SortOperation = {
   isNewFolder: boolean;
 };
 
+/** Node in the sort preview tree */
 export type SortTreeNode = {
   name: string;
   path: string;
@@ -23,16 +26,11 @@ export type SortTreeNode = {
   isNew?: boolean;
 };
 
-import { FilterRule } from "./common";
-
+/** State for the File Sorter */
 export type FileSorterState = {
   currentPath: string | null;
-
   files: SorterFileEntry[];
-
   similarityThreshold: number;
-  filterRules: FilterRule[];
-
   preview: SortOperation[];
 
   stats: {

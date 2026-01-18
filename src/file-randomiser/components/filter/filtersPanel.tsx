@@ -32,7 +32,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { useTranslation } from "react-i18next";
-import { FilterMatchType, FilterRule } from "../../../types/common";
+import { FilterMatchType, FilterRule } from "../../../types/filerandomiser";
 
 const FiltersPanel = ({
   data,

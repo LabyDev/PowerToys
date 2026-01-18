@@ -26,7 +26,6 @@ const FileSorter = () => {
   const [state, setState] = useState<FileSorterState>({
     currentPath: null,
     similarityThreshold: 60,
-    filterRules: [],
     preview: [],
     stats: {
       filesToMove: 0,

@@ -1,28 +1,14 @@
-export type FilterAction = "include" | "exclude";
-export type FilterMatchType =
-  | "contains"
-  | "startsWith"
-  | "endsWith"
-  | "regex"
-  | "bookmarks";
-
-export type FilterRule = {
-  id: string;
-  action: FilterAction;
-  type: FilterMatchType;
-  pattern: string;
-  caseSensitive?: boolean;
-};
-
-export type SavedPath = {
-  id: number;
-  name: string;
-  path: string;
-};
-
+/** Base file entry shared across modules */
 export type FileEntryBase = {
   id: number;
   name: string;
   path: string;
   isDir: boolean;
+};
+
+/** Bookmark information for files */
+export type Bookmark = {
+  path: string; // absolute path
+  hash: string; // content hash of the file
+  color?: string | null;
 };
