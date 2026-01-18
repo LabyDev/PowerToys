@@ -14,12 +14,12 @@ import {
 import { useDebouncedValue } from "@mantine/hooks";
 import Section from "../common/section";
 import FileSorterToolbar from "./components/toolbar";
-import { FileSorterState } from "../types/filesorter";
 import SortPreviewTree from "./components/sortPreviewTree";
-import { emit } from "@tauri-apps/api/event";
-import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
 import ConsolePanel from "./components/consolePanel";
+import { FileSorterState } from "../types/filesorter";
+import { emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
@@ -39,14 +39,17 @@ const FileSorter = () => {
     excludedPaths: new Set(),
     forcedTargets: new Map(),
   });
+
   const [similarity, setSimilarity] = useState(state.similarityThreshold);
   const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
   const [query, setQuery] = useState("");
 
+  // Emit log messages to console panel
   const logFrontend = (message: string) => {
     emit("file_sorter_log", `[ui] ${message}`);
   };
 
+  // Fetch full state from backend
   const fetchFullState = async () => {
     const backendState: FileSorterState & {
       excludedPaths?: string[];
@@ -65,6 +68,7 @@ const FileSorter = () => {
     fetchFullState();
   }, []);
 
+  // Apply similarity threshold when debounced value changes
   useEffect(() => {
     const applyThreshold = async () => {
       if (!state.currentPath) return;
@@ -86,6 +90,7 @@ const FileSorter = () => {
     applyThreshold();
   }, [debouncedSimilarity, state.currentPath]);
 
+  // Refresh preview
   const refreshPreview = async () => {
     setShowLoading(true);
     try {
@@ -95,6 +100,7 @@ const FileSorter = () => {
     }
   };
 
+  // Folder selection
   const handleSelectFolder = async () => {
     const path = await invoke<string | null>("select_sort_directory");
     if (!path) return;
@@ -104,6 +110,7 @@ const FileSorter = () => {
     await refreshPreview();
   };
 
+  // Refresh preview manually
   const handleRefresh = async () => {
     if (!state.currentPath) return;
     logFrontend("Refreshing preview...");
@@ -111,6 +118,7 @@ const FileSorter = () => {
     await refreshPreview();
   };
 
+  // Sort files
   const handleSort = async () => {
     if (!state.currentPath) return;
     logFrontend("Sorting files");
@@ -123,6 +131,7 @@ const FileSorter = () => {
     }
   };
 
+  // Restore last sort
   const handleRestore = async () => {
     logFrontend("Restoring last sort");
     setShowLoading(true);
@@ -134,6 +143,7 @@ const FileSorter = () => {
     }
   };
 
+  // Build preview tree
   const previewTree = state.currentPath
     ? buildSortPreviewTree(state.currentPath, state.files, state.preview)
     : null;
@@ -148,25 +158,25 @@ const FileSorter = () => {
       )
     : null;
 
-  function formatBytes(bytes: number, locale = navigator.language) {
+  // Format bytes for stats display
+  const formatBytes = (bytes: number, locale = navigator.language) => {
     if (bytes === 0) return "0 B";
-
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-
     return (
-      new Intl.NumberFormat(locale, {
-        maximumFractionDigits: 2,
-      }).format(bytes / Math.pow(k, i)) + ` ${sizes[i]}`
+      new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(
+        bytes / Math.pow(k, i),
+      ) + ` ${sizes[i]}`
     );
-  }
+  };
 
   return (
     <Box p="md" h="94vh">
       <LoadingOverlay visible={showLoading} />
 
       <Stack h="100%" gap="md">
+        {/* Toolbar */}
         <FileSorterToolbar
           query={query}
           onQueryChange={setQuery}
@@ -178,7 +188,9 @@ const FileSorter = () => {
           hasRestorePoint={state.hasRestorePoint}
         />
 
+        {/* Main content */}
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
+          {/* Preview */}
           <Section title="Processing Preview" style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
               {filteredPreviewTree ? (
@@ -202,6 +214,7 @@ const FileSorter = () => {
             </ScrollArea>
           </Section>
 
+          {/* Configuration */}
           <Section title="Configuration" style={{ width: 250, minWidth: 250 }}>
             <Stack gap="md" style={{ height: "100%" }}>
               <Box>
@@ -219,7 +232,7 @@ const FileSorter = () => {
 
               <Divider label="Stats" labelPosition="center" />
 
-              {/* Scrollable stats with max height */}
+              {/* Stats */}
               <ScrollArea style={{ maxHeight: "calc(100% - 100px)" }}>
                 <Stack gap="xs">
                   <Badge variant="light" fullWidth size="lg">
@@ -241,6 +254,7 @@ const FileSorter = () => {
           </Section>
         </Group>
 
+        {/* Console */}
         <ConsolePanel currentPath={state.currentPath} searchQuery={query} />
       </Stack>
     </Box>
