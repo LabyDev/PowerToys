@@ -2,6 +2,7 @@ import {
   Button,
   Checkbox,
   Group,
+  Stack,
   TextInput,
   ActionIcon,
   Paper,
@@ -47,9 +48,8 @@ const Toolbar = ({
 }: ToolbarProps) => {
   const { t } = useTranslation();
 
-  // ------------------- Left + middle buttons -------------------
   const renderButtons = () => (
-    <Group gap="sm" ml="xl">
+    <Group gap="sm">
       <Button leftSection={<FolderPlusIcon size={16} />} onClick={onAddPath}>
         {t("fileRandomiser.toolbar.addPath")}
       </Button>
@@ -84,7 +84,6 @@ const Toolbar = ({
     </Group>
   );
 
-  // ------------------- Right checkboxes -------------------
   const renderCheckboxes = () => (
     <Group gap="sm">
       <Checkbox
@@ -102,7 +101,6 @@ const Toolbar = ({
     </Group>
   );
 
-  // ------------------- Search input -------------------
   const renderSearchInput = () => (
     <TextInput
       placeholder={t("fileRandomiser.toolbar.searchPlaceholder")}
@@ -120,20 +118,21 @@ const Toolbar = ({
   );
 
   return (
-    <>
-      <Paper withBorder radius="md" p="md">
+    <Paper withBorder radius="md" p="md">
+      <Stack gap="sm">
+        {/* Top row: preset controls + buttons + checkboxes */}
         <Group justify="space-between" align="center" wrap="nowrap">
           <Group gap="md" align="center" wrap="nowrap">
             {presetControls}
             {renderButtons()}
           </Group>
-
           {renderCheckboxes()}
         </Group>
-      </Paper>
 
-      {renderSearchInput()}
-    </>
+        {/* Bottom row: search input */}
+        {renderSearchInput()}
+      </Stack>
+    </Paper>
   );
 };
 
