@@ -1,6 +1,5 @@
-use std::{collections::HashMap, sync::Mutex};
-
 use crate::models::FileSorterState;
+use std::sync::Mutex;
 mod filerandomisercommands;
 mod filesortercommands;
 pub mod models;
@@ -10,23 +9,20 @@ pub mod setting_commands;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Plugins
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        // App state
         .manage(models::settings::AppSettings::default())
-        .manage(Mutex::new(models::file_randomiser_models::AppStateData {
-            paths: vec![],
-            files: vec![],
-            history: vec![],
-            tracking_enabled: false,
-            filter_rules: vec![],
-            last_picked_id: None,
-            last_picked_index: None,
-            pick_counts: HashMap::new(),
-        }))
+        .manage(Mutex::new(
+            models::file_randomiser_models::AppStateData::default(),
+        ))
         .manage(filesortercommands::UndoStack(Mutex::new(Vec::new())))
         .manage(Mutex::new(FileSorterState::default()))
+        // Command handlers
         .invoke_handler(tauri::generate_handler![
+            // Settings
             setting_commands::get_app_settings,
             setting_commands::set_app_settings,
             setting_commands::toggle_process_tracking,
@@ -38,6 +34,7 @@ pub fn run() {
             setting_commands::set_language,
             setting_commands::get_global_bookmarks,
             setting_commands::set_global_bookmarks,
+            // File randomiser
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
             filerandomisercommands::remove_path,
@@ -49,6 +46,7 @@ pub fn run() {
             filerandomisercommands::get_presets,
             filerandomisercommands::save_preset,
             filerandomisercommands::open_path,
+            // File sorter
             filesortercommands::get_sorter_state,
             filesortercommands::select_sort_directory,
             filesortercommands::get_sort_preview,

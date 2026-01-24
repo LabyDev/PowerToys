@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tauri_plugin_dialog::FilePath;
 
-use crate::models::{FilterRule, SavedPath};
+use crate::models::{Bookmark, SavedPath};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -39,6 +39,21 @@ pub struct AppStateData {
     pub pick_counts: HashMap<u64, u32>,
 }
 
+impl Default for AppStateData {
+    fn default() -> Self {
+        Self {
+            paths: vec![],
+            files: vec![],
+            history: vec![],
+            tracking_enabled: false,
+            filter_rules: vec![],
+            last_picked_id: None,
+            last_picked_index: None,
+            pick_counts: HashMap::new(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RandomiserPreset {
@@ -53,9 +68,29 @@ pub struct RandomiserPreset {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Bookmark {
-    pub hash: String,
-    pub path: FilePath, // absolute path (primary key)
+pub enum FilterAction {
+    Include,
+    Exclude,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum FilterMatchType {
+    Contains,
+    StartsWith,
+    EndsWith,
+    Regex,
+    Bookmarks,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterRule {
+    pub id: String,
+    pub action: FilterAction,
+    #[serde(rename = "type")]
+    pub match_type: FilterMatchType,
+    pub pattern: String,
     #[serde(default)]
-    pub color: Option<String>,
+    pub case_sensitive: bool,
 }
