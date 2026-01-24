@@ -16,6 +16,7 @@ import {
   ArrowCounterClockwiseIcon,
   FolderOpenIcon,
 } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 
 interface FileSorterToolbarProps {
   query: string;
@@ -38,6 +39,7 @@ const FileSorterToolbar = ({
   currentPath,
   hasRestorePoint,
 }: FileSorterToolbarProps) => {
+  const { t } = useTranslation();
   const folderName = currentPath?.split(/[\\/]/).pop() ?? "";
 
   return (
@@ -52,11 +54,11 @@ const FileSorterToolbar = ({
             color="blue"
             disabled={!currentPath}
           >
-            Sort Files
+            {t("fileSorter.toolbar.sortFiles")}
           </Button>
 
           {/* Undo Last Move */}
-          <Tooltip label="Undo last move">
+          <Tooltip label={t("fileSorter.toolbar.undoLastMove")}>
             <Indicator
               disabled={!hasRestorePoint}
               color="red"
@@ -76,20 +78,22 @@ const FileSorterToolbar = ({
           </Tooltip>
 
           {/* Refresh */}
-          <ActionIcon
-            variant="subtle"
-            size="lg"
-            onClick={onRefresh}
-            disabled={!currentPath}
-          >
-            <ArrowsClockwiseIcon size={20} />
-          </ActionIcon>
+          <Tooltip label={t("fileSorter.toolbar.refresh")}>
+            <ActionIcon
+              variant="subtle"
+              size="lg"
+              onClick={onRefresh}
+              disabled={!currentPath}
+            >
+              <ArrowsClockwiseIcon size={20} />
+            </ActionIcon>
+          </Tooltip>
 
           <Divider orientation="vertical" />
 
           {/* Path Display */}
           <Group gap={6} wrap="nowrap">
-            <Tooltip label="Change Folder">
+            <Tooltip label={t("fileSorter.toolbar.changeFolder")}>
               <ActionIcon
                 variant="subtle"
                 color="gray"
@@ -110,7 +114,7 @@ const FileSorterToolbar = ({
               </Group>
             ) : (
               <Text size="sm" c="dimmed">
-                No folder selected
+                {t("fileSorter.toolbar.noFolderSelected")}
               </Text>
             )}
           </Group>
@@ -118,7 +122,7 @@ const FileSorterToolbar = ({
 
         {/* Search Filter */}
         <TextInput
-          placeholder="Filter results..."
+          placeholder={t("fileSorter.toolbar.searchPlaceholder")}
           leftSection={<MagnifyingGlassIcon size={16} />}
           rightSection={
             query && (

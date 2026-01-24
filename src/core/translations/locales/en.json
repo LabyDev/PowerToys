@@ -30,7 +30,8 @@
         "contains": "Contains",
         "startsWith": "Starts with",
         "endsWith": "Ends with",
-        "regex": "Regex"
+        "regex": "Regex",
+        "bookmarks": "Bookmark"
       },
       "ruleBadge": {
         "includeSymbol": "+",
@@ -65,7 +66,44 @@
   },
   "fileSorter": {
     "title": "Sort Files",
-    "description": "Choose sorting criteria"
+    "description": "Choose sorting criteria",
+    "matchThreshold": "Match Threshold",
+    "preview": {
+      "ready": "Ready to generate preview",
+      "selectDirectory": "Select a directory"
+    },
+    "stats": {
+      "filesToMove": "Files to Move",
+      "foldersToCreate": "New Folders",
+      "totalFoldersAffected": "Total Folders Affected",
+      "totalSizeToMove": "Total Size to Move"
+    },
+    "configuration": "Configuration",
+    "toolbar": {
+      "sortFiles": "Sort Files",
+      "undoLastMove": "Undo last move",
+      "refresh": "Refresh",
+      "changeFolder": "Change Folder",
+      "noFolderSelected": "No folder selected",
+      "searchPlaceholder": "Filter results…"
+    },
+    "previewTree": {
+      "folderEmoji": "📁",
+      "fileEmoji": "📄",
+      "filesWillMove": "{count} file{plural} will move inside",
+      "sourceFile": "Source file — planned move(s): {targets}"
+    },
+    "itemActions": {
+      "forceTarget": "Force target folder",
+      "forcedTo": "Forced to: {target}",
+      "excludeFile": "Exclude file",
+      "includeFile": "Include file again",
+      "revealInExplorer": "Reveal in file explorer"
+    },
+    "consolePanel": {
+      "awaitingFolder": "Awaiting folder...",
+      "directorySet": "Directory set: {path}"
+    }
   },
   "settings": {
     "title": "Settings",

@@ -5,6 +5,7 @@ import {
   CaretDownIcon,
   MinusIcon,
 } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import { SortTreeNode, SortOperation } from "../../types/filesorter";
 import FileSorterItemActions from "./fileSorterItemActions";
 
@@ -64,7 +65,8 @@ const TreeNode = ({
   refreshPreview,
   searchQuery = "",
 }: TreeNodeProps) => {
-  // Filter nodes based on search query
+  const { t } = useTranslation();
+
   const matchesSearch = (n: SortTreeNode): boolean => {
     if (n.name.toLowerCase().includes(searchQuery)) return true;
     return n.children?.some(matchesSearch) ?? false;
@@ -162,7 +164,9 @@ const TreeNode = ({
 
         {/* Node Name */}
         <Text size="sm" fw={displayNode.isDir ? 600 : 400} truncate>
-          {displayNode.isDir ? "📁 " : "📄 "}
+          {displayNode.isDir
+            ? t("fileSorter.previewTree.folderEmoji") + " "
+            : t("fileSorter.previewTree.fileEmoji") + " "}
           {nameChain.map((n, i) => (
             <span key={i}>
               {renderHighlighted(n)}
@@ -174,7 +178,10 @@ const TreeNode = ({
         {/* Planned Moves Badge */}
         {plannedMoves > 0 && displayNode.isDir && (
           <Tooltip
-            label={`${plannedMoves} file${plannedMoves > 1 ? "s" : ""} will move inside`}
+            label={t("fileSorter.previewTree.filesWillMove", {
+              count: plannedMoves,
+              plural: plannedMoves > 1 ? "s" : "",
+            })}
             withArrow
             openDelay={300}
           >
@@ -189,10 +196,12 @@ const TreeNode = ({
           <>
             {isSourceFile && (
               <Tooltip
-                label={`Source file — planned move(s): ${plannedMovesBySource
-                  .get(displayNode.path)!
-                  .map((op) => op.destinationFolder)
-                  .join(", ")}`}
+                label={t("fileSorter.previewTree.sourceFile", {
+                  targets: plannedMovesBySource
+                    .get(displayNode.path)!
+                    .map((op) => op.destinationFolder)
+                    .join(", "),
+                })}
                 withArrow
                 openDelay={300}
               >

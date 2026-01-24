@@ -12,6 +12,7 @@ import {
   Divider,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
+import { useTranslation } from "react-i18next";
 import Section from "../common/section";
 import FileSorterToolbar from "./components/toolbar";
 import SortPreviewTree from "./components/sortPreviewTree";
@@ -28,6 +29,8 @@ import {
 } from "../core/api/fileSorterApi";
 
 const FileSorter = () => {
+  const { t } = useTranslation();
+
   const [showLoading, setShowLoading] = useState(false);
   const [state, setState] = useState<FileSorterState>({
     currentPath: null,
@@ -191,7 +194,7 @@ const FileSorter = () => {
         />
 
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
-          <Section title="Processing Preview" style={{ flex: 1 }}>
+          <Section title={t("fileSorter.title")} style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
               {filteredPreviewTree ? (
                 <SortPreviewTree
@@ -207,18 +210,21 @@ const FileSorter = () => {
               ) : (
                 <Code block>
                   {state.currentPath
-                    ? "Ready to generate preview"
-                    : "Select a directory."}
+                    ? t("fileSorter.preview.ready")
+                    : t("fileSorter.preview.selectDirectory")}
                 </Code>
               )}
             </ScrollArea>
           </Section>
 
-          <Section title="Configuration" style={{ width: 250, minWidth: 250 }}>
+          <Section
+            title={t("fileSorter.configuration")}
+            style={{ width: 250, minWidth: 250 }}
+          >
             <Stack gap="md" style={{ height: "100%" }}>
               <Box>
                 <Text size="sm" fw={500} mb="xs">
-                  Match Threshold: {similarity}%
+                  {t("fileSorter.matchThreshold")}: {similarity}%
                 </Text>
                 <Slider
                   value={similarity}
@@ -229,21 +235,27 @@ const FileSorter = () => {
                 />
               </Box>
 
-              <Divider label="Stats" labelPosition="center" />
+              <Divider
+                label={t("fileSorter.stats.title") || "Stats"}
+                labelPosition="center"
+              />
 
               <ScrollArea style={{ maxHeight: "calc(100% - 100px)" }}>
                 <Stack gap="xs">
                   <Badge variant="light" fullWidth size="lg">
-                    Files to Move: {state.stats.filesToMove}
+                    {t("fileSorter.stats.filesToMove")}:{" "}
+                    {state.stats.filesToMove}
                   </Badge>
                   <Badge color="cyan" variant="light" fullWidth size="lg">
-                    New Folders: {state.stats.foldersToCreate}
+                    {t("fileSorter.stats.foldersToCreate")}:{" "}
+                    {state.stats.foldersToCreate}
                   </Badge>
                   <Badge color="green" variant="light" fullWidth size="lg">
-                    Total Folders Affected: {state.stats.totalFoldersAffected}
+                    {t("fileSorter.stats.totalFoldersAffected")}:{" "}
+                    {state.stats.totalFoldersAffected}
                   </Badge>
                   <Badge color="orange" variant="light" fullWidth size="lg">
-                    Total Size to Move:{" "}
+                    {t("fileSorter.stats.totalSizeToMove")}:{" "}
                     {formatBytes(state.stats.totalSizeToMove)}
                   </Badge>
                 </Stack>

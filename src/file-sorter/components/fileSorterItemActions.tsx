@@ -6,6 +6,7 @@ import {
   FolderSimplePlusIcon,
   FolderOpenIcon,
 } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import {
   includePath,
   excludePath,
@@ -27,6 +28,7 @@ const FileSorterItemActions = ({
   refreshPreview,
 }: FileSorterItemActionsProps) => {
   const [tooltipKey, setTooltipKey] = useState(0);
+  const { t } = useTranslation();
 
   const handleExcludeInclude = async () => {
     try {
@@ -67,7 +69,9 @@ const FileSorterItemActions = ({
       <Tooltip
         key={`force-${tooltipKey}`}
         label={
-          forcedTarget ? `Forced to: ${forcedTarget}` : "Force target folder"
+          forcedTarget
+            ? t("fileSorter.itemActions.forcedTo", { target: forcedTarget })
+            : t("fileSorter.itemActions.forceTarget")
         }
         withArrow
       >
@@ -88,7 +92,11 @@ const FileSorterItemActions = ({
       {/* Exclude / Include */}
       <Tooltip
         key={`exclude-${tooltipKey}`}
-        label={isExcluded ? "Include file again" : "Exclude file"}
+        label={
+          isExcluded
+            ? t("fileSorter.itemActions.includeFile")
+            : t("fileSorter.itemActions.excludeFile")
+        }
         withArrow
       >
         <ActionIcon
@@ -108,7 +116,7 @@ const FileSorterItemActions = ({
       {/* Reveal in file explorer */}
       <Tooltip
         key={`reveal-${tooltipKey}`}
-        label="Reveal in file explorer"
+        label={t("fileSorter.itemActions.revealInExplorer")}
         withArrow
       >
         <ActionIcon

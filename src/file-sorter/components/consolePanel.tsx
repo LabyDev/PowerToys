@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Paper, Group, ScrollArea, Text } from "@mantine/core";
 import { TerminalIcon } from "@phosphor-icons/react";
 import { listen } from "@tauri-apps/api/event";
+import { useTranslation } from "react-i18next";
 
 interface ConsolePanelProps {
   currentPath: string | null;
@@ -9,6 +10,7 @@ interface ConsolePanelProps {
 }
 
 const ConsolePanel = ({ currentPath, searchQuery = "" }: ConsolePanelProps) => {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,7 @@ const ConsolePanel = ({ currentPath, searchQuery = "" }: ConsolePanelProps) => {
     if (!currentPath) {
       if (!didLogAwaitingRef.current) {
         didLogAwaitingRef.current = true;
-        pushLog("Awaiting folder...");
+        pushLog(t("fileSorter.consolePanel.awaitingFolder"));
       }
       lastPathRef.current = null;
       return;
@@ -62,9 +64,9 @@ const ConsolePanel = ({ currentPath, searchQuery = "" }: ConsolePanelProps) => {
 
     if (currentPath !== lastPathRef.current) {
       lastPathRef.current = currentPath;
-      pushLog(`Directory set: ${currentPath}`);
+      pushLog(t("fileSorter.consolePanel.directorySet", { path: currentPath }));
     }
-  }, [currentPath]);
+  }, [currentPath, t]);
 
   // Highlight search matches
   const renderHighlighted = (line: string) => {
