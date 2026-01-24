@@ -29,3 +29,17 @@ export const getGlobalBookmarks = () => {
 export const setGlobalBookmarks = (bookmarks: Bookmark[]) => {
   return invoke<void>("set_global_bookmarks", { bookmarks });
 };
+
+/**
+ * Toggles the file randomiser process tracking
+ */
+export const toggleProcessTracking = (enable: boolean) => {
+  return invoke<AppSettings>("toggle_process_tracking", { enable });
+};
+
+/**
+ * Sets the randomness level for the file randomiser
+ */
+export const setRandomnessLevel = (level: number) => {
+  return invoke<AppSettings>("set_randomness_level", { level });
+};

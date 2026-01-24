@@ -8,11 +8,13 @@ import {
   Text,
   Slider,
 } from "@mantine/core";
-import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
-import { AppSettings } from "../../types/settings";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  toggleProcessTracking,
+  setRandomnessLevel,
+} from "../api/appSettingsApi";
 
 const FileRandomiserSettings = () => {
   const { t } = useTranslation();
@@ -23,34 +25,30 @@ const FileRandomiserSettings = () => {
 
   const handleProcessTrackingToggle = async (checked: boolean) => {
     try {
-      const updated: AppSettings = await invoke("toggle_process_tracking", {
-        enable: checked,
-      });
+      const updated = await toggleProcessTracking(checked);
       setSettings(updated);
     } catch (err) {
       console.error("Failed to toggle process tracking:", err);
     }
   };
 
-  // Debounce logic
+  // Debounce randomness level changes
   useEffect(() => {
     const handler = setTimeout(async () => {
       if (localRandomnessValue !== settings.fileRandomiser.randomness_level) {
         try {
-          const updated: AppSettings = await invoke("set_randomness_level", {
-            level: localRandomnessValue,
-          });
+          const updated = await setRandomnessLevel(localRandomnessValue);
           setSettings(updated);
         } catch (err) {
           console.error("Failed to update randomness level:", err);
         }
       }
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => clearTimeout(handler);
   }, [localRandomnessValue]);
 
-  // Keep localValue in sync if settings change externally
+  // Sync local slider if settings change externally
   useEffect(() => {
     setLocalRandomnessValue(settings.fileRandomiser.randomness_level ?? 50);
   }, [settings.fileRandomiser.randomness_level]);
@@ -62,7 +60,6 @@ const FileRandomiserSettings = () => {
           <Title order={3}>{t("fileRandomiserSettings.title")}</Title>
           <Divider />
 
-          {/* Process Tracking */}
           <Stack gap="sm">
             <Title order={4}>
               {t("fileRandomiserSettings.processTracking.title")}
@@ -85,7 +82,6 @@ const FileRandomiserSettings = () => {
             />
           </Stack>
 
-          {/* Randomness Slider */}
           <Stack gap="sm" mb="sm">
             <Title order={4}>
               {t("fileRandomiserSettings.randomness.title")}
