@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { FileSorterState } from "../../types/filesorter";
+import { emit } from "@tauri-apps/api/event";
 
 /**
  * Opens a native directory dialog and returns the selected path
@@ -34,7 +35,12 @@ export const getSortPreview = (
   similarity: number,
   filters: FileSorterState,
 ) => {
-  return invoke<string[]>("get_sort_preview", { path, similarity, filters });
+  return invoke<
+    FileSorterState & {
+      excludedPaths?: string[];
+      forcedTargets?: Record<string, string>;
+    }
+  >("get_sort_preview", { path, similarity, filters });
 };
 
 /**
@@ -42,4 +48,18 @@ export const getSortPreview = (
  */
 export const checkRestorePoint = () => {
   return invoke<boolean>("has_restore_point");
+};
+
+/**
+ * Updates the similarity threshold in the backend
+ */
+export const setSimilarityThreshold = (threshold: number) => {
+  return invoke<void>("set_similarity_threshold", { threshold });
+};
+
+/**
+ * Emits a log message to the frontend console panel
+ */
+export const logFrontend = (message: string) => {
+  return emit("file_sorter_log", `[ui] ${message}`);
 };

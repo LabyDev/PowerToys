@@ -17,9 +17,15 @@ import FileSorterToolbar from "./components/toolbar";
 import SortPreviewTree from "./components/sortPreviewTree";
 import ConsolePanel from "./components/consolePanel";
 import { FileSorterState } from "../types/filesorter";
-import { emit } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/core";
 import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
+import {
+  getSortPreview,
+  logFrontend,
+  setSimilarityThreshold,
+  selectSortDirectory,
+  sortFiles,
+  restoreLastSort,
+} from "../core/api/fileSorterApi";
 
 const FileSorter = () => {
   const [showLoading, setShowLoading] = useState(false);
@@ -43,17 +49,18 @@ const FileSorter = () => {
   const [debouncedSimilarity] = useDebouncedValue(similarity, 300);
   const [query, setQuery] = useState("");
 
-  // Emit log messages to console panel
-  const logFrontend = (message: string) => {
-    emit("file_sorter_log", `[ui] ${message}`);
-  };
-
   // Fetch full state from backend
   const fetchFullState = async () => {
+    if (!state.currentPath) return;
+
     const backendState: FileSorterState & {
       excludedPaths?: string[];
       forcedTargets?: Record<string, string>;
-    } = await invoke("get_sort_preview");
+    } = await getSortPreview(
+      state.currentPath,
+      state.similarityThreshold,
+      state,
+    );
 
     setState({
       ...backendState,
@@ -67,19 +74,16 @@ const FileSorter = () => {
     fetchFullState();
   }, []);
 
-  // Apply similarity threshold when debounced value changes
+  // Apply similarity threshold
   useEffect(() => {
     const applyThreshold = async () => {
       if (!state.currentPath) return;
       if (debouncedSimilarity === state.similarityThreshold) return;
 
       logFrontend(`Applying similarity threshold: ${debouncedSimilarity}%`);
-
       setShowLoading(true);
       try {
-        await invoke("set_similarity_threshold", {
-          threshold: debouncedSimilarity,
-        });
+        await setSimilarityThreshold(debouncedSimilarity);
         await fetchFullState();
       } finally {
         setShowLoading(false);
@@ -101,11 +105,12 @@ const FileSorter = () => {
 
   // Folder selection
   const handleSelectFolder = async () => {
-    const path = await invoke<string | null>("select_sort_directory");
+    const path = await selectSortDirectory();
     if (!path) return;
 
     logFrontend("Directory selected");
     setQuery("");
+    setState((s) => ({ ...s, currentPath: path }));
     await refreshPreview();
   };
 
@@ -123,7 +128,7 @@ const FileSorter = () => {
     logFrontend("Sorting files");
     setShowLoading(true);
     try {
-      await invoke("sort_files");
+      await sortFiles(state.currentPath, similarity, state);
       await refreshPreview();
     } finally {
       setShowLoading(false);
@@ -135,7 +140,7 @@ const FileSorter = () => {
     logFrontend("Restoring last sort");
     setShowLoading(true);
     try {
-      await invoke("restore_last_sort");
+      await restoreLastSort();
       await refreshPreview();
     } finally {
       setShowLoading(false);
@@ -157,7 +162,6 @@ const FileSorter = () => {
       )
     : null;
 
-  // Format bytes for stats display
   const formatBytes = (bytes: number, locale = navigator.language) => {
     if (bytes === 0) return "0 B";
     const k = 1024;
@@ -175,7 +179,6 @@ const FileSorter = () => {
       <LoadingOverlay visible={showLoading} />
 
       <Stack h="100%" gap="md">
-        {/* Toolbar */}
         <FileSorterToolbar
           query={query}
           onQueryChange={setQuery}
@@ -187,9 +190,7 @@ const FileSorter = () => {
           hasRestorePoint={state.hasRestorePoint}
         />
 
-        {/* Main content */}
         <Group align="stretch" style={{ flex: 1, minHeight: 0 }} wrap="nowrap">
-          {/* Preview */}
           <Section title="Processing Preview" style={{ flex: 1 }}>
             <ScrollArea h="100%" p="xs">
               {filteredPreviewTree ? (
@@ -213,7 +214,6 @@ const FileSorter = () => {
             </ScrollArea>
           </Section>
 
-          {/* Configuration */}
           <Section title="Configuration" style={{ width: 250, minWidth: 250 }}>
             <Stack gap="md" style={{ height: "100%" }}>
               <Box>
@@ -231,7 +231,6 @@ const FileSorter = () => {
 
               <Divider label="Stats" labelPosition="center" />
 
-              {/* Stats */}
               <ScrollArea style={{ maxHeight: "calc(100% - 100px)" }}>
                 <Stack gap="xs">
                   <Badge variant="light" fullWidth size="lg">
@@ -253,7 +252,6 @@ const FileSorter = () => {
           </Section>
         </Group>
 
-        {/* Console */}
         <ConsolePanel currentPath={state.currentPath} searchQuery={query} />
       </Stack>
     </Box>
