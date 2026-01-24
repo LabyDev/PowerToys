@@ -6,7 +6,12 @@ import {
   FolderSimplePlusIcon,
   FolderOpenIcon,
 } from "@phosphor-icons/react";
-import { invoke } from "@tauri-apps/api/core";
+import {
+  includePath,
+  excludePath,
+  forceTarget,
+  revealInExplorer,
+} from "../../core/api/fileSorterApi";
 
 interface FileSorterItemActionsProps {
   path: string;
@@ -26,9 +31,9 @@ const FileSorterItemActions = ({
   const handleExcludeInclude = async () => {
     try {
       if (isExcluded) {
-        await invoke("include_path", { path });
+        await includePath(path);
       } else {
-        await invoke("exclude_path", { path });
+        await excludePath(path);
       }
       await refreshPreview();
       setTooltipKey((k) => k + 1);
@@ -39,7 +44,7 @@ const FileSorterItemActions = ({
 
   const handleForceTarget = async () => {
     try {
-      await invoke("force_target", { path });
+      await forceTarget(path);
       await refreshPreview();
       setTooltipKey((k) => k + 1);
     } catch (err) {
@@ -49,7 +54,7 @@ const FileSorterItemActions = ({
 
   const handleReveal = async () => {
     try {
-      await invoke("reveal_in_explorer", { path });
+      await revealInExplorer(path);
       setTooltipKey((k) => k + 1);
     } catch (err) {
       console.error("Failed to reveal file:", err);
