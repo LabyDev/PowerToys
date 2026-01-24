@@ -86,76 +86,91 @@ pub fn crawl_paths(
     ) -> bool {
         let hash_str = format!("{:x}", hash_val);
 
-        // --- Bookmark Logic ---
         if let FilterMatchType::Bookmarks = rule.match_type {
-            let p = rule.pattern.to_lowercase().replace('@', "");
-            // Split by ':' to get strict tokens: ["bookmarks", "global", "red,blue"]
-            let tokens: Vec<&str> = p.split(':').map(|s| s.trim()).collect();
+            let pattern_lower = rule.pattern.trim().to_lowercase();
+            let raw = pattern_lower.strip_prefix("@bookmarks").unwrap_or("");
 
-            let has_global_token = tokens.contains(&"global");
-            let has_nonglobal_token = tokens.contains(&"nonglobal");
+            let mut scope: Option<&str> = None;
+            let mut colors: Vec<String> = Vec::new();
 
-            let check_global = has_global_token || !has_nonglobal_token;
-            let check_local = has_nonglobal_token || !has_global_token;
+            let parts: Vec<&str> = raw.split(':').filter(|p| !p.is_empty()).collect();
 
-            // Map human names to your specific hex codes
-            let color_map = |name: &str| -> String {
-                match name {
-                    "gold" | "yellow" => "#ffd700".to_string(),
-                    "red" => "#ff6b6b".to_string(),
-                    "green" => "#6bcb77".to_string(),
-                    "blue" => "#4d96ff".to_string(),
-                    _ => name.to_string(), // Allow direct hex input too
+            for part in parts {
+                match part {
+                    "global" | "nonglobal" => scope = Some(part),
+                    _ => {
+                        colors = part
+                            .split(',')
+                            .map(|c| match c.trim() {
+                                "gold" | "yellow" => "#ffd700",
+                                "red" => "#ff6b6b",
+                                "green" => "#6bcb77",
+                                "blue" => "#4d96ff",
+                                other => other,
+                            })
+                            .map(|c| c.to_string())
+                            .collect();
+                    }
                 }
-            };
-
-            let target_colors: Vec<String> = tokens
-                .iter()
-                .filter(|&&s| {
-                    s != "bookmarks" && s != "global" && s != "nonglobal" && !s.is_empty()
-                })
-                .flat_map(|s| s.split(','))
-                .map(|s| color_map(s.trim()))
-                .collect();
+            }
 
             let matches_list = |list: &[Bookmark]| {
                 list.iter().any(|bm| {
                     if bm.hash.to_lowercase() != hash_str {
                         return false;
                     }
-                    if target_colors.is_empty() {
+                    if colors.is_empty() {
                         return true;
                     }
-                    // Match the hex code (case-insensitive)
                     bm.color
                         .as_ref()
-                        .map(|c| target_colors.contains(&c.to_lowercase()))
+                        .map(|c| colors.iter().any(|t| t.eq_ignore_ascii_case(c)))
                         .unwrap_or(false)
                 })
             };
 
-            return (check_global && matches_list(global)) || (check_local && matches_list(local));
-        }
-        // --- Original Logic ---
-        let text = if rule.case_sensitive {
-            path.to_string()
+            match scope {
+                Some("global") => matches_list(global),
+                Some("nonglobal") => matches_list(local),
+                _ => matches_list(global) || matches_list(local),
+            }
         } else {
-            path.to_lowercase()
-        };
-        let pattern = if rule.case_sensitive {
-            rule.pattern.clone()
-        } else {
-            rule.pattern.to_lowercase()
-        };
-        match rule.match_type {
-            FilterMatchType::Contains => text.contains(&pattern),
-            FilterMatchType::StartsWith => text.starts_with(&pattern),
-            FilterMatchType::EndsWith => text.ends_with(&pattern),
-            FilterMatchType::Regex => regex::Regex::new(&rule.pattern)
-                .map(|r| r.is_match(path))
-                .unwrap_or(false),
-            _ => false,
+            let text = if rule.case_sensitive {
+                path.to_string()
+            } else {
+                path.to_lowercase()
+            };
+
+            let pattern = if rule.case_sensitive {
+                rule.pattern.clone()
+            } else {
+                rule.pattern.to_lowercase()
+            };
+
+            match rule.match_type {
+                FilterMatchType::Contains => text.contains(&pattern),
+                FilterMatchType::StartsWith => text.starts_with(&pattern),
+                FilterMatchType::EndsWith => text.ends_with(&pattern),
+                FilterMatchType::Regex => regex::Regex::new(&rule.pattern)
+                    .map(|r| r.is_match(path))
+                    .unwrap_or(false),
+                _ => false,
+            }
         }
+    }
+
+    fn should_include(
+        path: &std::path::Path,
+        hash_val: u64,
+        rules: &[FilterRule],
+        global: &[Bookmark],
+        local: &[Bookmark],
+    ) -> bool {
+        let s = path.to_string_lossy();
+        rules.iter().any(|r| {
+            matches_rule(&s, hash_val, r, global, local)
+                && matches!(r.action, FilterAction::Include)
+        })
     }
 
     fn should_exclude(
@@ -244,13 +259,25 @@ pub fn crawl_paths(
 
             // Calculate hash first so we can use it for filter matching
             let hash_val = fast_file_id(&path);
-            let excluded = should_exclude(
+            let included = should_include(
                 &path,
                 hash_val,
                 &filter_rules,
                 &global_bookmarks,
                 &local_bookmarks,
             );
+
+            let excluded = if included {
+                false
+            } else {
+                should_exclude(
+                    &path,
+                    hash_val,
+                    &filter_rules,
+                    &global_bookmarks,
+                    &local_bookmarks,
+                )
+            };
 
             FileEntry {
                 id,
