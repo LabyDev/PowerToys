@@ -73,6 +73,7 @@
       "selectDirectory": "Select a directory"
     },
     "stats": {
+      "title": "Statistics",
       "filesToMove": "Files to Move",
       "foldersToCreate": "New Folders",
       "totalFoldersAffected": "Total Folders Affected",
@@ -95,12 +96,12 @@
     "previewTree": {
       "folderEmoji": "📁",
       "fileEmoji": "📄",
-      "filesWillMove": "{count} file{plural} will move inside",
-      "sourceFile": "Source file — planned move(s): {targets}"
+      "filesWillMove": "{{count}} file{{plural}} will move inside",
+      "sourceFile": "Source file — planned move(s): {{targets}}"
     },
     "itemActions": {
       "forceTarget": "Force target folder",
-      "forcedTo": "Forced to: {target}",
+      "forcedTo": "Forced to: {{target}}",
       "excludeFile": "Exclude file",
       "includeFile": "Include file again",
       "revealInExplorer": "Reveal in file explorer"
