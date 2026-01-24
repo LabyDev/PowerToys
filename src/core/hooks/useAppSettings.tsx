@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import {
+  getAppSettings,
+  getGlobalBookmarks,
+  setAppSettings,
+  setGlobalBookmarks,
+} from "../api/appSettingsApi";
 import { AppSettings, LanguageOption } from "../../types/settings";
 import { Bookmark } from "../../types/common";
 
@@ -15,18 +20,12 @@ export function useAppSettings() {
     },
   });
 
-  const [globalBookmarks, setGlobalBookmarks] = useState<Bookmark[]>([]);
+  const [globalBookmarks, setGlobalBookmarksState] = useState<Bookmark[]>([]);
 
+  // Fetch settings and bookmarks on mount
   useEffect(() => {
-    // Fetch app settings
-    invoke<AppSettings>("get_app_settings")
-      .then(setSettingsState)
-      .catch(console.error);
-
-    // Fetch global bookmarks
-    invoke<Bookmark[]>("get_global_bookmarks")
-      .then(setGlobalBookmarks)
-      .catch(console.error);
+    getAppSettings().then(setSettingsState).catch(console.error);
+    getGlobalBookmarks().then(setGlobalBookmarksState).catch(console.error);
   }, []);
 
   const setSettings = useCallback(async (partial: Partial<AppSettings>) => {
@@ -39,17 +38,15 @@ export function useAppSettings() {
           ...partial.fileRandomiser,
         },
       };
-      invoke("set_app_settings", { settings: newSettings }).catch(
-        console.error,
-      );
+      setAppSettings(newSettings).catch(console.error);
       return newSettings;
     });
   }, []);
 
   const fetchGlobalBookmarks = useCallback(async () => {
     try {
-      const latest = await invoke<Bookmark[]>("get_global_bookmarks");
-      setGlobalBookmarks(latest);
+      const latest = await getGlobalBookmarks();
+      setGlobalBookmarksState(latest);
       return latest;
     } catch (err) {
       console.error("Failed to fetch global bookmarks:", err);
@@ -57,11 +54,10 @@ export function useAppSettings() {
     }
   }, []);
 
-  const setGlobalBookmarksPersist = useCallback(
+  const setGlobalBookmarksSettings = useCallback(
     async (bookmarks: Bookmark[]) => {
       try {
-        await invoke("set_global_bookmarks", { bookmarks });
-        // Always fetch latest after saving
+        await setGlobalBookmarks(bookmarks);
         return fetchGlobalBookmarks();
       } catch (err) {
         console.error("Failed to set global bookmarks:", err);
@@ -90,7 +86,7 @@ export function useAppSettings() {
     setSettings,
     isDarkMode,
     globalBookmarks,
-    setGlobalBookmarks: setGlobalBookmarksPersist,
+    setGlobalBookmarks: setGlobalBookmarksSettings,
     fetchGlobalBookmarks,
   };
 }
