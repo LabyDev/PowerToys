@@ -117,8 +117,30 @@ const FileSorter = () => {
 
     logFrontend(t("fileSorter.toolbar.directorySet", { path }));
     setQuery("");
+
+    // update state first
     setState((s) => ({ ...s, currentPath: path }));
-    await refreshPreview();
+
+    // fetch preview immediately using the selected path
+    setShowLoading(true);
+    try {
+      const backendState: FileSorterState & {
+        excludedPaths?: string[];
+        forcedTargets?: Record<string, string>;
+      } = await getSortPreview(path, state.similarityThreshold, state);
+
+      setState({
+        ...backendState,
+        currentPath: path,
+        excludedPaths: new Set(backendState.excludedPaths || []),
+        forcedTargets: new Map(
+          Object.entries(backendState.forcedTargets || {}),
+        ),
+      });
+      setSimilarity(backendState.similarityThreshold);
+    } finally {
+      setShowLoading(false);
+    }
   };
 
   // Refresh preview manually
