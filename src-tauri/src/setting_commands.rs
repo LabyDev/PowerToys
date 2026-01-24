@@ -62,23 +62,17 @@ pub fn set_dark_mode(app: AppHandle<Wry>, mode: DarkModeOption) -> Result<AppSet
 /// Set custom background via file dialog
 #[tauri::command]
 pub fn set_custom_background(app: tauri::AppHandle<Wry>) -> Result<AppSettings, String> {
-    // Pick file
     let file_path_opt = app.dialog().file().blocking_pick_file();
     let file_path = file_path_opt.ok_or("No file selected")?;
 
-    // Convert to owned PathBuf
     let path_buf: PathBuf = match file_path {
         FilePath::Path(p) => p,
         FilePath::Url(url) => url.to_file_path().map_err(|_| "URL not a file path")?,
     };
 
-    // Read file bytes
     let bytes = fs::read(&path_buf).map_err(|e| format!("Failed to read file: {}", e))?;
-
-    // Encode using the new Engine API
     let encoded = general_purpose::STANDARD.encode(&bytes);
 
-    // Get extension
     let ext = path_buf
         .extension()
         .and_then(|s| s.to_str())
@@ -110,22 +104,14 @@ pub fn set_randomness_level(app: tauri::AppHandle<Wry>, level: u8) -> Result<App
     if level > 100 {
         return Err("Randomness level must be between 0 and 100".into());
     }
-
-    // Get current settings
     let mut settings = get_app_settings(app.clone())?;
-
-    // Update the randomness level
     settings.file_randomiser.randomness_level = level;
-
-    // Persist updated settings
     set_app_settings(app, settings.clone())?;
-
     Ok(settings)
 }
 
 #[tauri::command]
 pub fn restart_app(app_handle: tauri::AppHandle) {
-    // Relaunch the app
     app_handle.restart();
 }
 
