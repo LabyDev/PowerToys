@@ -85,7 +85,12 @@
       "refresh": "Refresh",
       "changeFolder": "Change Folder",
       "noFolderSelected": "No folder selected",
-      "searchPlaceholder": "Filter results…"
+      "searchPlaceholder": "Filter results…",
+      "applyingSimilarity": "Applying similarity threshold: {{threshold}}%",
+      "refreshingPreview": "Refreshing preview...",
+      "sortingFiles": "Sorting files",
+      "restoringLastSort": "Restoring last sort",
+      "directorySet": "Directory set: {{path}}"
     },
     "previewTree": {
       "folderEmoji": "📁",
@@ -102,7 +107,7 @@
     },
     "consolePanel": {
       "awaitingFolder": "Awaiting folder...",
-      "directorySet": "Directory set: {path}"
+      "directorySet": "Directory set: {{path}}"
     }
   },
   "settings": {

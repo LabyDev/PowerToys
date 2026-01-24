@@ -83,7 +83,11 @@ const FileSorter = () => {
       if (!state.currentPath) return;
       if (debouncedSimilarity === state.similarityThreshold) return;
 
-      logFrontend(`Applying similarity threshold: ${debouncedSimilarity}%`);
+      logFrontend(
+        t("fileSorter.toolbar.applyingSimilarity", {
+          threshold: debouncedSimilarity,
+        }),
+      );
       setShowLoading(true);
       try {
         await setSimilarityThreshold(debouncedSimilarity);
@@ -111,7 +115,7 @@ const FileSorter = () => {
     const path = await selectSortDirectory();
     if (!path) return;
 
-    logFrontend("Directory selected");
+    logFrontend(t("fileSorter.toolbar.directorySet", { path }));
     setQuery("");
     setState((s) => ({ ...s, currentPath: path }));
     await refreshPreview();
@@ -120,7 +124,7 @@ const FileSorter = () => {
   // Refresh preview manually
   const handleRefresh = async () => {
     if (!state.currentPath) return;
-    logFrontend("Refreshing preview...");
+    logFrontend(t("fileSorter.toolbar.refreshingPreview"));
     setQuery("");
     await refreshPreview();
   };
@@ -128,7 +132,7 @@ const FileSorter = () => {
   // Sort files
   const handleSort = async () => {
     if (!state.currentPath) return;
-    logFrontend("Sorting files");
+    logFrontend(t("fileSorter.toolbar.sortingFiles"));
     setShowLoading(true);
     try {
       await sortFiles(state.currentPath, similarity, state);
@@ -140,7 +144,7 @@ const FileSorter = () => {
 
   // Restore last sort
   const handleRestore = async () => {
-    logFrontend("Restoring last sort");
+    logFrontend(t("fileSorter.toolbar.restoringLastSort"));
     setShowLoading(true);
     try {
       await restoreLastSort();
