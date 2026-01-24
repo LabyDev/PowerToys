@@ -6,7 +6,7 @@
     "settingsButton": "Postavke"
   },
   "fileRandomiser": {
-    "title": "Nasumično Fajlovi",
+    "title": "Nasumični Fajlovi",
     "description": "Odaberite fajlove za nasumično sortiranje",
     "paths": "Putanje",
     "files": "Fajlovi",
@@ -30,7 +30,8 @@
         "contains": "Sadrži",
         "startsWith": "Počinje sa",
         "endsWith": "Završava sa",
-        "regex": "Regex"
+        "regex": "Regex",
+        "bookmarks": "Oznake"
       },
       "ruleBadge": {
         "includeSymbol": "+",
@@ -65,7 +66,50 @@
   },
   "fileSorter": {
     "title": "Sortiranje Fajlova",
-    "description": "Odaberite kriterije sortiranja"
+    "description": "Odaberite kriterije sortiranja",
+    "matchThreshold": "Prag podudaranja",
+    "preview": {
+      "ready": "Spremno za generisanje pregleda",
+      "selectDirectory": "Odaberite direktorij"
+    },
+    "stats": {
+      "title": "Statistika",
+      "filesToMove": "Fajlovi za premještanje",
+      "foldersToCreate": "Nove fascikle",
+      "totalFoldersAffected": "Ukupno pogođene fascikle",
+      "totalSizeToMove": "Ukupna veličina za premještanje"
+    },
+    "configuration": "Konfiguracija",
+    "toolbar": {
+      "sortFiles": "Sortiraj fajlove",
+      "undoLastMove": "Poništi posljednje premještanje",
+      "refresh": "Osvježi",
+      "changeFolder": "Promijeni fasciklu",
+      "noFolderSelected": "Nijedna fascikla nije odabrana",
+      "searchPlaceholder": "Filtriraj rezultate…",
+      "applyingSimilarity": "Primjena praga podudaranja: {{threshold}}%",
+      "refreshingPreview": "Osvježavanje pregleda…",
+      "sortingFiles": "Sortiranje fajlova",
+      "restoringLastSort": "Obnavljanje posljednjeg sortiranja",
+      "directorySet": "Direktorij postavljen: {{path}}"
+    },
+    "previewTree": {
+      "folderEmoji": "📁",
+      "fileEmoji": "📄",
+      "filesWillMove": "{{count}} fajl{{plural}} će biti premješten unutar",
+      "sourceFile": "Izvorni fajl — planirano premještanje: {{targets}}"
+    },
+    "itemActions": {
+      "forceTarget": "Forsiraj ciljnu fasciklu",
+      "forcedTo": "Forsirano u: {{target}}",
+      "excludeFile": "Isključi fajl",
+      "includeFile": "Ponovo uključi fajl",
+      "revealInExplorer": "Prikaži u pretraživaču fajlova"
+    },
+    "consolePanel": {
+      "awaitingFolder": "Čekanje na fasciklu…",
+      "directorySet": "Direktorij postavljen: {{path}}"
+    }
   },
   "settings": {
     "title": "Postavke",
@@ -115,7 +159,7 @@
     }
   },
   "fileRandomiserSettings": {
-    "title": "Postavke nasumičnog fajla",
+    "title": "Postavke nasumičnih fajlova",
     "processTracking": {
       "title": "Praćenje procesa (Feature Flag)",
       "description": "Ovaj prekidač omogućava funkciju praćenja procesa u glavnoj aplikaciji.\nKada je omogućeno, Nasumični Fajlovi će automatski otvoriti sljedeći fajl (ili nasumični ako je aktiviran shuffle) kad god se fajl zatvori, dokle god praćenje nije isključeno.\nVažno: Ako aplikacija neočekivano zatvori, prerano, ili se otvori u postojećoj instanci, može izazvati padove.",

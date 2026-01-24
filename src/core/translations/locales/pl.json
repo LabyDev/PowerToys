@@ -30,7 +30,8 @@
         "contains": "Zawiera",
         "startsWith": "Zaczyna się od",
         "endsWith": "Kończy się na",
-        "regex": "Regex"
+        "regex": "Regex",
+        "bookmarks": "Zakładki"
       },
       "ruleBadge": {
         "includeSymbol": "+",
@@ -42,7 +43,8 @@
       "openFolder": "Otwórz w folderze",
       "openFile": "Otwórz plik",
       "exclude": "Wyklucz",
-      "remove": "Usuń"
+      "remove": "Usuń",
+      "bookmark": "Zakładka"
     },
     "presetControls": {
       "presetNamePlaceholder": "Nazwa presetu",
@@ -64,7 +66,50 @@
   },
   "fileSorter": {
     "title": "Sortuj Pliki",
-    "description": "Wybierz kryteria sortowania"
+    "description": "Wybierz kryteria sortowania",
+    "matchThreshold": "Próg dopasowania",
+    "preview": {
+      "ready": "Gotowe do wygenerowania podglądu",
+      "selectDirectory": "Wybierz katalog"
+    },
+    "stats": {
+      "title": "Statystyki",
+      "filesToMove": "Pliki do przeniesienia",
+      "foldersToCreate": "Nowe foldery",
+      "totalFoldersAffected": "Łączna liczba folderów",
+      "totalSizeToMove": "Łączny rozmiar do przeniesienia"
+    },
+    "configuration": "Konfiguracja",
+    "toolbar": {
+      "sortFiles": "Sortuj pliki",
+      "undoLastMove": "Cofnij ostatnie przeniesienie",
+      "refresh": "Odśwież",
+      "changeFolder": "Zmień folder",
+      "noFolderSelected": "Nie wybrano folderu",
+      "searchPlaceholder": "Filtruj wyniki…",
+      "applyingSimilarity": "Stosowanie progu podobieństwa: {{threshold}}%",
+      "refreshingPreview": "Odświeżanie podglądu…",
+      "sortingFiles": "Sortowanie plików",
+      "restoringLastSort": "Przywracanie ostatniego sortowania",
+      "directorySet": "Katalog ustawiony: {{path}}"
+    },
+    "previewTree": {
+      "folderEmoji": "📁",
+      "fileEmoji": "📄",
+      "filesWillMove": "{{count}} plik(i) zostanie przeniesiony do",
+      "sourceFile": "Plik źródłowy — planowane przeniesienie: {{targets}}"
+    },
+    "itemActions": {
+      "forceTarget": "Wymuś docelowy folder",
+      "forcedTo": "Wymuszone do: {{target}}",
+      "excludeFile": "Wyklucz plik",
+      "includeFile": "Ponownie uwzględnij plik",
+      "revealInExplorer": "Pokaż w eksploratorze plików"
+    },
+    "consolePanel": {
+      "awaitingFolder": "Oczekiwanie na folder…",
+      "directorySet": "Katalog ustawiony: {{path}}"
+    }
   },
   "settings": {
     "title": "Ustawienia",
@@ -109,8 +154,7 @@
         "nl": "Holenderski",
         "bs": "Bośniacki",
         "de": "Niemiecki",
-        "pl": "Polski",
-        "bookmark": "Zakładka"
+        "pl": "Polski"
       }
     }
   },

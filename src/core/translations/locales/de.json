@@ -30,7 +30,8 @@
         "contains": "Enthält",
         "startsWith": "Beginnt mit",
         "endsWith": "Endet mit",
-        "regex": "Regex"
+        "regex": "Regex",
+        "bookmarks": "Lesezeichen"
       },
       "ruleBadge": {
         "includeSymbol": "+",
@@ -42,7 +43,8 @@
       "openFolder": "Im Ordner öffnen",
       "openFile": "Datei öffnen",
       "exclude": "Ausschließen",
-      "remove": "Entfernen"
+      "remove": "Entfernen",
+      "bookmark": "Lesezeichen"
     },
     "presetControls": {
       "presetNamePlaceholder": "Preset-Name",
@@ -64,7 +66,50 @@
   },
   "fileSorter": {
     "title": "Dateien sortieren",
-    "description": "Wählen Sie die Sortierkriterien"
+    "description": "Wählen Sie die Sortierkriterien",
+    "matchThreshold": "Übereinstimmungsschwelle",
+    "preview": {
+      "ready": "Bereit für Vorschau",
+      "selectDirectory": "Verzeichnis auswählen"
+    },
+    "stats": {
+      "title": "Statistiken",
+      "filesToMove": "Zu verschiebende Dateien",
+      "foldersToCreate": "Neue Ordner",
+      "totalFoldersAffected": "Gesamt betroffene Ordner",
+      "totalSizeToMove": "Gesamtgröße zum Verschieben"
+    },
+    "configuration": "Konfiguration",
+    "toolbar": {
+      "sortFiles": "Dateien sortieren",
+      "undoLastMove": "Letzte Verschiebung rückgängig",
+      "refresh": "Aktualisieren",
+      "changeFolder": "Ordner wechseln",
+      "noFolderSelected": "Kein Ordner ausgewählt",
+      "searchPlaceholder": "Ergebnisse filtern…",
+      "applyingSimilarity": "Ähnlichkeitsschwelle anwenden: {{threshold}}%",
+      "refreshingPreview": "Vorschau aktualisieren…",
+      "sortingFiles": "Dateien sortieren",
+      "restoringLastSort": "Letzte Sortierung wiederherstellen",
+      "directorySet": "Verzeichnis festgelegt: {{path}}"
+    },
+    "previewTree": {
+      "folderEmoji": "📁",
+      "fileEmoji": "📄",
+      "filesWillMove": "{{count}} Datei(en) wird verschoben nach",
+      "sourceFile": "Quelldatei — geplante Verschiebung(en): {{targets}}"
+    },
+    "itemActions": {
+      "forceTarget": "Zielordner erzwingen",
+      "forcedTo": "Erzwungen nach: {{target}}",
+      "excludeFile": "Datei ausschließen",
+      "includeFile": "Datei erneut einbeziehen",
+      "revealInExplorer": "Im Datei-Explorer anzeigen"
+    },
+    "consolePanel": {
+      "awaitingFolder": "Warte auf Ordner…",
+      "directorySet": "Verzeichnis festgelegt: {{path}}"
+    }
   },
   "settings": {
     "title": "Einstellungen",
@@ -109,8 +154,7 @@
         "nl": "Niederländisch",
         "bs": "Bosnisch",
         "de": "Deutsch",
-        "pl": "Polnisch",
-        "bookmark": "Lesezeichen"
+        "pl": "Polnisch"
       }
     }
   },

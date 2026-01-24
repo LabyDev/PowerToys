@@ -30,7 +30,8 @@
         "contains": "Bevat",
         "startsWith": "Begint met",
         "endsWith": "Eindigt met",
-        "regex": "Regex"
+        "regex": "Regex",
+        "bookmarks": "Bladwijzer"
       },
       "ruleBadge": {
         "includeSymbol": "+",
@@ -65,7 +66,50 @@
   },
   "fileSorter": {
     "title": "Bestanden Sorteren",
-    "description": "Kies sorteercriteria"
+    "description": "Kies sorteercriteria",
+    "matchThreshold": "Drempel voor overeenkomst",
+    "preview": {
+      "ready": "Klaar om voorbeeld te genereren",
+      "selectDirectory": "Selecteer een map"
+    },
+    "stats": {
+      "title": "Statistieken",
+      "filesToMove": "Bestanden om te verplaatsen",
+      "foldersToCreate": "Nieuwe mappen",
+      "totalFoldersAffected": "Totaal beïnvloede mappen",
+      "totalSizeToMove": "Totale te verplaatsen grootte"
+    },
+    "configuration": "Configuratie",
+    "toolbar": {
+      "sortFiles": "Bestanden sorteren",
+      "undoLastMove": "Laatste verplaatsing ongedaan maken",
+      "refresh": "Vernieuwen",
+      "changeFolder": "Map wijzigen",
+      "noFolderSelected": "Geen map geselecteerd",
+      "searchPlaceholder": "Resultaten filteren…",
+      "applyingSimilarity": "Toepassen overeenkomst drempel: {{threshold}}%",
+      "refreshingPreview": "Voorbeeld vernieuwen…",
+      "sortingFiles": "Bestanden sorteren",
+      "restoringLastSort": "Laatste sortering herstellen",
+      "directorySet": "Map ingesteld: {{path}}"
+    },
+    "previewTree": {
+      "folderEmoji": "📁",
+      "fileEmoji": "📄",
+      "filesWillMove": "{{count}} bestand{{plural}} wordt verplaatst naar",
+      "sourceFile": "Bronbestand — geplande verplaatsing(en): {{targets}}"
+    },
+    "itemActions": {
+      "forceTarget": "Doelmap forceren",
+      "forcedTo": "Geforceerd naar: {{target}}",
+      "excludeFile": "Bestand uitsluiten",
+      "includeFile": "Bestand opnieuw opnemen",
+      "revealInExplorer": "Weergeven in bestandsverkenner"
+    },
+    "consolePanel": {
+      "awaitingFolder": "Wacht op map…",
+      "directorySet": "Map ingesteld: {{path}}"
+    }
   },
   "settings": {
     "title": "Instellingen",
