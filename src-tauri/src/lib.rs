@@ -21,6 +21,7 @@ pub fn run() {
             tracking_enabled: false,
             filter_rules: vec![],
             last_picked_id: None,
+            last_picked_index: None,
             pick_counts: HashMap::new(),
         }))
         .manage(filesortercommands::UndoStack(Mutex::new(Vec::new())))

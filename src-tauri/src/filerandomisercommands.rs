@@ -205,7 +205,6 @@ pub fn crawl_paths(
             let size = meta.len();
 
             let mut hasher = DefaultHasher::new();
-            path.file_name().hash(&mut hasher);
             size.hash(&mut hasher);
             modified.hash(&mut hasher);
 
@@ -356,64 +355,79 @@ pub fn open_file_tracked(
 pub fn pick_random_file(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
-    randomness: Option<u8>, // 0–100
 ) -> Option<FileEntry> {
-    let randomness = randomness.unwrap_or(50) as f64 / 100.0;
-    let temperature = (1.0 - randomness).max(0.05);
+    let settings = get_app_settings(app.clone()).ok()?;
+    let randomness_level = settings.file_randomiser.randomness_level;
+
+    let r = (randomness_level as f64 / 100.0).clamp(0.0, 1.0);
+    let mut rng = rand::rng();
 
     let mut data = app_data.lock().unwrap();
 
-    let mut available_files: Vec<FileEntry> =
-        data.files.iter().filter(|f| !f.excluded).cloned().collect();
+    let all: Vec<(usize, FileEntry)> = data
+        .files
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| !f.excluded)
+        .map(|(i, f)| (i, f.clone()))
+        .collect();
 
-    if available_files.is_empty() {
+    if all.is_empty() {
         return None;
     }
 
-    let mut rng = rand::rng();
+    let len = all.len();
 
-    // ---- RECENCY WINDOW (hard anti-repeat) ----
-    const RECENT_WINDOW: usize = 5;
+    let last_index = data.last_picked_index.unwrap_or(0);
 
-    let recent_ids: Vec<u64> = data
-        .history
+    // ---- DIRECTION BIAS (smooth) ----
+    // r=0   -> always forward
+    // r=1   -> fully bidirectional
+    let direction = if rng.random::<f64>() < r {
+        rng.random_range(0..len)
+    } else {
+        (last_index + 1) % len
+    };
+
+    // ---- JUMP DISTANCE CURVE ----
+    // r=0   -> always distance 1
+    // r=1   -> uniform distance
+    let max_dist = len as f64;
+    let dist = if r < 0.0001 {
+        1.0
+    } else {
+        let u = rng.random::<f64>();
+        (u.powf(1.0 / (1.0 + 4.0 * r)) * max_dist).max(1.0)
+    };
+
+    let target_index = (direction + dist as usize) % len;
+
+    // ---- MEMORY WEIGHTING (smooth fade-out) ----
+    let memory_strength = (1.0 - r).powf(2.0);
+
+    let weights: Vec<f64> = all
         .iter()
-        .rev()
-        .take(RECENT_WINDOW)
-        .map(|h| h.id)
-        .collect();
+        .map(|(_, file)| {
+            let mut w = 1.0;
 
-    // Randomise base order to avoid static bias
-    available_files.shuffle(&mut rng);
-
-    let weights: Vec<f64> = available_files
-        .iter()
-        .enumerate()
-        .map(|(i, file)| {
-            // Base positional soft bias
-            let pos = i as f64 / (available_files.len().saturating_sub(1).max(1)) as f64;
-            let mut weight = (pos / temperature).exp();
-
-            // ---- STRONG RECENCY PENALTY ----
-            if let Some(idx) = recent_ids.iter().position(|id| *id == file.id) {
-                // Exponential decay: most recent ≈ zero chance
-                let decay = (idx + 1) as f64;
-                weight *= 0.01_f64.powf(1.0 / decay);
-            }
-
-            // ---- LONG-TERM FREQUENCY PENALTY ----
             let picks = *data.pick_counts.get(&file.id).unwrap_or(&0) as f64;
-            weight /= 1.0 + (picks * 0.75);
+            w /= 1.0 + picks * 2.0 * memory_strength;
 
-            weight.max(0.000001)
+            w.max(0.000001)
         })
         .collect();
 
     let dist = WeightedIndex::new(&weights).ok()?;
-    let idx = dist.sample(&mut rng);
-    let file = available_files[idx].clone();
+    let weighted_choice = dist.sample(&mut rng);
 
-    // Update tracking
+    // Blend index choice with weighted memory
+    let final_index =
+        ((target_index as f64 * r) + (weighted_choice as f64 * (1.0 - r))) as usize % len;
+
+    let (picked_index, file) = all[final_index].clone();
+
+    // ---- UPDATE STATE ----
+    data.last_picked_index = Some(picked_index);
     data.last_picked_id = Some(file.id);
     *data.pick_counts.entry(file.id).or_insert(0) += 1;
 
@@ -428,6 +442,8 @@ pub fn pick_random_file(
         Some(file.id),
         Some(file.name.clone()),
     );
+
+    println!("r={:.2}, last={}, picked={}", r, last_index, picked_index);
 
     Some(file)
 }

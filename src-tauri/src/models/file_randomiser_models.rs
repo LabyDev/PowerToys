@@ -35,6 +35,7 @@ pub struct AppStateData {
     pub tracking_enabled: bool,
     pub filter_rules: Vec<FilterRule>,
     pub last_picked_id: Option<u64>,
+    pub last_picked_index: Option<usize>,
     pub pick_counts: HashMap<u64, u32>,
 }
 
