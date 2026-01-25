@@ -13,7 +13,7 @@ use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
-use tauri_plugin_dialog::{DialogExt, FilePath};
+use tauri_plugin_dialog::FilePath;
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
@@ -22,34 +22,36 @@ pub fn get_app_state(state: State<'_, Mutex<AppStateData>>) -> AppStateData {
 }
 
 #[tauri::command]
-pub fn add_path_via_dialog(
+pub async fn add_path_via_dialog(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
-) -> Option<SavedPath> {
-    // Try picking a folder; return None if user cancels
-    let folder = match app.dialog().file().blocking_pick_folder() {
-        Some(f) => f,
-        None => return None, // user cancelled
-    };
+) -> Result<Option<SavedPath>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    // Run blocking dialog off the main thread
+    let folder =
+        tauri::async_runtime::spawn_blocking(move || app.dialog().file().blocking_pick_folder())
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Dialog cancelled".to_string())?;
 
     let mut data = app_data.lock().unwrap();
 
     let name = folder
         .as_path()
-        .iter()
-        .last()
+        .and_then(|p| p.file_name())
         .and_then(|s| s.to_str())
         .unwrap_or("unknown")
         .to_string();
 
     let new_path = SavedPath {
         id: data.paths.len() as u64 + 1,
-        name: name,
+        name,
         path: folder,
     };
 
     data.paths.push(new_path.clone());
-    Some(new_path)
+    Ok(Some(new_path))
 }
 
 #[tauri::command]

@@ -634,7 +634,7 @@ const FileRandomiser = () => {
   />;
 
   return (
-    <Box p="md" h="94vh">
+    <Box p="md" h="92vh">
       <LoadingOverlay
         visible={showLoading}
         zIndex={1000}

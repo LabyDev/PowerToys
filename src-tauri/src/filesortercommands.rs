@@ -5,7 +5,6 @@ use std::sync::Mutex;
 
 use ignore::WalkBuilder;
 use tauri::{AppHandle, Emitter, State};
-use tauri_plugin_dialog::DialogExt;
 
 pub struct UndoStack(pub Mutex<Vec<Vec<(String, String)>>>);
 
@@ -19,11 +18,24 @@ pub fn get_sorter_state(state: State<'_, Mutex<FileSorterState>>) -> FileSorterS
 }
 
 #[tauri::command]
-pub fn select_sort_directory(
+pub async fn select_sort_directory(
     app: AppHandle,
     state: State<'_, Mutex<FileSorterState>>,
-) -> Option<String> {
-    let folder = app.dialog().file().blocking_pick_folder()?;
+) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let app_for_dialog = app.clone();
+
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app_for_dialog.dialog().file().blocking_pick_folder()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let Some(folder) = picked else {
+        return Ok(None); // user cancelled
+    };
+
     let path_str = folder.to_string();
 
     let mut data = state.lock().unwrap();
@@ -31,7 +43,7 @@ pub fn select_sort_directory(
 
     emit_log(&app, &format!("Directory selected: {}", path_str));
 
-    Some(path_str)
+    Ok(Some(path_str))
 }
 
 /* ===============================
@@ -442,24 +454,37 @@ pub fn include_path(state: State<'_, Mutex<FileSorterState>>, path: String) -> R
 }
 
 #[tauri::command]
-pub fn force_target(
+pub async fn force_target(
     app: AppHandle,
     state: State<'_, Mutex<FileSorterState>>,
     path: String,
-) -> Option<String> {
-    let mut data = state.lock().unwrap();
+) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
 
-    // If a forced target already exists, reset it
-    if data.forced_targets.contains_key(&path) {
-        data.forced_targets.remove(&path);
-        emit_log(&app, &format!("Forced target reset for: {}", path));
-        return Some(String::new());
-    }
+    {
+        let mut data = state.lock().unwrap();
+        if data.forced_targets.contains_key(&path) {
+            data.forced_targets.remove(&path);
+            emit_log(&app, &format!("Forced target reset for: {}", path));
+            return Ok(Some(String::new()));
+        }
+    } // mutex released before blocking dialog
 
-    // Otherwise, pick a new folder
-    let folder = app.dialog().file().blocking_pick_folder()?;
+    let app_for_dialog = app.clone();
+
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app_for_dialog.dialog().file().blocking_pick_folder()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let Some(folder) = picked else {
+        return Ok(None); // user cancelled
+    };
+
     let path_str = folder.to_string();
 
+    let mut data = state.lock().unwrap();
     data.forced_targets.insert(path.clone(), path_str.clone());
 
     emit_log(
@@ -467,7 +492,7 @@ pub fn force_target(
         &format!("Forced target set for {}: {}", path, path_str),
     );
 
-    Some(path_str)
+    Ok(Some(path_str))
 }
 
 #[tauri::command]

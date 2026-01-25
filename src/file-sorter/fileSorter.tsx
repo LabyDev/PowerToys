@@ -204,7 +204,7 @@ const FileSorter = () => {
   };
 
   return (
-    <Box p="md" h="94vh">
+    <Box p="md" h="92vh">
       <LoadingOverlay visible={showLoading} />
 
       <Stack h="100%" gap="md">
@@ -267,20 +267,82 @@ const FileSorter = () => {
               />
 
               <ScrollArea style={{ maxHeight: "calc(100% - 100px)" }}>
-                <Stack gap="xs">
-                  <Badge variant="light" fullWidth size="lg">
+                <Stack gap="xs" style={{ width: "100%" }}>
+                  <Badge
+                    variant="light"
+                    size="lg"
+                    fullWidth
+                    styles={{
+                      root: {
+                        display: "flex", // force block-level flex
+                        flexDirection: "column",
+                        width: "100%", // fill horizontal space
+                        whiteSpace: "normal", // allow wrapping
+                        overflow: "visible", // don’t cut off text
+                        textAlign: "left",
+                      },
+                    }}
+                  >
                     {t("fileSorter.stats.filesToMove")}:{" "}
                     {state.stats.filesToMove}
                   </Badge>
-                  <Badge color="cyan" variant="light" fullWidth size="lg">
+
+                  <Badge
+                    color="cyan"
+                    variant="light"
+                    size="lg"
+                    fullWidth
+                    styles={{
+                      root: {
+                        display: "flex",
+                        flexDirection: "column",
+                        width: "100%",
+                        whiteSpace: "normal",
+                        overflow: "visible",
+                        textAlign: "left",
+                      },
+                    }}
+                  >
                     {t("fileSorter.stats.foldersToCreate")}:{" "}
                     {state.stats.foldersToCreate}
                   </Badge>
-                  <Badge color="green" variant="light" fullWidth size="lg">
+
+                  <Badge
+                    color="green"
+                    variant="light"
+                    size="lg"
+                    fullWidth
+                    styles={{
+                      root: {
+                        display: "flex",
+                        flexDirection: "column",
+                        width: "100%",
+                        whiteSpace: "normal",
+                        overflow: "visible",
+                        textAlign: "left",
+                      },
+                    }}
+                  >
                     {t("fileSorter.stats.totalFoldersAffected")}:{" "}
                     {state.stats.totalFoldersAffected}
                   </Badge>
-                  <Badge color="orange" variant="light" fullWidth size="lg">
+
+                  <Badge
+                    color="orange"
+                    variant="light"
+                    size="lg"
+                    fullWidth
+                    styles={{
+                      root: {
+                        display: "flex",
+                        flexDirection: "column",
+                        width: "100%",
+                        whiteSpace: "normal",
+                        overflow: "visible",
+                        textAlign: "left",
+                      },
+                    }}
+                  >
                     {t("fileSorter.stats.totalSizeToMove")}:{" "}
                     {formatBytes(state.stats.totalSizeToMove)}
                   </Badge>
