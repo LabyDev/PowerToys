@@ -21,10 +21,9 @@ export function buildSortPreviewTree(
   const normalizedRoot = rootPath
     .replace(/[/\\]+/g, OS_SEP)
     .replace(new RegExp(`${OS_SEP}+$`), "");
-  const rootSegments = splitPath(normalizedRoot);
 
   const root: SortTreeNode = {
-    name: rootSegments[rootSegments.length - 1] || normalizedRoot,
+    name: normalizedRoot,
     path: normalizedRoot,
     children: [],
     isDir: true,
