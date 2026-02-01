@@ -1,5 +1,5 @@
-use crate::models::Bookmark;
 use crate::models::settings::AppSettings;
+use crate::models::Bookmark;
 use crate::models::DarkModeOption;
 use crate::models::LanguageOption;
 use base64::{engine::general_purpose, Engine as _};
@@ -59,11 +59,20 @@ pub fn set_dark_mode(app: AppHandle<Wry>, mode: DarkModeOption) -> Result<AppSet
     Ok(settings)
 }
 
-/// Set custom background via file dialog
+/// Set custom background via file dialog (non-blocking, same fix as folder picker)
 #[tauri::command]
-pub fn set_custom_background(app: tauri::AppHandle<Wry>) -> Result<AppSettings, String> {
-    let file_path_opt = app.dialog().file().blocking_pick_file();
-    let file_path = file_path_opt.ok_or("No file selected")?;
+pub async fn set_custom_background(app: AppHandle<Wry>) -> Result<AppSettings, String> {
+    let app_for_dialog = app.clone();
+
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app_for_dialog.dialog().file().blocking_pick_file()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let Some(file_path) = picked else {
+        return Err("No file selected".into());
+    };
 
     let path_buf: PathBuf = match file_path {
         FilePath::Path(p) => p,
@@ -78,10 +87,8 @@ pub fn set_custom_background(app: tauri::AppHandle<Wry>) -> Result<AppSettings, 
         .and_then(|s| s.to_str())
         .unwrap_or("png");
 
-    // Build data URL
     let data_url = format!("data:image/{};base64,{}", ext, encoded);
 
-    // Save in settings
     let mut settings = get_app_settings(app.clone())?;
     settings.custom_background = Some(data_url);
     set_app_settings(app, settings.clone())?;
@@ -93,14 +100,14 @@ pub fn set_custom_background(app: tauri::AppHandle<Wry>) -> Result<AppSettings, 
 #[tauri::command]
 pub fn clear_custom_background(app: AppHandle<Wry>) -> Result<AppSettings, String> {
     let mut settings = get_app_settings(app.clone())?;
-    settings.custom_background = None; // clear the background
+    settings.custom_background = None;
     set_app_settings(app, settings.clone())?;
     Ok(settings)
 }
 
 /// Set the randomness level for the file randomiser (0-100)
 #[tauri::command]
-pub fn set_randomness_level(app: tauri::AppHandle<Wry>, level: u8) -> Result<AppSettings, String> {
+pub fn set_randomness_level(app: AppHandle<Wry>, level: u8) -> Result<AppSettings, String> {
     if level > 100 {
         return Err("Randomness level must be between 0 and 100".into());
     }
@@ -111,19 +118,19 @@ pub fn set_randomness_level(app: tauri::AppHandle<Wry>, level: u8) -> Result<App
 }
 
 #[tauri::command]
-pub fn restart_app(app_handle: tauri::AppHandle) {
+pub fn restart_app(app_handle: AppHandle) {
     app_handle.restart();
 }
 
 #[tauri::command]
-pub fn get_global_bookmarks(app: tauri::AppHandle<Wry>) -> Result<Vec<Bookmark>, String> {
+pub fn get_global_bookmarks(app: AppHandle<Wry>) -> Result<Vec<Bookmark>, String> {
     let settings = get_app_settings(app)?;
     Ok(settings.file_randomiser.global_bookmarks)
 }
 
 #[tauri::command]
 pub fn set_global_bookmarks(
-    app: tauri::AppHandle<Wry>,
+    app: AppHandle<Wry>,
     bookmarks: Vec<Bookmark>,
 ) -> Result<Vec<Bookmark>, String> {
     let mut settings = get_app_settings(app.clone())?;

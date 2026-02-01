@@ -190,21 +190,24 @@ pub fn crawl_paths(
     }
 
     fn is_system_file(path: &std::path::Path) -> bool {
-        if let Some(name) = path.file_name() {
-            let name = name.to_string_lossy();
+        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+            // Unix hidden files
             if name.starts_with('.') {
                 return true;
             }
-            #[cfg(windows)]
-            {
-                use std::os::windows::fs::MetadataExt;
-                if let Ok(meta) = path.metadata() {
-                    if meta.file_attributes() & 0x2 != 0 {
-                        return true;
-                    }
+        }
+
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::MetadataExt;
+            if let Ok(meta) = path.metadata() {
+                const FILE_ATTRIBUTE_HIDDEN: u32 = 0x2;
+                if meta.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0 {
+                    return true;
                 }
             }
         }
+
         false
     }
 
