@@ -164,7 +164,9 @@
       "title": "Process Tracking (Feature Flag)",
       "description": "This toggle enables the process tracking feature in the main app.\nOnce enabled, the File Randomiser will automatically open the next file (or a random file if shuffle is active) whenever a file is closed, until tracking is disabled.\nImportant: If an app closes unexpectedly, too soon, or opens in an existing instance, it may cause crashes.",
       "checkboxLabel": "Enable process tracking feature",
-      "checkboxDescription": "This setting only enables the feature; tracking itself must still be toggled in the main app."
+      "checkboxDescription": "This setting only enables the feature; tracking itself must still be toggled in the main app.",
+      "unsupportedOnLinux": "Process tracking is not supported on Linux due to how process isolation and permissions work.",
+      "checkboxUnavailable": "Unavailable on Linux"
     },
     "randomness": {
       "title": "Randomness",

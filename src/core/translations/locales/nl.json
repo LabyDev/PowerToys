@@ -164,7 +164,9 @@
       "title": "Proces Tracking (Feature Flag)",
       "description": "Deze schakelaar activeert de proces-trackingfunctie in de hoofdapp.\nEenmaal ingeschakeld, opent de Bestanden Randomiseren automatisch het volgende bestand (of een willekeurig bestand als shuffle actief is) telkens wanneer een bestand wordt gesloten, totdat tracking wordt uitgeschakeld.\nBelangrijk: Als een app onverwacht sluit, te snel, of in een bestaande instantie opent, kan dit crashes veroorzaken.",
       "checkboxLabel": "Proces-trackingfunctie inschakelen",
-      "checkboxDescription": "Deze instelling activeert alleen de functie; tracking zelf moet nog steeds worden ingeschakeld in de hoofdapp."
+      "checkboxDescription": "Deze instelling activeert alleen de functie; tracking zelf moet nog steeds worden ingeschakeld in de hoofdapp.",
+      "unsupportedOnLinux": "Proces tracking wordt niet ondersteund op Linux vanwege procesisolatie en machtigingen.",
+      "checkboxUnavailable": "Niet beschikbaar op Linux"
     },
     "randomness": {
       "title": "Willekeur",

@@ -164,7 +164,9 @@
       "title": "Praćenje procesa (Feature Flag)",
       "description": "Ovaj prekidač omogućava funkciju praćenja procesa u glavnoj aplikaciji.\nKada je omogućeno, Nasumični Fajlovi će automatski otvoriti sljedeći fajl (ili nasumični ako je aktiviran shuffle) kad god se fajl zatvori, dokle god praćenje nije isključeno.\nVažno: Ako aplikacija neočekivano zatvori, prerano, ili se otvori u postojećoj instanci, može izazvati padove.",
       "checkboxLabel": "Omogući funkciju praćenja procesa",
-      "checkboxDescription": "Ova postavka samo omogućava funkciju; praćenje se i dalje mora aktivirati u glavnoj aplikaciji."
+      "checkboxDescription": "Ova postavka samo omogućava funkciju; praćenje se i dalje mora aktivirati u glavnoj aplikaciji.",
+      "unsupportedOnLinux": "Praćenje procesa nije podržano na Linuxu zbog načina izolacije procesa i dozvola.",
+      "checkboxUnavailable": "Nedostupno na Linuxu"
     },
     "randomness": {
       "title": "Nasumičnost",

@@ -86,7 +86,7 @@ const FileRandomiserSettings = () => {
 
             <Text size="sm" c="dimmed">
               {isLinux
-                ? "Process tracking is not supported on Linux due to how process isolation and permissions work."
+                ? t("fileRandomiserSettings.processTracking.unsupportedOnLinux")
                 : t("fileRandomiserSettings.processTracking.description")}
             </Text>
 
@@ -98,7 +98,9 @@ const FileRandomiserSettings = () => {
               label={t("fileRandomiserSettings.processTracking.checkboxLabel")}
               description={
                 isLinux
-                  ? "Unavailable on Linux"
+                  ? t(
+                      "fileRandomiserSettings.processTracking.checkboxUnavailable",
+                    )
                   : t(
                       "fileRandomiserSettings.processTracking.checkboxDescription",
                     )

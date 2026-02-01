@@ -164,7 +164,9 @@
       "title": "Śledzenie procesów (flaga funkcji)",
       "description": "Ten przełącznik włącza funkcję śledzenia procesów w głównej aplikacji.\nPo włączeniu, Losowanie Plików automatycznie otworzy następny plik (lub losowy, jeśli aktywne jest tasowanie) po zamknięciu pliku, aż śledzenie zostanie wyłączone.\nWażne: Jeśli aplikacja zamknie się nieoczekiwanie, zbyt wcześnie lub otworzy istniejącą instancję, może to spowodować awarie.",
       "checkboxLabel": "Włącz funkcję śledzenia procesów",
-      "checkboxDescription": "To ustawienie tylko włącza funkcję; samo śledzenie nadal musi być aktywowane w głównej aplikacji."
+      "checkboxDescription": "To ustawienie tylko włącza funkcję; samo śledzenie nadal musi być aktywowane w głównej aplikacji.",
+      "unsupportedOnLinux": "Śledzenie procesów nie jest obsługiwane na Linuksie z powodu sposobu izolacji procesów i uprawnień.",
+      "checkboxUnavailable": "Niedostępne na Linuksie"
     },
     "randomness": {
       "title": "Losowość",

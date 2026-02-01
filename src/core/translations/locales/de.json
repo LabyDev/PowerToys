@@ -164,7 +164,9 @@
       "title": "Prozessverfolgung (Feature-Flag)",
       "description": "Dieser Schalter aktiviert die Prozessverfolgungsfunktion in der Hauptanwendung.\nSobald aktiviert, öffnet der Dateizufallsgenerator automatisch die nächste Datei (oder eine zufällige Datei, wenn Shuffle aktiviert ist), sobald eine Datei geschlossen wird, bis die Verfolgung deaktiviert wird.\nWichtig: Wenn eine App unerwartet schließt, zu früh startet oder in einer bestehenden Instanz geöffnet wird, kann dies zu Abstürzen führen.",
       "checkboxLabel": "Prozessverfolgungsfunktion aktivieren",
-      "checkboxDescription": "Diese Einstellung aktiviert nur die Funktion; die Verfolgung selbst muss weiterhin in der Hauptanwendung umgeschaltet werden."
+      "checkboxDescription": "Diese Einstellung aktiviert nur die Funktion; die Verfolgung selbst muss weiterhin in der Hauptanwendung umgeschaltet werden.",
+      "unsupportedOnLinux": "Prozessverfolgung wird unter Linux nicht unterstützt, aufgrund der Art der Prozessisolation und Berechtigungen.",
+      "checkboxUnavailable": "Unter Linux nicht verfügbar"
     },
     "randomness": {
       "title": "Zufälligkeit",
