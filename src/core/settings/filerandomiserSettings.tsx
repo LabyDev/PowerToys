@@ -15,19 +15,34 @@ import {
   toggleProcessTracking,
   setRandomnessLevel,
 } from "../api/appSettingsApi";
+import { platform, Platform } from "@tauri-apps/plugin-os";
 
 const FileRandomiserSettings = () => {
   const { t } = useTranslation();
   const { settings, setSettings } = useAppSettings();
+
+  const [isLinux, setIsLinux] = useState(false);
   const [localRandomnessValue, setLocalRandomnessValue] = useState(
     settings.fileRandomiser.randomness_level ?? 50,
   );
 
+  // Detect OS via Tauri v2 OS plugin
+  useEffect(() => {
+    try {
+      const currentPlatform: Platform = platform();
+      setIsLinux(currentPlatform === "linux");
+    } catch (err: unknown) {
+      console.error("Failed to detect platform:", err);
+    }
+  }, []);
+
   const handleProcessTrackingToggle = async (checked: boolean) => {
+    if (isLinux) return;
+
     try {
       const updated = await toggleProcessTracking(checked);
       setSettings(updated);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to toggle process tracking:", err);
     }
   };
@@ -39,14 +54,18 @@ const FileRandomiserSettings = () => {
         try {
           const updated = await setRandomnessLevel(localRandomnessValue);
           setSettings(updated);
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Failed to update randomness level:", err);
         }
       }
     }, 300);
 
     return () => clearTimeout(handler);
-  }, [localRandomnessValue]);
+  }, [
+    localRandomnessValue,
+    settings.fileRandomiser.randomness_level,
+    setSettings,
+  ]);
 
   // Sync local slider if settings change externally
   useEffect(() => {
@@ -64,16 +83,26 @@ const FileRandomiserSettings = () => {
             <Title order={4}>
               {t("fileRandomiserSettings.processTracking.title")}
             </Title>
+
             <Text size="sm" c="dimmed">
-              {t("fileRandomiserSettings.processTracking.description")}
+              {isLinux
+                ? "Process tracking is not supported on Linux due to how process isolation and permissions work."
+                : t("fileRandomiserSettings.processTracking.description")}
             </Text>
 
             <Checkbox
-              checked={settings.fileRandomiser.allow_process_tracking}
+              checked={
+                isLinux ? false : settings.fileRandomiser.allow_process_tracking
+              }
+              disabled={isLinux}
               label={t("fileRandomiserSettings.processTracking.checkboxLabel")}
-              description={t(
-                "fileRandomiserSettings.processTracking.checkboxDescription",
-              )}
+              description={
+                isLinux
+                  ? "Unavailable on Linux"
+                  : t(
+                      "fileRandomiserSettings.processTracking.checkboxDescription",
+                    )
+              }
               onChange={(event) =>
                 handleProcessTrackingToggle(event.currentTarget.checked)
               }

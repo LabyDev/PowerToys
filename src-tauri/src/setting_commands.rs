@@ -15,17 +15,33 @@ use tauri_plugin_store::StoreExt;
 pub fn get_app_settings(app: AppHandle<Wry>) -> Result<AppSettings, String> {
     let store = app.store("store.json").map_err(|e| e.to_string())?;
 
-    let settings: AppSettings = match store.get("settings") {
+    #[allow(unused_mut)]
+    let mut settings: AppSettings = match store.get("settings") {
         Some(value) => serde_json::from_value(value).unwrap_or_default(),
         None => AppSettings::default(),
     };
+
+    // Force-disable process tracking on non-Windows
+    #[cfg(not(target_os = "windows"))]
+    {
+        settings.file_randomiser.allow_process_tracking = false;
+    }
 
     Ok(settings)
 }
 
 /// Save updated settings to the persistent store
 #[tauri::command]
-pub fn set_app_settings(app: AppHandle<Wry>, settings: AppSettings) -> Result<AppSettings, String> {
+pub fn set_app_settings(
+    app: AppHandle<Wry>,
+    #[allow(unused_mut)] mut settings: AppSettings, // It is not unused.
+) -> Result<AppSettings, String> {
+    // Force-disable process tracking on non-Windows
+    #[cfg(not(target_os = "windows"))]
+    {
+        settings.file_randomiser.allow_process_tracking = false;
+    }
+
     let store = app.store("store.json").map_err(|e| e.to_string())?;
     store.set("settings", serde_json::to_value(&settings).unwrap());
     store.save().map_err(|e| e.to_string())?;
@@ -36,7 +52,17 @@ pub fn set_app_settings(app: AppHandle<Wry>, settings: AppSettings) -> Result<Ap
 #[tauri::command]
 pub fn toggle_process_tracking(app: AppHandle<Wry>, enable: bool) -> Result<AppSettings, String> {
     let mut settings = get_app_settings(app.clone())?;
-    settings.file_randomiser.allow_process_tracking = enable;
+
+    #[cfg(target_os = "windows")]
+    {
+        settings.file_randomiser.allow_process_tracking = enable;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        settings.file_randomiser.allow_process_tracking = false;
+    }
+
     set_app_settings(app, settings.clone())?;
     Ok(settings)
 }

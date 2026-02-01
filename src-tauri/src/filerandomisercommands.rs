@@ -321,30 +321,18 @@ fn open_and_wait(path: &str, show_cmd: bool) -> std::io::Result<()> {
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
-fn open_and_wait(path: &str, show_cmd: bool) -> std::io::Result<()> {
-    if show_cmd {
-        std::process::Command::new("open")
-            .arg("-W")
-            .arg(path)
-            .status()
-            .map(|_| ())
-    } else {
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn open_and_wait(path: &str, _show_cmd: bool) -> std::io::Result<()> {
+    #[cfg(target_os = "macos")]
+    {
         std::process::Command::new("open")
             .arg(path)
             .spawn()
             .map(|_| ())
     }
-}
 
-#[cfg(target_os = "linux")]
-fn open_and_wait(path: &str, show_cmd: bool) -> std::io::Result<()> {
-    if show_cmd {
-        std::process::Command::new("gio")
-            .args(["open", "--wait", path])
-            .status()
-            .map(|_| ())
-    } else {
+    #[cfg(target_os = "linux")]
+    {
         std::process::Command::new("gio")
             .args(["open", path])
             .spawn()
@@ -358,8 +346,13 @@ pub fn open_file_tracked(
     id: Option<u64>,
     name: Option<String>,
 ) -> Result<(), String> {
-    let settings = get_app_settings(app.clone())?;
-    let allow_tracking = settings.file_randomiser.allow_process_tracking;
+    let _settings = get_app_settings(app.clone())?;
+    // Only allow tracking on Windows
+    #[cfg(target_os = "windows")]
+    let allow_tracking = _settings.file_randomiser.allow_process_tracking;
+    #[cfg(not(target_os = "windows"))]
+    let allow_tracking = false;
+
     if let (Some(id), Some(name)) = (id, name) {
         let app_data_lock = app.state::<Mutex<AppStateData>>();
         let mut state = app_data_lock.lock().unwrap();
