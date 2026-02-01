@@ -1,11 +1,31 @@
+@font-face {
+  font-family: "Inter";
+  src: url("/src/assets/fonts/Inter/Inter-VariableFont_opsz\,wght.ttf")
+    format("truetype");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "NotoColorEmoji";
+  src: url("/src/assets/fonts/Noto_Color_Emoji/NotoColorEmoji-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
 html,
 body {
   overflow: hidden;
   height: 100%;
 }
 
+*,
+body {
+  font-family:
+    "Segoe UI Variable Text", "Segoe UI", "Inter", "NotoColorEmoji",
+    "Noto Sans", "Twemoji Mozilla", sans-serif !important;
+}
+
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
