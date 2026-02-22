@@ -1,4 +1,4 @@
-import { Card, Title, Button, Stack, useMantineTheme } from "@mantine/core";
+import { Card, Flex, Image, Button, Stack } from "@mantine/core";
 import {
   ShuffleIcon,
   SortAscendingIcon,
@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import "./MainPage.css";
 
 function App() {
-  const theme = useMantineTheme();
   const { t } = useTranslation();
 
   return (
@@ -21,12 +20,15 @@ function App() {
         withBorder
         className="main-card"
       >
-        <Title
-          style={{ textAlign: "center", marginBottom: theme.spacing.xl }}
-          order={1}
-        >
-          {t("mainPage.appTitle")}
-        </Title>
+        {/* Logo Container */}
+        <Flex justify="center" mb="xl">
+          <Image
+            src="/powertoys.svg"
+            alt="Laby's Powertoys Logo"
+            w={200} // Adjust width as needed
+            fit="contain"
+          />
+        </Flex>
 
         <Stack gap="md" style={{ width: "100%" }}>
           <Button

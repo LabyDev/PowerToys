@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="75.477005mm"
+   height="17.9974mm"
+   viewBox="0 0 75.477005 17.9974"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <rect
+       x="136.3159"
+       y="279.5867"
+       width="261.50397"
+       height="44.511307"
+       id="rect2" />
+  </defs>
+  <g
+     id="layer1"
+     transform="translate(-30.280024,-70.161177)">
+    <rect
+       style="fill:#0078d4;fill-opacity:1;stroke:#ffb900;stroke-width:0.176735;stroke-dasharray:none;stroke-opacity:1"
+       id="rect3"
+       width="75.30027"
+       height="17.820665"
+       x="30.368391"
+       y="70.249542"
+       ry="3.6433086" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:#ffffff;stroke-opacity:1"
+       id="rect4"
+       width="71.434868"
+       height="14.833475"
+       x="32.111229"
+       y="71.743141"
+       ry="3.6433086" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.27304516,0,0,0.283048,-3.3838613,-5.1311686)"
+       id="text2"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:Bahnschrift;-inkscape-font-specification:Bahnschrift;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#ffffff;fill-opacity:1;stroke-width:1.00157;stroke-dasharray:none"><tspan
+         x="136.31641"
+         y="308.99219"
+         id="tspan3"><tspan
+           style="font-weight:600;-inkscape-font-specification:'Bahnschrift Semi-Bold'"
+           id="tspan1">Laby's Powertoys</tspan></tspan></text>
+  </g>
+</svg>
