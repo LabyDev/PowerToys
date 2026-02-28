@@ -254,6 +254,16 @@ When sorting:
 
 The last operation can be restored at any time.
 
+## Support the Project
+
+If you find this project useful and would like to support its development, you can do so here:
+
+<a href="https://www.buymeacoffee.com/aperturecoffee" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="45">
+</a>
+
+Support is optional and greatly appreciated.
+
 ## License and Disclaimer
 
 Licensed under the Laby’s Source Available Passion License LSAPL v1.0.  
