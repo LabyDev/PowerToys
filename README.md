@@ -6,7 +6,7 @@
 
 A small collection of personal utilities built as a long-term passion project using Tauri.
 
-Originally started as Python tools nearly a decade ago, later refined and expanded with new features. See the early versions [here](/old/readme.md).
+Originally started as Python tools nearly a decade ago, later refined and expanded with new features. See the early versions [here](/museum/readme.md).
 
 Supported platforms: Windows and Linux.
 
