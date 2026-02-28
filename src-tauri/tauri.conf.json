@@ -3,6 +3,7 @@
   "productName": "powertoys",
   "version": "1.0.0",
   "identifier": "eu.laby.powertoys",
+
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -10,27 +11,46 @@
     "frontendDist": "../dist",
     "removeUnusedCommands": true
   },
+
   "app": {
     "windows": [
       {
         "title": "PowerToys",
         "width": 1000,
         "height": 620,
-        "center": true
+        "center": true,
+        "windowEffects": {
+          "effects": ["mica"],
+          "state": "active"
+        }
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost; connect-src 'self' ipc: http://localhost:1420"
     }
   },
+
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "msi", "appimage", "deb", "rpm"],
+
+    "shortDescription": "A personal utility toolkit",
+    "longDescription": "PowerToys is a collection of personal utilities built using Tauri.",
+    "copyright": "© 2026 Laby",
+    "category": "Utility",
+    "licenseFile": "./LICENSE",
+
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.ico"
-    ]
+    ],
+
+    "windows": {
+      "nsis": {
+        "installMode": "both"
+      }
+    }
   }
 }
