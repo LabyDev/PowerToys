@@ -1,4 +1,4 @@
-import { Card, Flex, Image, Button, Stack } from "@mantine/core";
+import { Card, Flex, Image, Button, Stack, Text } from "@mantine/core";
 import {
   ShuffleIcon,
   SortAscendingIcon,
@@ -6,10 +6,26 @@ import {
 } from "@phosphor-icons/react";
 import { NavLink } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
+import { platform, Platform } from "@tauri-apps/plugin-os";
 import "./MainPage.css";
 
 function App() {
   const { t } = useTranslation();
+  const [isLinux, setIsLinux] = useState(false);
+
+  useEffect(() => {
+    async function detectOS() {
+      try {
+        const currentPlatform: Platform = await platform();
+        setIsLinux(currentPlatform === "linux");
+      } catch (err) {
+        console.error("Failed to detect platform:", err);
+      }
+    }
+
+    detectOS();
+  }, []);
 
   return (
     <div className="wrapper">
@@ -20,14 +36,19 @@ function App() {
         withBorder
         className="main-card"
       >
-        {/* Logo Container */}
         <Flex justify="center" mb="xl">
-          <Image
-            src="/powertoys.svg"
-            alt="Laby's Powertoys Logo"
-            w={200} // Adjust width as needed
-            fit="contain"
-          />
+          {isLinux ? (
+            <Text size="xl" fw={700}>
+              Laby&apos;s Powertoys
+            </Text>
+          ) : (
+            <Image
+              src="/powertoys.svg"
+              alt="Laby's Powertoys Logo"
+              w={200}
+              fit="contain"
+            />
+          )}
         </Flex>
 
         <Stack gap="md" style={{ width: "100%" }}>
