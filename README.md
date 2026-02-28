@@ -2,9 +2,9 @@
   <img src="./public/powertoys.svg" alt="Powertoys Logo" height="120" />
 </p>
 
-# Powertoys
+# PowerToys
 
-A small collection of personal utilities built as a long-term passion project using Tauri.
+A small collection of personal utilities built as a passion project using Tauri.
 
 Originally started as Python tools nearly a decade ago, later refined and expanded with new features. See the early versions [here](/museum/readme.md).
 
