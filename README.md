@@ -31,12 +31,12 @@ Available in:
     - Bosnian  
 
 
-# File Randomiser
+### File Randomiser
 
 Randomly selects files from configured paths with filtering, bookmarking, presets, and optional tracking.
 
 
-## Overview
+#### Overview
 
 The workflow follows four stages:
 
@@ -53,7 +53,7 @@ The interface provides:
 - Timestamped open history  
 
 
-## Toolbar
+#### Toolbar
 
 - Add Path  
 - Crawl  
@@ -66,11 +66,11 @@ The interface provides:
 When tracking is active, manual picking is disabled.
 
 
-## Filtering System
+#### Filtering System
 
 The Filters and Exclusions panel allows rule-based filtering.
 
-### Rule Types
+##### Rule Types
 
 - Contains  
 - Starts With  
@@ -89,7 +89,7 @@ Rules are evaluated in order and can be rearranged.
 If no include rules exist, all files are included unless excluded.
 
 
-## Bookmarks
+#### Bookmarks
 
 Files can be color-bookmarked.
 
@@ -108,8 +108,7 @@ Available colors:
 Bookmarks can be referenced directly in filters.
 
 
-
-## Hidden Bookmark Filter Syntax
+#### Hidden Bookmark Filter Syntax
 
 Trigger:
 
@@ -143,7 +142,7 @@ Examples:
 
 
 
-## Shuffle vs Sequential
+#### Shuffle vs Sequential
 
 - Shuffle enabled results in random selection  
 - Shuffle disabled results in sequential traversal  
@@ -152,7 +151,7 @@ Sequential mode respects current filters and exclusions.
 
 
 
-## Randomness Level
+##### Randomness Level
 
 A 0 to 100 slider controls how random selection feels:
 
@@ -164,7 +163,7 @@ Changes are saved automatically.
 
 
 
-## Process Tracking
+#### Process Tracking
 
 Available on Windows only.
 
@@ -179,7 +178,7 @@ Linux does not support process tracking.
 Unstable or fast-closing applications may cause unexpected behavior. Like high RAM usage and system crashes.
 
 
-## Presets
+#### Presets
 
 Presets store:
 
@@ -198,9 +197,7 @@ Available actions:
 
 Unsaved changes are detected automatically.
 
-
-
-# File Sorter
+### File Sorter
 
 Organizes files inside a selected directory using name similarity.  
 Everything is previewed first. Nothing happens until confirmed.
@@ -209,7 +206,7 @@ Fully undoable.
 
 
 
-## How It Works
+#### How It Works
 
 1. Select a directory  
 2. Build preview plan  
@@ -220,7 +217,7 @@ Fully undoable.
 
 
 
-## Similarity Matching
+#### Similarity Matching
 
 Files are grouped based on filename similarity without extensions.
 
@@ -232,7 +229,7 @@ When multiple folders match, the highest similarity wins.
 
 
 
-## Match Threshold
+#### Match Threshold
 
 Adjustable from 10 percent to 100 percent.
 
@@ -243,8 +240,7 @@ Adjustable from 10 percent to 100 percent.
 Preview updates automatically.
 
 
-
-## Preview
+#### Preview
 
 Live tree preview shows:
 
@@ -260,8 +256,7 @@ Includes live search and real-time statistics:
 - Total size to move  
 
 
-
-## Manual Controls
+#### Manual Controls
 
 Per-file options:
 
@@ -272,8 +267,7 @@ Per-file options:
 All changes update the preview instantly.
 
 
-
-## Execution and Undo
+#### Execution and Undo
 
 When sorting:
 
@@ -282,7 +276,6 @@ When sorting:
 - All moves are recorded  
 
 The last operation can be restored at any time.
-
 
 
 ## License and Disclaimer
