@@ -37,6 +37,7 @@ pub struct AppStateData {
     pub last_picked_id: Option<u64>,
     pub last_picked_index: Option<usize>,
     pub pick_counts: HashMap<u64, u32>,
+    pub recency_list: Vec<u64>,
 }
 
 impl Default for AppStateData {
@@ -50,6 +51,7 @@ impl Default for AppStateData {
             last_picked_id: None,
             last_picked_index: None,
             pick_counts: HashMap::new(),
+            recency_list: vec![],
         }
     }
 }

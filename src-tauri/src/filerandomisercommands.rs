@@ -389,7 +389,7 @@ pub fn pick_random_file(
 
     let mut data = app_data.lock().unwrap();
 
-    let all: Vec<(usize, FileEntry)> = data
+    let candidates: Vec<(usize, FileEntry)> = data
         .files
         .iter()
         .enumerate()
@@ -397,64 +397,80 @@ pub fn pick_random_file(
         .map(|(i, f)| (i, f.clone()))
         .collect();
 
-    if all.is_empty() {
+    if candidates.is_empty() {
         return None;
     }
 
-    let len = all.len();
-
+    let len = candidates.len();
     let last_index = data.last_picked_index.unwrap_or(0);
 
-    // ---- DIRECTION BIAS (smooth) ----
-    // r=0   -> always forward
-    // r=1   -> fully bidirectional
-    let direction = if rng.random::<f64>() < r {
-        rng.random_range(0..len)
-    } else {
-        (last_index + 1) % len
-    };
+    // --- How large a recency window to penalise ---
+    // Scales with library size but caps so it doesn't dominate huge libraries.
+    // e.g. 50 files → window ~10, 1000 files → window ~50, 10000 → window ~100
+    let recency_window = ((len as f64).sqrt() * 3.0).clamp(5.0, 150.0) as usize;
 
-    // ---- JUMP DISTANCE CURVE ----
-    // r=0   -> always distance 1
-    // r=1   -> uniform distance
-    let max_dist = len as f64;
-    let dist = if r < 0.0001 {
-        1.0
-    } else {
-        let u = rng.random::<f64>();
-        (u.powf(1.0 / (1.0 + 4.0 * r)) * max_dist).max(1.0)
-    };
+    // --- ORDER BIAS CURVE ---
+    // Drops steeply: at r=0.3 it's already ~5%, gone by r=0.5
+    // order_influence: r=0 → 1.0, r=0.5 → ~0.02, r=1 → 0.0
+    let order_influence = (1.0 - r).powf(3.0);
 
-    let target_index = (direction + dist as usize) % len;
+    // --- MEMORY PENALTY CURVE ---
+    // Peaks around r=0.5, fades toward r=1 (pure chaos needs no memory)
+    // memory_influence: r=0 → 0.0, r=0.5 → 1.0, r=1 → 0.0
+    let memory_influence = 4.0 * r * (1.0 - r); // parabola peaking at r=0.5
 
-    // ---- MEMORY WEIGHTING (smooth fade-out) ----
-    let memory_strength = (1.0 - r).powf(2.0);
-
-    let weights: Vec<f64> = all
+    let weights: Vec<f64> = candidates
         .iter()
-        .map(|(_, file)| {
-            let mut w = 1.0;
+        .map(|(idx, file)| {
+            // --- Order weight ---
+            // Gaussian centred on next file (distance=1), tight sigma
+            let fwd_dist = ((*idx + len - last_index) % len) as f64;
+            let sigma = (len as f64 * 0.03).max(1.5); // ~3% of library width, always at least 1.5
+            let order_w = (-((fwd_dist - 1.0).powi(2)) / (2.0 * sigma * sigma)).exp();
 
-            let picks = *data.pick_counts.get(&file.id).unwrap_or(&0) as f64;
-            w /= 1.0 + picks * 2.0 * memory_strength;
+            // --- Memory (recency) penalty ---
+            // Check position in recency list: 0 = picked last, recency_window-1 = oldest in window
+            let recency_penalty = if Some(file.id) == data.last_picked_id {
+                0.0 // just played, near-impossible to re-pick
+            } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
+                if pos < recency_window {
+                    let fade = pos as f64 / recency_window as f64;
+                    1.0 - fade
+                } else {
+                    1.0
+                }
+            } else {
+                1.0
+            };
 
-            w.max(0.000001)
+            // memory_factor: at full memory_influence, recently played files
+            // get weight multiplied by recency_penalty (near 0 for just-played)
+            let memory_factor = 1.0 - memory_influence * (1.0 - recency_penalty);
+
+            // --- Combine ---
+            // Base is always uniform (1.0), order bias adds on top when active
+            let base = 1.0 + order_w * order_influence * 10.0;
+            (base * memory_factor).max(1e-9)
         })
         .collect();
 
     let dist = WeightedIndex::new(&weights).ok()?;
-    let weighted_choice = dist.sample(&mut rng);
+    let chosen = dist.sample(&mut rng);
+    let (picked_index, file) = candidates[chosen].clone();
 
-    // Blend index choice with weighted memory
-    let final_index =
-        ((target_index as f64 * r) + (weighted_choice as f64 * (1.0 - r))) as usize % len;
-
-    let (picked_index, file) = all[final_index].clone();
-
-    // ---- UPDATE STATE ----
+    // --- Update state ---
     data.last_picked_index = Some(picked_index);
     data.last_picked_id = Some(file.id);
     *data.pick_counts.entry(file.id).or_insert(0) += 1;
+
+    // Update recency list — push to back, trim front if over 2x window
+    // (keep a bit extra so window can shrink without losing history)
+    data.recency_list.push(file.id);
+    let max_recency_len = recency_window * 2;
+    if data.recency_list.len() > max_recency_len {
+        let drain_count = data.recency_list.len() - max_recency_len;
+        data.recency_list.drain(0..drain_count);
+    }
 
     drop(data);
 
@@ -468,7 +484,10 @@ pub fn pick_random_file(
         Some(file.name.clone()),
     );
 
-    println!("r={:.2}, last={}, picked={}", r, last_index, picked_index);
+    println!(
+        "r={:.2}, last_idx={}, picked_idx={}",
+        r, last_index, picked_index
+    );
 
     Some(file)
 }
