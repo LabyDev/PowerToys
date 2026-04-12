@@ -219,10 +219,19 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       return (
         <Group
           key={id}
+          ref={(el) => {
+            if (el)
+              console.log("row height:", el.getBoundingClientRect().height);
+          }}
           style={{
             paddingLeft: depth * 16,
             alignItems: "center",
             gap: 8,
+            height: 30,
+            minHeight: 30,
+            maxHeight: 30,
+            boxSizing: "border-box",
+            overflow: "hidden",
             backgroundColor: isCurrent
               ? "var(--mantine-color-blue-light)"
               : undefined,
@@ -300,6 +309,13 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         ref={virtuosoRef}
         style={{ height: "100%" }}
         data={flatNodes}
+        fixedItemHeight={30}
+        increaseViewportBy={300}
+        overscan={5}
+        scrollSeekConfiguration={{
+          enter: (velocity) => Math.abs(velocity) > 500,
+          exit: (velocity) => Math.abs(velocity) < 30,
+        }}
         itemContent={(_, node) => renderNode(node)}
       />
     );
