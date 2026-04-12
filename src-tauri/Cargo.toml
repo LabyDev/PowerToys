@@ -1,8 +1,8 @@
 [package]
 name = "powertoys"
-version = "1.0.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "1.1.0"
+description = "A small collection of personal utilities built as a passion project using Tauri. "
+authors = ["Laby"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
