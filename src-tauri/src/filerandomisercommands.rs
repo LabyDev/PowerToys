@@ -9,7 +9,7 @@ use rand::distr::weighted::WeightedIndex;
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
@@ -211,59 +211,70 @@ pub fn crawl_paths(
         false
     }
 
-    fn fast_file_id(path: &std::path::Path) -> u64 {
+    fn hash_from_meta(meta: &std::fs::Metadata) -> u64 {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
-        if let Ok(meta) = path.metadata() {
-            let modified = meta
-                .modified()
-                .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs();
-            let size = meta.len();
+        let modified = meta
+            .modified()
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
 
-            let mut hasher = DefaultHasher::new();
-            size.hash(&mut hasher);
-            modified.hash(&mut hasher);
-
-            return hasher.finish();
-        }
-        0
+        let mut hasher = DefaultHasher::new();
+        meta.len().hash(&mut hasher);
+        modified.hash(&mut hasher);
+        hasher.finish()
     }
 
     // Collect all files
-    let mut all_files: Vec<std::path::PathBuf> = Vec::new();
+    // Collect (path, hash) together so metadata is only read once
+    let all_files: Arc<Mutex<Vec<(std::path::PathBuf, u64)>>> = Arc::new(Mutex::new(Vec::new()));
+
     for saved_path in &paths {
         if let Some(p) = saved_path.path.as_path() {
             if p.is_dir() {
-                let walker = WalkBuilder::new(p)
+                let collected = Arc::clone(&all_files);
+                WalkBuilder::new(p)
                     .hidden(false)
                     .filter_entry(|e| !is_system_file(e.path()))
-                    .build();
-                all_files.extend(
-                    walker
-                        .filter_map(|r| r.ok())
-                        .filter(|e| e.path().is_file())
-                        .map(|e| e.path().to_path_buf()),
-                );
+                    .build_parallel()
+                    .run(|| {
+                        let collected = Arc::clone(&collected);
+                        Box::new(move |entry| {
+                            use ignore::WalkState;
+                            if let Ok(e) = entry {
+                                if let Ok(meta) = e.metadata() {
+                                    if meta.is_file() {
+                                        collected
+                                            .lock()
+                                            .unwrap()
+                                            .push((e.path().to_path_buf(), hash_from_meta(&meta)));
+                                    }
+                                }
+                            }
+                            WalkState::Continue
+                        })
+                    });
             }
         }
     }
 
+    let all_files = Arc::try_unwrap(all_files).unwrap().into_inner().unwrap();
+
     // Parallel hashing & FileEntry construction
     let file_entries: Vec<FileEntry> = all_files
         .into_par_iter()
-        .map(|path| {
+        .map(|(path, hash_val)| {
+            // <-- destructure the tuple
             let id = next_id.fetch_add(1, Ordering::SeqCst);
             let name = path
                 .file_name()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or("unknown".to_string());
 
-            // Calculate hash first so we can use it for filter matching
-            let hash_val = fast_file_id(&path);
+            // hash_val already computed above, no fast_file_id call needed
             let included = should_include(
                 &path,
                 hash_val,
@@ -271,7 +282,6 @@ pub fn crawl_paths(
                 &global_bookmarks,
                 &local_bookmarks,
             );
-
             let excluded = if included {
                 false
             } else {
@@ -402,7 +412,7 @@ pub fn pick_random_file(
     }
 
     let len = candidates.len();
-    let last_index = data.last_picked_index.unwrap_or(0);
+    let last_index = data.last_picked_index.unwrap_or(0).min(len - 1);
 
     // --- How large a recency window to penalise ---
     // Scales with library size but caps so it doesn't dominate huge libraries.

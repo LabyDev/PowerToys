@@ -8,7 +8,7 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
-import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
+import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { dirname, sep } from "@tauri-apps/api/path";
 
 import {
@@ -29,13 +29,15 @@ interface FileTreeProps {
   currentFileId: number | null;
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
-  virtuosoRef?: React.RefObject<VirtuosoHandle>;
 }
 
 export interface FileTreeHandle {
   scrollToFile: (fileId: number) => void;
   getFlattenedFiles: () => FileEntry[];
 }
+
+const ITEM_HEIGHT = 30;
+const LAUNCH_DISTANCE = 600;
 
 const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
   (
@@ -48,10 +50,12 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       currentFileId,
       freshCrawl = false,
       treeCollapsed = false,
-      virtuosoRef,
     },
     ref,
   ) => {
+    const parentRef = useRef<HTMLDivElement>(null);
+    const animationFrameRef = useRef<number | null>(null);
+
     // ------------------- Helpers -------------------
     const getNodeId = (node: FileTreeNode) =>
       node.file ? `file-${node.file.id}` : node.path;
@@ -95,7 +99,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     };
 
     // ------------------- Effects -------------------
-    // Auto-expand nodes containing the current file
     useEffect(() => {
       if (currentFileId == null) return;
       setExpandedMap((prev) => {
@@ -105,7 +108,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       });
     }, [currentFileId, nodes]);
 
-    // Collapse or expand entire tree
     useEffect(() => {
       const map: Record<string, boolean> = { ...expandedMap };
       const update = (node: FileTreeNode) => {
@@ -119,10 +121,8 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       setExpandedMap(map);
     }, [treeCollapsed]);
 
-    // Expand shallow nodes on fresh crawl
     useEffect(() => {
       if (!freshCrawl) return;
-
       const map: Record<string, boolean> = { ...expandedMap };
       const update = (node: FileTreeNode) => {
         const id = getNodeId(node);
@@ -136,11 +136,18 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       setFreshCrawl(false);
     }, [freshCrawl]);
 
+    // Cleanup animation on unmount
+    useEffect(() => {
+      return () => {
+        if (animationFrameRef.current)
+          cancelAnimationFrame(animationFrameRef.current);
+      };
+    }, []);
+
     // ------------------- Flattening -------------------
     const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
       const flat: FlattenedNode[] = [];
       const sortedNodes = [...nodes].sort(sortNodes);
-
       for (const node of sortedNodes) {
         flat.push({ node, depth });
         const id = getNodeId(node);
@@ -157,7 +164,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     ): FlattenedNode[] => {
       const flat: FlattenedNode[] = [];
       const sortedNodes = [...nodes].sort(sortNodes);
-
       for (const node of sortedNodes) {
         flat.push({ node, depth });
         if (node.children) {
@@ -169,37 +175,82 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
 
     const flatNodes = useMemo(() => flattenTree(nodes), [nodes, expandedMap]);
 
-    const pendingScrollId = useRef<number | null>(null);
+    // ------------------- Virtualizer -------------------
+    const virtualizer = useVirtualizer({
+      count: flatNodes.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => ITEM_HEIGHT,
+      overscan: 10,
+    });
 
-    // Scroll to pending file
-    useEffect(() => {
-      const targetId = pendingScrollId.current;
-      if (targetId === null) return;
+    // ------------------- Smooth Scroll -------------------
+    const smoothScrollTo = (target: number, duration = 350) => {
+      const scroller = parentRef.current;
+      if (!scroller) return;
 
-      const index = flatNodes.findIndex((n) => n.node.file?.id === targetId);
-      if (index === -1) return;
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
 
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          virtuosoRef?.current?.scrollToIndex({
-            index,
-            align: "center",
-            behavior: "smooth",
-          });
-          pendingScrollId.current = null;
-        });
-      });
-    }, [flatNodes]);
+      const start = scroller.scrollTop;
+      const distance = target - start;
+      const startTime = performance.now();
+
+      // Ease in-out cubic
+      const ease = (t: number) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        scroller.scrollTop = start + distance * ease(progress);
+        if (progress < 1) {
+          animationFrameRef.current = requestAnimationFrame(step);
+        } else {
+          animationFrameRef.current = null;
+        }
+      };
+
+      animationFrameRef.current = requestAnimationFrame(step);
+    };
 
     // ------------------- Expose methods -------------------
     useImperativeHandle(ref, () => ({
       scrollToFile: (fileId: number) => {
-        pendingScrollId.current = fileId;
+        // First expand parents so the node is in flatNodes
         setExpandedMap((prev) => {
           const map = { ...prev };
           expandParents(fileId, nodes, map);
           return map;
         });
+
+        // Use a small timeout to let flatNodes recompute after expand
+        setTimeout(() => {
+          const scroller = parentRef.current;
+          if (!scroller) return;
+
+          const index = flatNodes.findIndex((n) => n.node.file?.id === fileId);
+          if (index === -1) return;
+
+          const targetScrollTop = Math.max(
+            0,
+            index * ITEM_HEIGHT - scroller.clientHeight / 2 + ITEM_HEIGHT / 2,
+          );
+
+          const distance = Math.abs(scroller.scrollTop - targetScrollTop);
+
+          if (distance < LAUNCH_DISTANCE) {
+            smoothScrollTo(targetScrollTop);
+          } else {
+            // Jump to just outside the target, then smooth the rest
+            const jumpTo =
+              targetScrollTop > scroller.scrollTop
+                ? targetScrollTop - LAUNCH_DISTANCE
+                : targetScrollTop + LAUNCH_DISTANCE;
+
+            scroller.scrollTop = Math.max(0, jumpTo);
+            smoothScrollTo(targetScrollTop, 300);
+          }
+        }, 0);
       },
       getFlattenedFiles: () =>
         flattenTreeAll(nodes)
@@ -218,18 +269,13 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
 
       return (
         <Group
-          key={id}
-          ref={(el) => {
-            if (el)
-              console.log("row height:", el.getBoundingClientRect().height);
-          }}
           style={{
             paddingLeft: depth * 16,
             alignItems: "center",
             gap: 8,
-            height: 30,
-            minHeight: 30,
-            maxHeight: 30,
+            height: ITEM_HEIGHT,
+            minHeight: ITEM_HEIGHT,
+            maxHeight: ITEM_HEIGHT,
             boxSizing: "border-box",
             overflow: "hidden",
             backgroundColor: isCurrent
@@ -305,19 +351,32 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     };
 
     return (
-      <Virtuoso
-        ref={virtuosoRef}
-        style={{ height: "100%" }}
-        data={flatNodes}
-        fixedItemHeight={30}
-        increaseViewportBy={300}
-        overscan={5}
-        scrollSeekConfiguration={{
-          enter: (velocity) => Math.abs(velocity) > 500,
-          exit: (velocity) => Math.abs(velocity) < 30,
-        }}
-        itemContent={(_, node) => renderNode(node)}
-      />
+      <div ref={parentRef} style={{ height: "100%", overflowY: "auto" }}>
+        <div
+          style={{
+            height: virtualizer.getTotalSize(),
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualItem: VirtualItem) => (
+            <div
+              key={virtualItem.key}
+              data-index={virtualItem.index}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: ITEM_HEIGHT,
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              {renderNode(flatNodes[virtualItem.index])}
+            </div>
+          ))}
+        </div>
+      </div>
     );
   },
 );

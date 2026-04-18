@@ -2,7 +2,7 @@ import { Box, Button, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
+import { Virtuoso } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
 import { useAppSettings } from "../core/hooks/useAppSettings";
 import "./fileRandomiser.css";
@@ -58,7 +58,6 @@ const FileRandomiser = () => {
     setTreeCollapsed,
   } = useFileRandomiser();
 
-  const fileTreeVirtuosoRef = useRef<VirtuosoHandle>(null);
   const fileTreeRef = useRef<FileTreeHandle>(null);
   const shuffleRef = useRef(shuffle);
   const trackingRef = useRef(tracking);
@@ -760,7 +759,6 @@ const FileRandomiser = () => {
             <Box style={{ height: "100%", minHeight: 0, overflowY: "auto" }}>
               <FileTree
                 ref={fileTreeRef}
-                virtuosoRef={fileTreeVirtuosoRef}
                 nodes={fileTreeNodes}
                 setFreshCrawl={setFreshCrawl}
                 onExclude={async (file) => {
