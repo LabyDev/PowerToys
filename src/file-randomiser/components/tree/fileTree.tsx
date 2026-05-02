@@ -171,7 +171,13 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     };
 
     // ------------------- Expanded state -------------------
+    const expandedMapRef = useRef<Record<string, boolean>>({});
     const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+
+    // Keep ref in sync
+    useEffect(() => {
+      expandedMapRef.current = expandedMap;
+    }, [expandedMap]);
 
     const toggleNode = (node: FileTreeNode) => {
       const id = getNodeId(node);
@@ -225,14 +231,18 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     }, []);
 
     // ------------------- Flattening -------------------
-    const flattenTree = (nodes: FileTreeNode[], depth = 0): FlattenedNode[] => {
+    const flattenTree = (
+      nodes: FileTreeNode[],
+      depth = 0,
+      map: Record<string, boolean> = expandedMapRef.current,
+    ): FlattenedNode[] => {
       const flat: FlattenedNode[] = [];
       const sortedNodes = [...nodes].sort(sortNodes);
       for (const node of sortedNodes) {
         flat.push({ node, depth });
         const id = getNodeId(node);
-        if (node.children && expandedMap[id]) {
-          flat.push(...flattenTree(node.children, depth + 1));
+        if (node.children && map[id]) {
+          flat.push(...flattenTree(node.children, depth + 1, map));
         }
       }
       return flat;
@@ -253,7 +263,12 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       return flat;
     };
 
-    const flatNodes = useMemo(() => flattenTree(nodes), [nodes, expandedMap]);
+    const flatNodesRef = useRef<FlattenedNode[]>([]);
+    const flatNodes = useMemo(() => {
+      const result = flattenTree(nodes);
+      flatNodesRef.current = result;
+      return result;
+    }, [nodes, expandedMap]);
 
     // getNodeHeight defined AFTER flatNodes so it has a valid closure over it.
     // Also added flatNodes to its dependency array.
@@ -320,45 +335,39 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     // ------------------- Expose methods -------------------
     useImperativeHandle(ref, () => ({
       scrollToFile: (fileId: number) => {
-        // First expand parents so the node is in flatNodes
-        setExpandedMap((prev) => {
-          const map = { ...prev };
-          expandParents(fileId, nodes, map);
-          return map;
-        });
+        const scroller = parentRef.current;
+        if (!scroller) return;
 
-        // Use a small timeout to let flatNodes recompute after expand
-        setTimeout(() => {
-          const scroller = parentRef.current;
-          if (!scroller) return;
+        // Build the new map synchronously from the ref
+        const newMap = { ...expandedMapRef.current };
+        expandParents(fileId, nodes, newMap);
 
-          const index = flatNodes.findIndex((n) => n.node.file?.id === fileId);
-          if (index === -1) return;
+        // Update state so the tree re-renders
+        setExpandedMap(newMap);
 
-          // Use the actual computed fileItemHeight instead of the old
-          // hardcoded (BASE_ITEM_HEIGHT + 4 * SCORE_EXTRA_HEIGHT) estimate.
-          const targetScrollTop = Math.max(
-            0,
-            index * fileItemHeight -
-              scroller.clientHeight / 2 +
-              fileItemHeight / 2,
-          );
+        // Compute scroll position using the new map directly
+        const recomputed = flattenTree(nodes, 0, newMap);
+        const index = recomputed.findIndex((n) => n.node.file?.id === fileId);
+        if (index === -1) return;
 
-          const distance = Math.abs(scroller.scrollTop - targetScrollTop);
+        const targetScrollTop = Math.max(
+          0,
+          index * fileItemHeight -
+            scroller.clientHeight / 2 +
+            fileItemHeight / 2,
+        );
 
-          if (distance < LAUNCH_DISTANCE) {
-            smoothScrollTo(targetScrollTop);
-          } else {
-            // Jump to just outside the target, then smooth the rest
-            const jumpTo =
-              targetScrollTop > scroller.scrollTop
-                ? targetScrollTop - LAUNCH_DISTANCE
-                : targetScrollTop + LAUNCH_DISTANCE;
-
-            scroller.scrollTop = Math.max(0, jumpTo);
-            smoothScrollTo(targetScrollTop, 300);
-          }
-        }, 0);
+        const distance = Math.abs(scroller.scrollTop - targetScrollTop);
+        if (distance < LAUNCH_DISTANCE) {
+          smoothScrollTo(targetScrollTop);
+        } else {
+          const jumpTo =
+            targetScrollTop > scroller.scrollTop
+              ? targetScrollTop - LAUNCH_DISTANCE
+              : targetScrollTop + LAUNCH_DISTANCE;
+          scroller.scrollTop = Math.max(0, jumpTo);
+          smoothScrollTo(targetScrollTop, 300);
+        }
       },
       getFlattenedFiles: () =>
         flattenTreeAll(nodes)
@@ -480,6 +489,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         ? node.file.excluded
         : allChildrenExcluded(node);
       const isCurrent = node.file && currentFileId === node.file.id;
+      const nodeHeight = node.file ? fileItemHeight : BASE_ITEM_HEIGHT;
 
       return (
         <Group
@@ -487,6 +497,9 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             paddingLeft: depth * 16,
             alignItems: "flex-start",
             gap: 8,
+            height: nodeHeight,
+            minHeight: nodeHeight,
+            maxHeight: nodeHeight,
             boxSizing: "border-box",
             backgroundColor: isCurrent
               ? "var(--mantine-color-blue-light)"
