@@ -17,6 +17,11 @@ export function useAppSettings() {
       allow_process_tracking: false,
       randomness_level: 50,
       global_bookmarks: [],
+      bookmarkPreference: {
+        enabled: false,
+        colors: {},
+      },
+      showScores: false,
     },
   });
 

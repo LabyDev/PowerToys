@@ -26,12 +26,6 @@ pub fn run() {
         .flatten()
         .map(std::sync::Mutex::new);
 
-    eprintln!(
-        "debug_randomiser={} log_file={}",
-        debug_randomiser,
-        log_file.is_some()
-    );
-
     tauri::Builder::default()
         // Plugins
         .plugin(tauri_plugin_store::Builder::new().build())
