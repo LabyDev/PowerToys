@@ -1,4 +1,4 @@
-use crate::models::FileSorterState;
+use crate::models::{DebugFlags, FileSorterState};
 use std::sync::Mutex;
 mod filerandomisercommands;
 mod filesortercommands;
@@ -8,6 +8,30 @@ pub mod setting_commands;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let args: Vec<String> = std::env::args().collect();
+    let debug_randomiser = args.contains(&"--debug-randomiser".to_string());
+
+    let log_file = args
+        .iter()
+        .position(|a| a == "--log-file")
+        .and_then(|i| args.get(i + 1))
+        .map(|path| {
+            std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)
+                .map_err(|e| eprintln!("Failed to open log file: {}", e))
+                .ok()
+        })
+        .flatten()
+        .map(std::sync::Mutex::new);
+
+    eprintln!(
+        "debug_randomiser={} log_file={}",
+        debug_randomiser,
+        log_file.is_some()
+    );
+
     tauri::Builder::default()
         // Plugins
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -19,6 +43,10 @@ pub fn run() {
         .manage(Mutex::new(
             models::file_randomiser_models::AppStateData::default(),
         ))
+        .manage(DebugFlags {
+            randomiser: debug_randomiser,
+            log_file,
+        })
         .manage(filesortercommands::UndoStack(Mutex::new(Vec::new())))
         .manage(Mutex::new(FileSorterState::default()))
         // Command handlers

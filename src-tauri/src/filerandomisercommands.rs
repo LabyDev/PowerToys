@@ -448,12 +448,23 @@ fn compute_bookmark_factor(
     }
 }
 
+fn debug_log(flags: &crate::models::DebugFlags, msg: &str) {
+    eprintln!("{}", msg);
+    if let Some(file_lock) = &flags.log_file {
+        use std::io::Write;
+        if let Ok(mut f) = file_lock.lock() {
+            let _ = writeln!(f, "{}", msg);
+        }
+    }
+}
 #[tauri::command]
 pub fn pick_random_file(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
 ) -> Option<FileEntry> {
     let settings = get_app_settings(app.clone()).ok()?;
+    let debug = app.state::<crate::models::DebugFlags>();
+    let should_log = cfg!(debug_assertions) || debug.randomiser;
     let randomness_level = settings.file_randomiser.randomness_level;
 
     let r = (randomness_level as f64 / 100.0).clamp(0.0, 1.0);
@@ -473,30 +484,23 @@ pub fn pick_random_file(
         return None;
     }
 
-    eprintln!(
-        "[pick] r={:.2}, bookmark_pref_enabled={}, candidates={}",
-        r,
-        settings.file_randomiser.bookmark_preference.enabled,
-        candidates.len()
-    );
-
     let len = candidates.len();
     let last_index = data.last_picked_index.unwrap_or(0).min(len - 1);
 
     // --- How large a recency window to penalise ---
     // Scales with library size but caps so it doesn't dominate huge libraries.
     // e.g. 50 files → window ~10, 1000 files → window ~50, 10000 → window ~100
-    let recency_window = ((len as f64).sqrt() * 3.0).clamp(5.0, 150.0) as usize;
+    let recency_window = ((len as f64).sqrt() * 1.5).clamp(3.0, 75.0) as usize;
 
     // --- ORDER BIAS CURVE ---
     // Drops steeply: at r=0.3 it's already ~5%, gone by r=0.5
     // order_influence: r=0 → 1.0, r=0.5 → ~0.02, r=1 → 0.0
-    let order_influence = (1.0 - r).powf(3.0);
+    let order_influence = (1.0 - r).powf(5.0);
 
     // --- MEMORY PENALTY CURVE ---
     // Peaks around r=0.5, fades toward r=1 (pure chaos needs no memory)
     // memory_influence: r=0 → 0.0, r=0.5 → 1.0, r=1 → 0.0
-    let memory_influence = 4.0 * r * (1.0 - r); // parabola peaking at r=0.5
+    let memory_influence = (4.0 * r * (1.0 - r) * 0.75).min(0.75); // parabola peaking at r=0.5
 
     let weights: Vec<f64> = candidates
         .iter()
@@ -539,24 +543,132 @@ pub fn pick_random_file(
             // --- Combine everything ---
             let base = 1.0 + order_w * order_influence * 10.0;
 
-            eprintln!(
-                "[pick] '{}' | bookmark={:?} | order={:.3} | memory={:.3} | bookmark_factor={:.3} | adjusted_bookmark={:.3} | total={:.3}",
-                file.name,
-                file.bookmark.as_ref().and_then(|b| b.color.as_deref()).unwrap_or("none"),
-                order_w * order_influence,
-                memory_factor,
-                bookmark_factor,
-                adjusted_bookmark,
-                (base * memory_factor * adjusted_bookmark).max(1e-9)
-            );
-
             (base * memory_factor * adjusted_bookmark).max(1e-9)
         })
         .collect();
 
+    // --- Debug: distribution summary ---
+    if should_log {
+        let bookmarked_weights: Vec<f64> = candidates
+            .iter()
+            .zip(weights.iter())
+            .filter(|((_, f), _)| f.bookmark.as_ref().and_then(|b| b.color.as_ref()).is_some())
+            .map(|(_, w)| *w)
+            .collect();
+
+        let unbookmarked_weights: Vec<f64> = candidates
+            .iter()
+            .zip(weights.iter())
+            .filter(|((_, f), _)| f.bookmark.as_ref().and_then(|b| b.color.as_ref()).is_none())
+            .map(|(_, w)| *w)
+            .collect();
+
+        let mean = |v: &[f64]| {
+            if v.is_empty() {
+                0.0
+            } else {
+                v.iter().sum::<f64>() / v.len() as f64
+            }
+        };
+        let median = |v: &mut Vec<f64>| {
+            if v.is_empty() {
+                return 0.0;
+            }
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let mid = v.len() / 2;
+            if v.len() % 2 == 0 {
+                (v[mid - 1] + v[mid]) / 2.0
+            } else {
+                v[mid]
+            }
+        };
+
+        let all_min = weights.iter().cloned().fold(f64::INFINITY, f64::min);
+        let all_max = weights.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let all_mean = mean(&weights);
+        let mut weights_clone = weights.clone();
+        let all_median = median(&mut weights_clone);
+
+        let recency_penalised = candidates
+            .iter()
+            .filter(|(_, f)| {
+                data.recency_list
+                    .iter()
+                    .rev()
+                    .position(|&id| id == f.id)
+                    .is_some()
+                    || Some(f.id) == data.last_picked_id
+            })
+            .count();
+
+        debug_log(
+            &debug,
+            &format!(
+                "[pick] r={:.2} | candidates={} | bookmark_pref={}",
+                r, len, settings.file_randomiser.bookmark_preference.enabled
+            ),
+        );
+        debug_log(
+            &debug,
+            &format!(
+                "[pick] weights — min={:.3} max={:.3} mean={:.3} median={:.3}",
+                all_min, all_max, all_mean, all_median
+            ),
+        );
+        debug_log(
+            &debug,
+            &format!(
+                "[pick] bookmarked={} (avg={:.3}) unbookmarked={} (avg={:.3})",
+                bookmarked_weights.len(),
+                mean(&bookmarked_weights),
+                unbookmarked_weights.len(),
+                mean(&unbookmarked_weights)
+            ),
+        );
+        debug_log(
+            &debug,
+            &format!(
+                "[pick] recency_penalised={} (of {} in window)",
+                recency_penalised, recency_window
+            ),
+        );
+    }
+
     let dist = WeightedIndex::new(&weights).ok()?;
     let chosen = dist.sample(&mut rng);
     let (picked_index, file) = candidates[chosen].clone();
+
+    // --- Debug: chosen file factors ---
+    if should_log {
+        let fwd_dist = ((picked_index + len - last_index) % len) as f64;
+        let sigma = (len as f64 * 0.03).max(1.5);
+        let order_w = (-((fwd_dist - 1.0).powi(2)) / (2.0 * sigma * sigma)).exp();
+        let recency_penalty = if Some(file.id) == data.last_picked_id {
+            0.0
+        } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
+            if pos < recency_window {
+                1.0 - (pos as f64 / recency_window as f64)
+            } else {
+                1.0
+            }
+        } else {
+            1.0
+        };
+        let memory_factor = 1.0 - memory_influence * (1.0 - recency_penalty);
+        let bookmark_factor = compute_bookmark_factor(&file, &settings);
+        let bookmark_influence = 1.0 - (r * 0.7);
+        let adjusted_bookmark = 1.0 + (bookmark_factor - 1.0) * bookmark_influence;
+        let base = 1.0 + order_w * order_influence * 10.0;
+        debug_log(&debug, &format!("[pick] chose — bookmark={} global={} | order={:.3} memory={:.3} bookmark_factor={:.3} adjusted={:.3} total={:.3}",
+    file.bookmark.as_ref().and_then(|b| b.color.as_deref()).unwrap_or("none"),
+    file.bookmark.as_ref().map(|b| b.is_global).unwrap_or(false),
+    order_w * order_influence,
+    memory_factor,
+    bookmark_factor,
+    adjusted_bookmark,
+    (base * memory_factor * adjusted_bookmark).max(1e-9)
+));
+    }
 
     // --- Update state ---
     data.last_picked_index = Some(picked_index);
@@ -582,16 +694,6 @@ pub fn pick_random_file(
         },
         Some(file.id),
         Some(file.name.clone()),
-    );
-
-    eprintln!(
-        "[pick] chose='{}' at index {} (weight was one of {} candidates)",
-        file.name, picked_index, len
-    );
-
-    println!(
-        "r={:.2}, last_idx={}, picked_idx={}",
-        r, last_index, picked_index
     );
 
     Some(file)
@@ -721,17 +823,13 @@ pub fn get_file_scores(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
 ) -> Result<Vec<FileScore>, String> {
-    let settings = get_app_settings(app)?;
+    let settings = get_app_settings(app.clone())?;
+    let debug = app.state::<crate::models::DebugFlags>();
+    let should_log = cfg!(debug_assertions) || debug.randomiser;
     let randomness_level = settings.file_randomiser.randomness_level;
     let r = (randomness_level as f64 / 100.0).clamp(0.0, 1.0);
 
     let data = app_data.lock().unwrap();
-
-    eprintln!(
-        "[scores] bookmark_pref enabled={} colors={:?}",
-        settings.file_randomiser.bookmark_preference.enabled,
-        settings.file_randomiser.bookmark_preference.colors
-    );
 
     let candidates: Vec<(usize, &FileEntry)> = data
         .files
@@ -744,13 +842,25 @@ pub fn get_file_scores(
         return Ok(vec![]);
     }
 
+    // --- Debug header ---
+    if should_log {
+        debug_log(
+            &debug,
+            &format!(
+                "[scores] candidates={} | bookmark_pref={}",
+                candidates.len(),
+                settings.file_randomiser.bookmark_preference.enabled
+            ),
+        );
+    }
+
     let len = candidates.len();
     let last_index = data.last_picked_index.unwrap_or(0).min(len - 1);
     let recency_window = ((len as f64).sqrt() * 3.0).clamp(5.0, 150.0) as usize;
     let order_influence = (1.0 - r).powf(3.0);
     let memory_influence = 4.0 * r * (1.0 - r);
 
-    let scores = candidates
+    let scores: Vec<FileScore> = candidates
         .iter()
         .map(|(idx, file)| {
             let fwd_dist = ((*idx + len - last_index) % len) as f64;
@@ -776,18 +886,6 @@ pub fn get_file_scores(
             let base = 1.0 + order_w * order_influence * 10.0;
             let total = (base * memory_factor * adjusted_bookmark).max(1e-9);
 
-            eprintln!(
-                "[scores] '{}' | bookmark={:?} | is_global={} | factor={:.3} | total={:.3}",
-                file.name,
-                file.bookmark
-                    .as_ref()
-                    .and_then(|b| b.color.as_deref())
-                    .unwrap_or("none"),
-                file.bookmark.as_ref().map(|b| b.is_global).unwrap_or(false),
-                bookmark_factor,
-                total
-            );
-
             FileScore {
                 id: file.id,
                 name: file.name.clone(),
@@ -799,6 +897,52 @@ pub fn get_file_scores(
             }
         })
         .collect();
+
+    // --- Debug: distribution summary ---
+    if should_log {
+        let bookmarked: Vec<&FileScore> =
+            scores.iter().filter(|s| s.bookmark_factor > 1.0).collect();
+        let unbookmarked: Vec<&FileScore> =
+            scores.iter().filter(|s| s.bookmark_factor <= 1.0).collect();
+
+        let mean = |v: &[&FileScore]| -> f64 {
+            if v.is_empty() {
+                return 0.0;
+            }
+            v.iter().map(|s| s.total_weight).sum::<f64>() / v.len() as f64
+        };
+
+        let all_weights: Vec<f64> = scores.iter().map(|s| s.total_weight).collect();
+        let min = all_weights.iter().cloned().fold(f64::INFINITY, f64::min);
+        let max = all_weights
+            .iter()
+            .cloned()
+            .fold(f64::NEG_INFINITY, f64::max);
+        let total_mean = all_weights.iter().sum::<f64>() / all_weights.len() as f64;
+        let recency_penalised = scores.iter().filter(|s| s.memory_factor < 1.0).count();
+
+        debug_log(
+            &debug,
+            &format!(
+                "[scores] weights — min={:.3} max={:.3} mean={:.3}",
+                min, max, total_mean
+            ),
+        );
+        debug_log(
+            &debug,
+            &format!(
+                "[scores] bookmarked={} (avg={:.3}) unbookmarked={} (avg={:.3})",
+                bookmarked.len(),
+                mean(&bookmarked),
+                unbookmarked.len(),
+                mean(&unbookmarked)
+            ),
+        );
+        debug_log(
+            &debug,
+            &format!("[scores] recency_penalised={}", recency_penalised),
+        );
+    }
 
     Ok(scores)
 }

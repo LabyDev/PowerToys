@@ -119,3 +119,8 @@ pub struct BookmarkInfo {
     pub color: Option<String>,
     pub is_global: bool,
 }
+
+pub struct DebugFlags {
+    pub randomiser: bool,
+    pub log_file: Option<std::sync::Mutex<std::fs::File>>,
+}
