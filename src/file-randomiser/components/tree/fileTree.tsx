@@ -1,4 +1,4 @@
-import { ActionIcon, Group } from "@mantine/core";
+import { ActionIcon, Box, Group, Text } from "@mantine/core";
 import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import {
   useState,
@@ -7,9 +7,11 @@ import {
   forwardRef,
   useImperativeHandle,
   useRef,
+  useCallback,
 } from "react";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { dirname, sep } from "@tauri-apps/api/path";
+import { invoke } from "@tauri-apps/api/core";
 
 import {
   FileEntry,
@@ -20,6 +22,16 @@ import ClampedTooltipText from "../../../common/clampedTooltipText";
 import ItemActions from "./itemActions";
 import * as randomiserApi from "../../../core/api/fileRandomiserApi";
 
+interface FileScore {
+  id: number;
+  name: string;
+  isExcluded: boolean;
+  orderScore: number;
+  memoryFactor: number;
+  bookmarkFactor: number;
+  totalWeight: number;
+}
+
 interface FileTreeProps {
   nodes: FileTreeNode[];
   onExclude: (file: FileEntry) => void;
@@ -29,6 +41,7 @@ interface FileTreeProps {
   currentFileId: number | null;
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
+  showScores?: boolean;
 }
 
 export interface FileTreeHandle {
@@ -36,8 +49,26 @@ export interface FileTreeHandle {
   getFlattenedFiles: () => FileEntry[];
 }
 
-const ITEM_HEIGHT = 30;
+const BASE_ITEM_HEIGHT = 30;
+const SCORE_EXTRA_HEIGHT = 22;
 const LAUNCH_DISTANCE = 600;
+
+type FactorKey = "order" | "memory" | "bookmark" | "total";
+const ALL_FACTORS: FactorKey[] = ["order", "memory", "bookmark", "total"];
+
+const FACTOR_LABELS: Record<FactorKey, string> = {
+  order: "Order",
+  memory: "Memory",
+  bookmark: "Bookmark",
+  total: "Total",
+};
+
+const FACTOR_COLORS: Record<FactorKey, string> = {
+  order: "var(--mantine-color-violet-5)",
+  memory: "var(--mantine-color-cyan-5)",
+  bookmark: "var(--mantine-color-yellow-5)",
+  total: "var(--mantine-color-green-5)",
+};
 
 const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
   (
@@ -50,11 +81,60 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       currentFileId,
       freshCrawl = false,
       treeCollapsed = false,
+      showScores = false,
     },
     ref,
   ) => {
     const parentRef = useRef<HTMLDivElement>(null);
     const animationFrameRef = useRef<number | null>(null);
+
+    // ------------------- Score state -------------------
+    const [scoreMap, setScoreMap] = useState<Map<number, FileScore>>(new Map());
+    const [visibleFactors, setVisibleFactors] = useState<Set<FactorKey>>(
+      new Set(["total"]),
+    );
+
+    const toggleFactor = (factor: FactorKey) => {
+      setVisibleFactors((prev) => {
+        const next = new Set(prev);
+        if (next.has(factor)) {
+          next.delete(factor);
+        } else {
+          next.add(factor);
+        }
+        return next;
+      });
+    };
+
+    const fetchScores = useCallback(async () => {
+      if (!showScores) return;
+      try {
+        const scores = await invoke<FileScore[]>("get_file_scores");
+        setScoreMap(new Map(scores.map((s) => [s.id, s])));
+      } catch (e) {
+        console.error("Failed to fetch file scores", e);
+      }
+    }, [showScores]);
+
+    useEffect(() => {
+      if (showScores) {
+        fetchScores();
+      } else {
+        setScoreMap(new Map());
+      }
+    }, [showScores]);
+
+    useEffect(() => {
+      if (showScores) fetchScores();
+    }, [currentFileId, showScores]);
+
+    // ------------------- Item height -------------------
+    const factorCount = visibleFactors.size;
+
+    const fileItemHeight = useMemo(() => {
+      if (!showScores) return BASE_ITEM_HEIGHT;
+      return BASE_ITEM_HEIGHT + factorCount * SCORE_EXTRA_HEIGHT;
+    }, [showScores, factorCount]);
 
     // ------------------- Helpers -------------------
     const getNodeId = (node: FileTreeNode) =>
@@ -175,13 +255,37 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
 
     const flatNodes = useMemo(() => flattenTree(nodes), [nodes, expandedMap]);
 
+    // getNodeHeight defined AFTER flatNodes so it has a valid closure over it.
+    // Also added flatNodes to its dependency array.
+    const getNodeHeight = useCallback(
+      (index: number) => {
+        const node = flatNodes[index]?.node;
+        return node?.file ? fileItemHeight : BASE_ITEM_HEIGHT;
+      },
+      [flatNodes, fileItemHeight],
+    );
+
     // ------------------- Virtualizer -------------------
     const virtualizer = useVirtualizer({
       count: flatNodes.length,
       getScrollElement: () => parentRef.current,
-      estimateSize: () => ITEM_HEIGHT,
+      estimateSize: getNodeHeight,
       overscan: 10,
     });
+
+    // Force virtualizer to re-measure all items whenever the item height
+    // changes (showScores toggled, or a factor turned on/off).
+    useEffect(() => {
+      virtualizer.measure();
+    }, [fileItemHeight]);
+
+    // Callback ref passed to each row div so the virtualizer reads actual DOM height
+    const measureElement = useCallback(
+      (el: Element | null) => {
+        if (el) virtualizer.measureElement(el);
+      },
+      [virtualizer],
+    );
 
     // ------------------- Smooth Scroll -------------------
     const smoothScrollTo = (target: number, duration = 350) => {
@@ -231,9 +335,13 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           const index = flatNodes.findIndex((n) => n.node.file?.id === fileId);
           if (index === -1) return;
 
+          // Use the actual computed fileItemHeight instead of the old
+          // hardcoded (BASE_ITEM_HEIGHT + 4 * SCORE_EXTRA_HEIGHT) estimate.
           const targetScrollTop = Math.max(
             0,
-            index * ITEM_HEIGHT - scroller.clientHeight / 2 + ITEM_HEIGHT / 2,
+            index * fileItemHeight -
+              scroller.clientHeight / 2 +
+              fileItemHeight / 2,
           );
 
           const distance = Math.abs(scroller.scrollTop - targetScrollTop);
@@ -258,6 +366,112 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           .filter((f): f is FileEntry => !!f),
     }));
 
+    // ------------------- Score bar -------------------
+    const getFactorValue = (score: FileScore, factor: FactorKey): number => {
+      switch (factor) {
+        case "order":
+          return score.orderScore;
+        case "memory":
+          return score.memoryFactor;
+        case "bookmark":
+          return score.bookmarkFactor;
+        case "total":
+          return score.totalWeight;
+      }
+    };
+
+    const maxTotal = useMemo(() => {
+      let max = 1;
+      scoreMap.forEach((s) => {
+        if (s.totalWeight > max) max = s.totalWeight;
+      });
+      return max;
+    }, [scoreMap]);
+
+    const renderScoreRows = (file: FileEntry) => {
+      const score = scoreMap.get(file.id);
+
+      return (
+        <Box style={{ paddingLeft: 4, opacity: file.excluded ? 0.4 : 1 }}>
+          <Group gap={6} mb={2}>
+            {ALL_FACTORS.map((factor) => (
+              <Text
+                key={factor}
+                size="10px"
+                style={{
+                  cursor: "pointer",
+                  color: visibleFactors.has(factor)
+                    ? FACTOR_COLORS[factor]
+                    : "var(--mantine-color-dimmed)",
+                  userSelect: "none",
+                  fontWeight: visibleFactors.has(factor) ? 600 : 400,
+                  transition: "color 0.15s",
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFactor(factor);
+                }}
+              >
+                {FACTOR_LABELS[factor]}
+              </Text>
+            ))}
+          </Group>
+
+          {score
+            ? Array.from(visibleFactors).map((factor) => {
+                const value = getFactorValue(score, factor);
+                const barPct =
+                  factor === "total"
+                    ? (value / maxTotal) * 100
+                    : Math.min(value * 50, 100);
+                return (
+                  <Group key={factor} gap={6} mb={1} align="center">
+                    <Box
+                      style={{
+                        width: 80,
+                        height: 6,
+                        borderRadius: 3,
+                        background: "var(--mantine-color-dark-4)",
+                        overflow: "hidden",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Box
+                        style={{
+                          width: `${barPct}%`,
+                          height: "100%",
+                          background: FACTOR_COLORS[factor],
+                          borderRadius: 3,
+                          transition: "width 0.2s ease",
+                        }}
+                      />
+                    </Box>
+                    <Text size="10px" c="dimmed" ff="monospace">
+                      {value.toFixed(3)}
+                    </Text>
+                  </Group>
+                );
+              })
+            : Array.from(visibleFactors).map((factor) => (
+                <Group key={factor} gap={6} mb={1} align="center">
+                  <Box
+                    style={{
+                      width: 80,
+                      height: 6,
+                      borderRadius: 3,
+                      background: "var(--mantine-color-dark-4)",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Text size="10px" c="dimmed" ff="monospace">
+                    —
+                  </Text>
+                </Group>
+              ))}
+        </Box>
+      );
+    };
+
     // ------------------- Render -------------------
     const renderNode = ({ node, depth }: FlattenedNode) => {
       const id = getNodeId(node);
@@ -271,22 +485,24 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         <Group
           style={{
             paddingLeft: depth * 16,
-            alignItems: "center",
+            alignItems: "flex-start",
             gap: 8,
-            height: ITEM_HEIGHT,
-            minHeight: ITEM_HEIGHT,
-            maxHeight: ITEM_HEIGHT,
             boxSizing: "border-box",
-            overflow: "hidden",
             backgroundColor: isCurrent
               ? "var(--mantine-color-blue-light)"
               : undefined,
             opacity: isExcluded ? 0.5 : 1,
+            paddingTop: 4,
+            paddingBottom: 4,
           }}
           className="item-actions"
         >
           {node.children && (
-            <ActionIcon size="xs" onClick={() => toggleNode(node)}>
+            <ActionIcon
+              size="xs"
+              onClick={() => toggleNode(node)}
+              style={{ marginTop: 4 }}
+            >
               {isExpanded ? (
                 <CaretDownIcon size={16} />
               ) : (
@@ -295,22 +511,25 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             </ActionIcon>
           )}
 
-          <ClampedTooltipText
-            size="sm"
-            fw={node.children ? 600 : 400}
-            style={{
-              flex: 1,
-              cursor: node.children ? "pointer" : undefined,
-              textDecoration: isExcluded ? "line-through" : undefined,
-            }}
-            onClick={() => node.children && toggleNode(node)}
-          >
-            {node.children
-              ? isExpanded
-                ? "📂 " + node.name
-                : "📁 " + node.name
-              : "📄 " + node.name}
-          </ClampedTooltipText>
+          <Box style={{ flex: 1, overflow: "hidden" }}>
+            <ClampedTooltipText
+              size="sm"
+              fw={node.children ? 600 : 400}
+              style={{
+                cursor: node.children ? "pointer" : undefined,
+                textDecoration: isExcluded ? "line-through" : undefined,
+              }}
+              onClick={() => node.children && toggleNode(node)}
+            >
+              {node.children
+                ? isExpanded
+                  ? "📂 " + node.name
+                  : "📁 " + node.name
+                : "📄 " + node.name}
+            </ClampedTooltipText>
+
+            {showScores && node.file && renderScoreRows(node.file)}
+          </Box>
 
           {node.file && (
             <ItemActions
@@ -359,22 +578,24 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             position: "relative",
           }}
         >
-          {virtualizer.getVirtualItems().map((virtualItem: VirtualItem) => (
-            <div
-              key={virtualItem.key}
-              data-index={virtualItem.index}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: ITEM_HEIGHT,
-                transform: `translateY(${virtualItem.start}px)`,
-              }}
-            >
-              {renderNode(flatNodes[virtualItem.index])}
-            </div>
-          ))}
+          {virtualizer.getVirtualItems().map((virtualItem: VirtualItem) => {
+            return (
+              <div
+                key={virtualItem.key}
+                data-index={virtualItem.index}
+                ref={measureElement}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  transform: `translateY(${virtualItem.start}px)`,
+                }}
+              >
+                {renderNode(flatNodes[virtualItem.index])}
+              </div>
+            );
+          })}
         </div>
       </div>
     );

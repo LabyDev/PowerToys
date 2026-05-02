@@ -1,13 +1,68 @@
-use serde::{Deserialize, Serialize};
-
 use crate::models::Bookmark;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-// File randomiser settings
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ColorWeightEntry {
+    pub local: f64,
+    pub global: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct BookmarkPreference {
+    pub enabled: bool,
+    /// Keys are lowercase hex strings e.g. "#ff6b6b"
+    pub colors: HashMap<String, ColorWeightEntry>,
+}
+
+impl Default for BookmarkPreference {
+    fn default() -> Self {
+        let mut colors = HashMap::new();
+        colors.insert(
+            "#ff6b6b".to_string(),
+            ColorWeightEntry {
+                local: 2.5,
+                global: 2.0,
+            },
+        );
+        colors.insert(
+            "#6bcb77".to_string(),
+            ColorWeightEntry {
+                local: 1.8,
+                global: 1.5,
+            },
+        );
+        colors.insert(
+            "#ffd700".to_string(),
+            ColorWeightEntry {
+                local: 1.4,
+                global: 1.2,
+            },
+        );
+        colors.insert(
+            "#4d96ff".to_string(),
+            ColorWeightEntry {
+                local: 1.1,
+                global: 1.0,
+            },
+        );
+        Self {
+            enabled: false,
+            colors,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase", default)]
 pub struct FileRandomiserSettings {
     pub allow_process_tracking: bool,
     pub randomness_level: u8,
     pub global_bookmarks: Vec<Bookmark>,
+    pub bookmark_preference: BookmarkPreference,
+    pub show_scores: bool,
 }
 
 impl Default for FileRandomiserSettings {
@@ -16,6 +71,8 @@ impl Default for FileRandomiserSettings {
             allow_process_tracking: false,
             randomness_level: 50,
             global_bookmarks: vec![],
+            bookmark_preference: BookmarkPreference::default(),
+            show_scores: false,
         }
     }
 }
@@ -69,7 +126,7 @@ impl Default for LanguageOption {
 
 // Main app settings
 #[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
     pub dark_mode: DarkModeOption,
     pub language: LanguageOption,

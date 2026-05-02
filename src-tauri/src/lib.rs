@@ -47,6 +47,8 @@ pub fn run() {
             filerandomisercommands::get_presets,
             filerandomisercommands::save_preset,
             filerandomisercommands::open_path,
+            filerandomisercommands::get_file_scores,
+            filerandomisercommands::update_file_bookmark,
             // File sorter
             filesortercommands::get_sorter_state,
             filesortercommands::select_sort_directory,

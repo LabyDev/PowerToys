@@ -180,6 +180,12 @@ const FileRandomiser = () => {
               : f,
           ),
         }));
+
+        await invoke("update_file_bookmark", {
+          hash: file.hash,
+          color: color,
+          isGlobal: isGlobal,
+        });
       } else {
         // --- LOCAL PRESET BOOKMARK ---
         const preset = lastAppliedPresetRef.current;
@@ -220,6 +226,12 @@ const FileRandomiser = () => {
               : f,
           ),
         }));
+
+        await invoke("update_file_bookmark", {
+          hash: file.hash,
+          color: color,
+          isGlobal: isGlobal,
+        });
       }
     },
     [globalBookmarks, setGlobalBookmarks, setData, presetState.bookmarks],
@@ -624,6 +636,8 @@ const FileRandomiser = () => {
     [filteredFiles],
   );
 
+  const showScores = settings?.fileRandomiser?.showScores ?? false;
+
   // Then use `showLoading` for the overlay:
   <LoadingOverlay
     visible={showLoading}
@@ -761,6 +775,7 @@ const FileRandomiser = () => {
                 ref={fileTreeRef}
                 nodes={fileTreeNodes}
                 setFreshCrawl={setFreshCrawl}
+                showScores={showScores}
                 onExclude={async (file) => {
                   const rule = {
                     id: crypto.randomUUID(),

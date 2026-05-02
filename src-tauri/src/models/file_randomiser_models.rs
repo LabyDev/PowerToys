@@ -13,8 +13,24 @@ pub struct FileEntry {
     pub name: String,
     pub path: FilePath,
     pub excluded: bool,
+
     #[serde(default)]
     pub hash: Option<String>,
+
+    #[serde(default)]
+    pub bookmark: Option<BookmarkInfo>,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FileScore {
+    pub id: u64,
+    pub name: String,
+    pub is_excluded: bool,
+    pub order_score: f64,
+    pub memory_factor: f64,
+    pub bookmark_factor: f64,
+    pub total_weight: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -95,4 +111,11 @@ pub struct FilterRule {
     pub pattern: String,
     #[serde(default)]
     pub case_sensitive: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BookmarkInfo {
+    pub color: Option<String>,
+    pub is_global: bool,
 }

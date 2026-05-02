@@ -7,14 +7,25 @@ export type LanguageOption = "en" | "nl" | "bs" | "de" | "pl";
 export type DarkModeOption = "light" | "dark" | "system";
 
 /** Application settings */
+export type ColorWeightEntry = {
+  local: number;
+  global: number;
+};
+
+export type BookmarkPreference = {
+  enabled: boolean;
+  colors: Record<string, ColorWeightEntry>;
+};
+
 export type AppSettings = {
   language: LanguageOption;
   darkMode: DarkModeOption;
   customBackground?: string;
-
   fileRandomiser: {
     allow_process_tracking: boolean;
     randomness_level: number;
     global_bookmarks: Bookmark[];
+    bookmarkPreference: BookmarkPreference;
+    showScores: boolean;
   };
 };

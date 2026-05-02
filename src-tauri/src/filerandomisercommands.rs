@@ -1,5 +1,6 @@
 use crate::models::{
-    AppStateData, Bookmark, FileEntry, FilterMatchType, FilterRule, HistoryEntry, SavedPath,
+    AppStateData, Bookmark, FileEntry, FileScore, FilterMatchType, FilterRule, HistoryEntry,
+    SavedPath,
 };
 use crate::models::{FilterAction, RandomiserPreset};
 use crate::setting_commands::get_app_settings;
@@ -189,6 +190,29 @@ pub fn crawl_paths(
         })
     }
 
+    fn resolve_bookmark(
+        hash: &str,
+        global: &[Bookmark],
+        local: &[Bookmark],
+    ) -> Option<crate::models::BookmarkInfo> {
+        // Local overrides global
+        if let Some(bm) = local.iter().find(|b| b.hash.eq_ignore_ascii_case(hash)) {
+            return Some(crate::models::BookmarkInfo {
+                color: bm.color.clone(),
+                is_global: false,
+            });
+        }
+
+        if let Some(bm) = global.iter().find(|b| b.hash.eq_ignore_ascii_case(hash)) {
+            return Some(crate::models::BookmarkInfo {
+                color: bm.color.clone(),
+                is_global: true,
+            });
+        }
+
+        None
+    }
+
     fn is_system_file(path: &std::path::Path) -> bool {
         if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
             // Unix hidden files
@@ -294,12 +318,17 @@ pub fn crawl_paths(
                 )
             };
 
+            let hash_string = format!("{:x}", hash_val);
+
+            let bookmark = resolve_bookmark(&hash_string, &global_bookmarks, &local_bookmarks);
+
             FileEntry {
                 id,
                 name,
                 path: FilePath::Path(path),
                 excluded,
-                hash: Some(format!("{:x}", hash_val)),
+                hash: Some(hash_string),
+                bookmark,
             }
         })
         .collect();
@@ -386,6 +415,39 @@ pub fn open_file_tracked(
     Ok(())
 }
 
+fn compute_bookmark_factor(
+    file: &FileEntry,
+    settings: &crate::models::settings::AppSettings,
+) -> f64 {
+    let pref = &settings.file_randomiser.bookmark_preference;
+
+    if !pref.enabled {
+        return 1.0;
+    }
+
+    // No bookmark, or bookmark has no colour → treat as a regular file
+    let bookmark = match &file.bookmark {
+        Some(b) if b.color.is_some() => b,
+        _ => return 1.0,
+    };
+
+    let key = bookmark.color.as_ref().unwrap().to_lowercase();
+
+    match pref.colors.get(&key) {
+        Some(entry) => {
+            let w = if bookmark.is_global {
+                entry.global
+            } else {
+                entry.local
+            };
+            // Never let a misconfigured weight completely zero out a file
+            w.max(0.0001)
+        }
+        // Colour exists on bookmark but isn't in the table → neutral
+        None => 1.0,
+    }
+}
+
 #[tauri::command]
 pub fn pick_random_file(
     app: tauri::AppHandle,
@@ -410,6 +472,13 @@ pub fn pick_random_file(
     if candidates.is_empty() {
         return None;
     }
+
+    eprintln!(
+        "[pick] r={:.2}, bookmark_pref_enabled={}, candidates={}",
+        r,
+        settings.file_randomiser.bookmark_preference.enabled,
+        candidates.len()
+    );
 
     let len = candidates.len();
     let last_index = data.last_picked_index.unwrap_or(0).min(len - 1);
@@ -457,10 +526,31 @@ pub fn pick_random_file(
             // get weight multiplied by recency_penalty (near 0 for just-played)
             let memory_factor = 1.0 - memory_influence * (1.0 - recency_penalty);
 
-            // --- Combine ---
-            // Base is always uniform (1.0), order bias adds on top when active
+            // --- Bookmark preference ---
+            let bookmark_factor = compute_bookmark_factor(file, &settings);
+
+            // Fade bookmark influence with randomness
+            let bookmark_influence = 1.0 - (r * 0.7);
+            // r=0 → full effect
+            // r=1 → 30% effect
+
+            let adjusted_bookmark = 1.0 + (bookmark_factor - 1.0) * bookmark_influence;
+
+            // --- Combine everything ---
             let base = 1.0 + order_w * order_influence * 10.0;
-            (base * memory_factor).max(1e-9)
+
+            eprintln!(
+                "[pick] '{}' | bookmark={:?} | order={:.3} | memory={:.3} | bookmark_factor={:.3} | adjusted_bookmark={:.3} | total={:.3}",
+                file.name,
+                file.bookmark.as_ref().and_then(|b| b.color.as_deref()).unwrap_or("none"),
+                order_w * order_influence,
+                memory_factor,
+                bookmark_factor,
+                adjusted_bookmark,
+                (base * memory_factor * adjusted_bookmark).max(1e-9)
+            );
+
+            (base * memory_factor * adjusted_bookmark).max(1e-9)
         })
         .collect();
 
@@ -492,6 +582,11 @@ pub fn pick_random_file(
         },
         Some(file.id),
         Some(file.name.clone()),
+    );
+
+    eprintln!(
+        "[pick] chose='{}' at index {} (weight was one of {} candidates)",
+        file.name, picked_index, len
     );
 
     println!(
@@ -618,5 +713,111 @@ pub fn open_path(app: tauri::AppHandle, path: tauri_plugin_dialog::FilePath) -> 
         .open_path(folder_path.to_string_lossy(), None::<String>)
         .map_err(|e| e.to_string())?;
 
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_file_scores(
+    app: tauri::AppHandle,
+    app_data: State<'_, Mutex<AppStateData>>,
+) -> Result<Vec<FileScore>, String> {
+    let settings = get_app_settings(app)?;
+    let randomness_level = settings.file_randomiser.randomness_level;
+    let r = (randomness_level as f64 / 100.0).clamp(0.0, 1.0);
+
+    let data = app_data.lock().unwrap();
+
+    eprintln!(
+        "[scores] bookmark_pref enabled={} colors={:?}",
+        settings.file_randomiser.bookmark_preference.enabled,
+        settings.file_randomiser.bookmark_preference.colors
+    );
+
+    let candidates: Vec<(usize, &FileEntry)> = data
+        .files
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| !f.excluded)
+        .collect();
+
+    if candidates.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let len = candidates.len();
+    let last_index = data.last_picked_index.unwrap_or(0).min(len - 1);
+    let recency_window = ((len as f64).sqrt() * 3.0).clamp(5.0, 150.0) as usize;
+    let order_influence = (1.0 - r).powf(3.0);
+    let memory_influence = 4.0 * r * (1.0 - r);
+
+    let scores = candidates
+        .iter()
+        .map(|(idx, file)| {
+            let fwd_dist = ((*idx + len - last_index) % len) as f64;
+            let sigma = (len as f64 * 0.03).max(1.5);
+            let order_w = (-((fwd_dist - 1.0).powi(2)) / (2.0 * sigma * sigma)).exp();
+
+            let recency_penalty = if Some(file.id) == data.last_picked_id {
+                0.0
+            } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
+                if pos < recency_window {
+                    1.0 - (pos as f64 / recency_window as f64)
+                } else {
+                    1.0
+                }
+            } else {
+                1.0
+            };
+
+            let memory_factor = 1.0 - memory_influence * (1.0 - recency_penalty);
+            let bookmark_factor = compute_bookmark_factor(file, &settings);
+            let bookmark_influence = 1.0 - (r * 0.7);
+            let adjusted_bookmark = 1.0 + (bookmark_factor - 1.0) * bookmark_influence;
+            let base = 1.0 + order_w * order_influence * 10.0;
+            let total = (base * memory_factor * adjusted_bookmark).max(1e-9);
+
+            eprintln!(
+                "[scores] '{}' | bookmark={:?} | is_global={} | factor={:.3} | total={:.3}",
+                file.name,
+                file.bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.as_deref())
+                    .unwrap_or("none"),
+                file.bookmark.as_ref().map(|b| b.is_global).unwrap_or(false),
+                bookmark_factor,
+                total
+            );
+
+            FileScore {
+                id: file.id,
+                name: file.name.clone(),
+                is_excluded: file.excluded,
+                order_score: order_w * order_influence,
+                memory_factor,
+                bookmark_factor,
+                total_weight: total,
+            }
+        })
+        .collect();
+
+    Ok(scores)
+}
+
+#[tauri::command]
+pub fn update_file_bookmark(
+    app_data: State<'_, Mutex<AppStateData>>,
+    hash: String,
+    color: Option<String>,
+    is_global: bool,
+) -> Result<(), String> {
+    let mut data = app_data.lock().unwrap();
+    for file in data.files.iter_mut() {
+        if file.hash.as_deref() == Some(hash.as_str()) {
+            file.bookmark = color.as_ref().map(|c| crate::models::BookmarkInfo {
+                color: Some(c.clone()),
+                is_global,
+            });
+        }
+    }
     Ok(())
 }
