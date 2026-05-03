@@ -152,6 +152,62 @@ const FileRandomiser = () => {
     });
   };
 
+  const handleBookmarkChangeBulk = useCallback(
+    async (files: FileEntry[], color: string | null, isGlobal: boolean) => {
+      const hashes = files.map((f) => f.hash).filter(Boolean) as string[];
+
+      // Single Rust call for all files
+      await invoke("update_file_bookmarks_bulk", {
+        hashes,
+        color,
+        isGlobal,
+      });
+
+      if (isGlobal) {
+        const existing = globalBookmarks ?? [];
+        const withoutThese = existing.filter((b) => !hashes.includes(b.hash));
+        const nextGlobal =
+          color === null
+            ? withoutThese
+            : [
+                ...withoutThese,
+                ...files.map((f) => ({ path: f.path, hash: f.hash, color })),
+              ];
+        await setGlobalBookmarks(nextGlobal);
+      } else {
+        const preset = lastAppliedPresetRef.current;
+        const existing = preset?.bookmarks ?? presetState.bookmarks ?? [];
+        const withoutThese = existing.filter((b) => !hashes.includes(b.hash));
+        const nextLocal =
+          color === null
+            ? withoutThese
+            : [
+                ...withoutThese,
+                ...files.map((f) => ({ path: f.path, hash: f.hash, color })),
+              ];
+        setPresetState((p) => ({ ...p, bookmarks: nextLocal, dirty: true }));
+        if (preset) {
+          lastAppliedPresetRef.current = { ...preset, bookmarks: nextLocal };
+        }
+      }
+
+      // Single state update for all files
+      setData((prev) => ({
+        ...prev,
+        files: prev.files.map((f) => {
+          if (!hashes.includes(f.hash)) return f;
+          return {
+            ...f,
+            bookmark: color ? { color, isGlobal } : undefined,
+          };
+        }),
+      }));
+
+      setBookmarksDirty(true);
+    },
+    [globalBookmarks, setGlobalBookmarks, setData, presetState.bookmarks],
+  );
+
   const handleBookmarkChangeGlobal = useCallback(
     async (file: FileEntry, color: string | null, isGlobal = true) => {
       if (isGlobal) {
@@ -800,6 +856,7 @@ const FileRandomiser = () => {
                 }
                 freshCrawl={freshCrawl}
                 treeCollapsed={treeCollapsed}
+                onBookmarkChangeBulk={handleBookmarkChangeBulk}
               />
             </Box>
           </Section>

@@ -71,6 +71,7 @@ pub fn run() {
             filerandomisercommands::open_path,
             filerandomisercommands::get_file_scores,
             filerandomisercommands::update_file_bookmark,
+            filerandomisercommands::update_file_bookmarks_bulk,
             // File sorter
             filesortercommands::get_sorter_state,
             filesortercommands::select_sort_directory,

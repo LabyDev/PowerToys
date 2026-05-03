@@ -43,6 +43,11 @@ interface FileTreeProps {
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
   showScores?: boolean;
+  onBookmarkChangeBulk?: (
+    files: FileEntry[],
+    color: string | null,
+    isGlobal: boolean,
+  ) => void;
 }
 
 export interface FileTreeHandle {
@@ -83,6 +88,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       freshCrawl = false,
       treeCollapsed = false,
       showScores = false,
+      onBookmarkChangeBulk,
     },
     ref,
   ) => {
@@ -390,6 +396,19 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           .filter((f): f is FileEntry => !!f),
     }));
 
+    const collectFilesUnder = (node: FileTreeNode): FileEntry[] => {
+      const files: FileEntry[] = [];
+      if (node.file) {
+        files.push(node.file);
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          files.push(...collectFilesUnder(child));
+        }
+      }
+      return files;
+    };
+
     // ------------------- Score bar -------------------
     const getFactorValue = (score: FileScore, factor: FactorKey): number => {
       switch (factor) {
@@ -525,6 +544,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           }}
           className="item-actions"
         >
+          {/* Caret for folders */}
           {node.children && (
             <ActionIcon
               size="xs"
@@ -539,6 +559,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             </ActionIcon>
           )}
 
+          {/* Name + scores */}
           <Box style={{ flex: 1, overflow: "hidden" }}>
             <ClampedTooltipText
               size="sm"
@@ -559,6 +580,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             {showScores && node.file && renderScoreRows(node.file)}
           </Box>
 
+          {/* File actions */}
           {node.file && (
             <ItemActions
               onOpen={() => randomiserApi.openPath(node.file!.path)}
@@ -574,9 +596,29 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             />
           )}
 
+          {/* Folder actions — with recursive bookmark support */}
           {node.children && (
             <ItemActions
               onOpenFolder={() => randomiserApi.openPath(node.path)}
+              onBookmarkChange={(color) => {
+                const files = collectFilesUnder(node);
+                onBookmarkChangeBulk?.(files, color, false);
+              }}
+              onBookmarkChangeGlobal={(color) => {
+                const files = collectFilesUnder(node);
+                onBookmarkChangeBulk?.(files, color, true);
+              }}
+              currentBookmark={(() => {
+                const files = collectFilesUnder(node);
+                if (!files.length) return undefined;
+                const first = files[0].bookmark;
+                const allSame = files.every(
+                  (f) =>
+                    f.bookmark?.color === first?.color &&
+                    f.bookmark?.isGlobal === first?.isGlobal,
+                );
+                return allSame ? first : undefined;
+              })()}
               onExclude={() =>
                 onExclude({
                   id: -1,

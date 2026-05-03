@@ -977,3 +977,25 @@ pub fn update_file_bookmark(
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn update_file_bookmarks_bulk(
+    app_data: State<'_, Mutex<AppStateData>>,
+    hashes: Vec<String>,
+    color: Option<String>,
+    is_global: bool,
+) -> Result<(), String> {
+    let mut data = app_data.lock().unwrap();
+    let hash_set: std::collections::HashSet<&str> = hashes.iter().map(|h| h.as_str()).collect();
+    for file in data.files.iter_mut() {
+        if let Some(hash) = &file.hash {
+            if hash_set.contains(hash.as_str()) {
+                file.bookmark = color.as_ref().map(|c| crate::models::BookmarkInfo {
+                    color: Some(c.clone()),
+                    is_global,
+                });
+            }
+        }
+    }
+    Ok(())
+}
