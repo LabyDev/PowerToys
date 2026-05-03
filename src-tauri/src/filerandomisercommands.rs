@@ -490,12 +490,12 @@ pub fn pick_random_file(
     // --- How large a recency window to penalise ---
     // Scales with library size but caps so it doesn't dominate huge libraries.
     // e.g. 50 files → window ~10, 1000 files → window ~50, 10000 → window ~100
-    let recency_window = ((len as f64).sqrt() * 1.5).clamp(3.0, 75.0) as usize;
+    let recency_window = ((len as f64).sqrt() * 1.0).clamp(3.0, 50.0) as usize;
 
     // --- ORDER BIAS CURVE ---
     // Drops steeply: at r=0.3 it's already ~5%, gone by r=0.5
     // order_influence: r=0 → 1.0, r=0.5 → ~0.02, r=1 → 0.0
-    let order_influence = (1.0 - r).powf(5.0);
+    let order_influence = (1.0 - r).powf(4.0);
 
     // --- MEMORY PENALTY CURVE ---
     // Peaks around r=0.5, fades toward r=1 (pure chaos needs no memory)
@@ -513,12 +513,24 @@ pub fn pick_random_file(
 
             // --- Memory (recency) penalty ---
             // Check position in recency list: 0 = picked last, recency_window-1 = oldest in window
+            // Bookmark factor — exempt bookmarked files from recency penalty entirely
             let recency_penalty = if Some(file.id) == data.last_picked_id {
-                0.0 // just played, near-impossible to re-pick
+                0.0
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
+                    // If file is bookmarked, apply only a light penalty (max 20% reduction)
                     let fade = pos as f64 / recency_window as f64;
-                    1.0 - fade
+                    let full_penalty = 1.0 - fade;
+                    if file
+                        .bookmark
+                        .as_ref()
+                        .and_then(|b| b.color.as_ref())
+                        .is_some()
+                    {
+                        full_penalty.max(0.8) // bookmarked files never go below 80% of their weight
+                    } else {
+                        full_penalty
+                    }
                 } else {
                     1.0
                 }
