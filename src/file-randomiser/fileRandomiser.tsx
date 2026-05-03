@@ -94,10 +94,10 @@ const FileRandomiser = () => {
   }, [currentIndex]);
 
   useEffect(() => {
-    if (settings.fileRandomiser.allow_process_tracking === false && tracking) {
+    if (settings.fileRandomiser.allowProcessTracking === false && tracking) {
       setTracking(false);
     }
-  }, [settings.fileRandomiser.allow_process_tracking]);
+  }, [settings.fileRandomiser.allowProcessTracking]);
 
   useEffect(() => {
     const preset = lastAppliedPresetRef.current;
@@ -658,7 +658,7 @@ const FileRandomiser = () => {
         <Toolbar
           shuffle={shuffle}
           tracking={tracking}
-          allowTracking={settings?.fileRandomiser?.allow_process_tracking}
+          allowTracking={settings?.fileRandomiser?.allowProcessTracking}
           query={query}
           hasStartedTracking={hasStartedTracking}
           onAddPath={handleAddPath}

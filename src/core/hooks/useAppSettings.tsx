@@ -14,9 +14,9 @@ export function useAppSettings() {
     darkMode: "system",
     customBackground: undefined,
     fileRandomiser: {
-      allow_process_tracking: false,
-      randomness_level: 50,
-      global_bookmarks: [],
+      allowProcessTracking: false,
+      randomnessLevel: 50,
+      globalBookmarks: [],
       bookmarkPreference: {
         enabled: false,
         colors: {},

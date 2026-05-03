@@ -38,7 +38,7 @@ const FileRandomiserSettings = () => {
   const [isLinux, setIsLinux] = useState(false);
 
   const [localRandomnessValue, setLocalRandomnessValue] = useState<number>(
-    settings.fileRandomiser.randomness_level ?? 50,
+    settings.fileRandomiser.randomnessLevel ?? 50,
   );
 
   // Local slider state for color weights — avoids invoking on every drag tick
@@ -56,8 +56,8 @@ const FileRandomiserSettings = () => {
   // ---- Sync from external settings changes ----
 
   useEffect(() => {
-    setLocalRandomnessValue(settings.fileRandomiser.randomness_level ?? 50);
-  }, [settings.fileRandomiser.randomness_level]);
+    setLocalRandomnessValue(settings.fileRandomiser.randomnessLevel ?? 50);
+  }, [settings.fileRandomiser.randomnessLevel]);
 
   useEffect(() => {
     setLocalColorWeights(
@@ -114,7 +114,7 @@ const FileRandomiserSettings = () => {
 
   useEffect(() => {
     const handler = setTimeout(async () => {
-      if (localRandomnessValue !== settings.fileRandomiser.randomness_level) {
+      if (localRandomnessValue !== settings.fileRandomiser.randomnessLevel) {
         try {
           const updated = await setRandomnessLevel(localRandomnessValue);
           setSettings(updated);
@@ -205,7 +205,7 @@ const FileRandomiserSettings = () => {
             </Text>
             <Checkbox
               checked={
-                isLinux ? false : settings.fileRandomiser.allow_process_tracking
+                isLinux ? false : settings.fileRandomiser.allowProcessTracking
               }
               disabled={isLinux}
               label={t("fileRandomiserSettings.processTracking.checkboxLabel")}

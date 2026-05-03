@@ -22,9 +22,9 @@ export type AppSettings = {
   darkMode: DarkModeOption;
   customBackground?: string;
   fileRandomiser: {
-    allow_process_tracking: boolean;
-    randomness_level: number;
-    global_bookmarks: Bookmark[];
+    allowProcessTracking: boolean;
+    randomnessLevel: number;
+    globalBookmarks: Bookmark[];
     bookmarkPreference: BookmarkPreference;
     showScores: boolean;
   };
