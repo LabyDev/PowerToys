@@ -21,6 +21,7 @@ import {
 import ClampedTooltipText from "../../../common/clampedTooltipText";
 import ItemActions from "./itemActions";
 import * as randomiserApi from "../../../core/api/fileRandomiserApi";
+import { useFileRandomiser } from "../../../core/hooks/fileRandomiserStateProvider";
 
 interface FileScore {
   id: number;
@@ -171,12 +172,16 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     };
 
     // ------------------- Expanded state -------------------
-    const expandedMapRef = useRef<Record<string, boolean>>({});
-    const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+    const { fileTreeScrollTopRef, fileTreeExpandedMapRef } =
+      useFileRandomiser();
 
-    // Keep ref in sync
+    const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>(
+      () => fileTreeExpandedMapRef.current,
+    );
+
+    // Keep the ref in sync whenever expandedMap changes
     useEffect(() => {
-      expandedMapRef.current = expandedMap;
+      fileTreeExpandedMapRef.current = expandedMap;
     }, [expandedMap]);
 
     const toggleNode = (node: FileTreeNode) => {
@@ -230,11 +235,21 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       };
     }, []);
 
+    useEffect(() => {
+      const scroller = parentRef.current;
+      if (scroller && fileTreeScrollTopRef.current > 0) {
+        scroller.scrollTop = fileTreeScrollTopRef.current;
+      }
+      return () => {
+        fileTreeScrollTopRef.current = scroller?.scrollTop ?? 0;
+      };
+    }, []);
+
     // ------------------- Flattening -------------------
     const flattenTree = (
       nodes: FileTreeNode[],
       depth = 0,
-      map: Record<string, boolean> = expandedMapRef.current,
+      map: Record<string, boolean> = expandedMap,
     ): FlattenedNode[] => {
       const flat: FlattenedNode[] = [];
       const sortedNodes = [...nodes].sort(sortNodes);
@@ -339,7 +354,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         if (!scroller) return;
 
         // Build the new map synchronously from the ref
-        const newMap = { ...expandedMapRef.current };
+        const newMap = { ...fileTreeExpandedMapRef.current };
         expandParents(fileId, nodes, newMap);
 
         // Update state so the tree re-renders

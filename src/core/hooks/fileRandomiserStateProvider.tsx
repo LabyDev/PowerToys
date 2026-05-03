@@ -28,6 +28,8 @@ interface FileRandomiserContextValue {
   setFreshCrawl: (fc: boolean) => void;
   treeCollapsed: boolean;
   setTreeCollapsed: (t: boolean) => void;
+  fileTreeScrollTopRef: React.MutableRefObject<number>;
+  fileTreeExpandedMapRef: React.MutableRefObject<Record<string, boolean>>;
 }
 
 const FileRandomiserContext = createContext<
@@ -72,6 +74,8 @@ export const FileRandomiserProvider = ({
   const [isCrawling, setIsCrawling] = useState(false);
   const [freshCrawl, setFreshCrawl] = useState(false);
   const [treeCollapsed, setTreeCollapsed] = useState<boolean>(false);
+  const fileTreeScrollTopRef = useRef<number>(0);
+  const fileTreeExpandedMapRef = useRef<Record<string, boolean>>({});
 
   return (
     <FileRandomiserContext.Provider
@@ -98,6 +102,8 @@ export const FileRandomiserProvider = ({
         setFreshCrawl,
         treeCollapsed,
         setTreeCollapsed,
+        fileTreeScrollTopRef,
+        fileTreeExpandedMapRef,
       }}
     >
       {children}
