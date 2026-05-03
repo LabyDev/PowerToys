@@ -318,7 +318,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     );
 
     // ------------------- Smooth Scroll -------------------
-    const smoothScrollTo = (target: number, duration = 350) => {
+    const smoothScrollTo = (target: number, duration = 600) => {
       const scroller = parentRef.current;
       if (!scroller) return;
 
@@ -381,7 +381,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
               ? targetScrollTop - LAUNCH_DISTANCE
               : targetScrollTop + LAUNCH_DISTANCE;
           scroller.scrollTop = Math.max(0, jumpTo);
-          smoothScrollTo(targetScrollTop, 300);
+          smoothScrollTo(targetScrollTop, 450);
         }
       },
       getFlattenedFiles: () =>
