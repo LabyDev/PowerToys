@@ -10,6 +10,7 @@ import {
   Group,
   Alert,
 } from "@mantine/core";
+import { FolderOpenIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
@@ -44,7 +45,7 @@ const AppSettingsPage = () => {
         language: value,
       });
       setSettings(updatedSettings);
-      i18n.changeLanguage(value); // update i18next language
+      i18n.changeLanguage(value);
     } catch (err) {
       console.error("Failed to update language:", err);
     }
@@ -74,6 +75,14 @@ const AppSettingsPage = () => {
     }
   };
 
+  const handleOpenSettingsFolder = async () => {
+    try {
+      await invoke("open_settings_folder");
+    } catch (err) {
+      console.error("Failed to open settings folder:", err);
+    }
+  };
+
   const handleRestartApp = async () => {
     try {
       await invoke("restart_app");
@@ -89,14 +98,13 @@ const AppSettingsPage = () => {
           <Title order={3}>{t("settingsPage.title")}</Title>
           <Divider />
 
-          {/* Appearance */}
           <Stack gap="sm">
             <Title order={4}>{t("settingsPage.appearance.title")}</Title>
+
             <Text size="sm" c="dimmed">
               {t("settingsPage.appearance.description")}
             </Text>
 
-            {/* Language Selection */}
             <Select
               label={t("settingsPage.appearance.language")}
               description={t("settingsPage.appearance.languageDescription")}
@@ -113,7 +121,6 @@ const AppSettingsPage = () => {
               {t("settingsPage.appearance.alert")}
             </Alert>
 
-            {/* Dark Mode */}
             <Select
               label={t("settingsPage.appearance.darkMode")}
               description={t("settingsPage.appearance.darkModeDescription")}
@@ -135,11 +142,11 @@ const AppSettingsPage = () => {
               ]}
             />
 
-            {/* Custom Background */}
             <Group gap="sm" mt="sm">
               <Button onClick={handleBackgroundSelect}>
                 {t("settingsPage.appearance.customBackgroundSelect")}
               </Button>
+
               {settings.customBackground && (
                 <Button
                   color="red"
@@ -149,9 +156,16 @@ const AppSettingsPage = () => {
                   {t("settingsPage.appearance.customBackgroundClear")}
                 </Button>
               )}
+
+              <Button
+                variant="light"
+                leftSection={<FolderOpenIcon size={16} />}
+                onClick={handleOpenSettingsFolder}
+              >
+                Open settings folder
+              </Button>
             </Group>
 
-            {/* Restart App - only show if there’s a pending change */}
             {pendingChange && (
               <Alert
                 color="gray.0"
@@ -170,6 +184,7 @@ const AppSettingsPage = () => {
                 <Text size="sm" c="white">
                   {t("settingsPage.appearance.restartDescription")}
                 </Text>
+
                 <Button
                   size="xs"
                   color="white"

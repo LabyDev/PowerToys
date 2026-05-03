@@ -5,9 +5,11 @@ use crate::models::LanguageOption;
 use base64::{engine::general_purpose, Engine as _};
 use std::fs;
 use std::path::PathBuf;
+use tauri::Manager;
 use tauri::{AppHandle, Wry};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_dialog::FilePath;
+use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_store::StoreExt;
 
 /// Get the current settings, merging persisted store + runtime context menu status
@@ -170,4 +172,17 @@ pub fn set_global_bookmarks(
     settings.file_randomiser.global_bookmarks = bookmarks.clone();
     set_app_settings(app, settings)?;
     Ok(bookmarks)
+}
+
+#[tauri::command]
+pub fn open_settings_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let settings_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+
+    std::fs::create_dir_all(&settings_dir).map_err(|e| e.to_string())?;
+
+    app.opener()
+        .open_path(settings_dir.to_string_lossy(), None::<String>)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }

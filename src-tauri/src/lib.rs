@@ -57,6 +57,7 @@ pub fn run() {
             setting_commands::set_language,
             setting_commands::get_global_bookmarks,
             setting_commands::set_global_bookmarks,
+            setting_commands::open_settings_folder,
             // File randomiser
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
