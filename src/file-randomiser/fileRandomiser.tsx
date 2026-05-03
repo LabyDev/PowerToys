@@ -186,6 +186,7 @@ const FileRandomiser = () => {
           color: color,
           isGlobal: isGlobal,
         });
+        setBookmarksDirty(true);
       } else {
         // --- LOCAL PRESET BOOKMARK ---
         const preset = lastAppliedPresetRef.current;
@@ -232,6 +233,7 @@ const FileRandomiser = () => {
           color: color,
           isGlobal: isGlobal,
         });
+        setBookmarksDirty(true);
       }
     },
     [globalBookmarks, setGlobalBookmarks, setData, presetState.bookmarks],
