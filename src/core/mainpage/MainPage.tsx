@@ -9,10 +9,16 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { platform, Platform } from "@tauri-apps/plugin-os";
 import "./MainPage.css";
+import { getVersion } from "@tauri-apps/api/app";
 
 function App() {
   const { t } = useTranslation();
   const [isLinux, setIsLinux] = useState(false);
+  const [version, setVersion] = useState<string>("");
+
+  useEffect(() => {
+    getVersion().then(setVersion);
+  }, []);
 
   useEffect(() => {
     async function detectOS() {
@@ -79,6 +85,11 @@ function App() {
             {t("mainPage.settingsButton")}
           </Button>
         </Stack>
+        {version && (
+          <Text size="xs" c="dimmed" mt={6}>
+            v{version}
+          </Text>
+        )}
       </Card>
     </div>
   );
