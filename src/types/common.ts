@@ -19,6 +19,8 @@ export const bookmarkColorOptions = [
   { hex: "#6BCB77", label: "Green" },
   { hex: "#FFD700", label: "Gold" },
   { hex: "#4D96FF", label: "Blue" },
+  { hex: "#C77DFF", label: "Purple" },
+  { hex: "#FF922B", label: "Orange" },
 ] as const;
 
 export type BookmarkColor = (typeof bookmarkColorOptions)[number]["hex"];
