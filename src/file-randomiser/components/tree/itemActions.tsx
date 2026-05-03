@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { BookmarkInfo } from "../../../types/filerandomiser";
+import { BookmarkColor, bookmarkCycle } from "../../../types/common";
 
 type ItemActionsProps = {
   onOpenFolder?: () => void;
@@ -19,16 +20,6 @@ type ItemActionsProps = {
   onBookmarkChangeGlobal?: (color: string | null) => void;
   currentBookmark?: BookmarkInfo;
 };
-
-const bookmarkCycle = [
-  null,
-  "#FF6B6B", // red
-  "#6BCB77", // green
-  "#FFD700", // gold
-  "#4D96FF", // blue
-] as const;
-
-type BookmarkCycleColor = (typeof bookmarkCycle)[number];
 
 const ItemActions = ({
   onOpenFolder,
@@ -47,11 +38,11 @@ const ItemActions = ({
 
     const isGlobalLocked = currentBookmark?.isGlobal ?? false;
 
-    const currentColor: BookmarkCycleColor = bookmarkCycle.includes(
-      currentBookmark?.color as BookmarkCycleColor,
-    )
-      ? (currentBookmark!.color as BookmarkCycleColor)
-      : null;
+    const currentColor: BookmarkColor | null =
+      currentBookmark?.color &&
+      bookmarkCycle.includes(currentBookmark.color as BookmarkColor)
+        ? (currentBookmark.color as BookmarkColor)
+        : null;
 
     const nextColor =
       bookmarkCycle[

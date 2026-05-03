@@ -20,13 +20,9 @@ import {
   setRandomnessLevel,
 } from "../api/appSettingsApi";
 import { AppSettings, ColorWeightEntry } from "../../types/settings";
+import { bookmarkColorOptions } from "../../types/common";
 
-const BUILT_IN_COLORS: { hex: string; label: string }[] = [
-  { hex: "#ff6b6b", label: "Red" },
-  { hex: "#6bcb77", label: "Green" },
-  { hex: "#ffd700", label: "Gold" },
-  { hex: "#4d96ff", label: "Blue" },
-];
+const BUILT_IN_COLORS = bookmarkColorOptions;
 
 const DEFAULT_ENTRY: ColorWeightEntry = { local: 1.0, global: 1.0 };
 
