@@ -13,7 +13,7 @@ import { sep } from "@tauri-apps/api/path";
 import { useFileRandomiser } from "../core/hooks/fileRandomiserStateProvider";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "@mantine/hooks";
-import { Bookmark } from "../types/common";
+import { Bookmark, DEFAULT_BOOKMARK_COLOR_OPTIONS } from "../types/common";
 import {
   AppStateData,
   RandomiserPreset,
@@ -75,6 +75,10 @@ const FileRandomiser = () => {
     lastAppliedPresetRef.current,
     100,
   );
+
+  const bookmarkColorHexes = (
+    settings.bookmarkColors ?? DEFAULT_BOOKMARK_COLOR_OPTIONS
+  ).map((b) => b.hex);
 
   // ------------------------ Effects ------------------------
   useEffect(() => {
@@ -832,6 +836,7 @@ const FileRandomiser = () => {
               <FileTree
                 ref={fileTreeRef}
                 nodes={fileTreeNodes}
+                bookmarkColors={bookmarkColorHexes}
                 setFreshCrawl={setFreshCrawl}
                 showScores={showScores}
                 onExclude={async (file) => {

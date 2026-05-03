@@ -17,6 +17,11 @@ export type BookmarkPreference = {
   colors: Record<string, ColorWeightEntry>;
 };
 
+export type BookmarkColorOption = {
+  hex: string;
+  label: string;
+};
+
 export type AppSettings = {
   language: LanguageOption;
   darkMode: DarkModeOption;
@@ -28,4 +33,5 @@ export type AppSettings = {
     bookmarkPreference: BookmarkPreference;
     showScores: boolean;
   };
+  bookmarkColors: BookmarkColorOption[];
 };

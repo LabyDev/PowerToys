@@ -14,45 +14,24 @@ pub struct ColorWeightEntry {
 pub struct BookmarkPreference {
     pub enabled: bool,
     /// Keys are lowercase hex strings e.g. "#ff6b6b"
+    /// Empty by default — colours not in the table get weight 1.0
     pub colors: HashMap<String, ColorWeightEntry>,
 }
 
 impl Default for BookmarkPreference {
     fn default() -> Self {
-        let mut colors = HashMap::new();
-        colors.insert(
-            "#ff6b6b".to_string(),
-            ColorWeightEntry {
-                local: 2.5,
-                global: 2.0,
-            },
-        );
-        colors.insert(
-            "#6bcb77".to_string(),
-            ColorWeightEntry {
-                local: 1.8,
-                global: 1.5,
-            },
-        );
-        colors.insert(
-            "#ffd700".to_string(),
-            ColorWeightEntry {
-                local: 1.4,
-                global: 1.2,
-            },
-        );
-        colors.insert(
-            "#4d96ff".to_string(),
-            ColorWeightEntry {
-                local: 1.1,
-                global: 1.0,
-            },
-        );
         Self {
             enabled: false,
-            colors,
+            colors: HashMap::new(),
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookmarkColorOption {
+    pub hex: String,
+    pub label: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -77,7 +56,6 @@ impl Default for FileRandomiserSettings {
     }
 }
 
-// Dark mode options
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum DarkModeOption {
@@ -92,7 +70,6 @@ impl Default for DarkModeOption {
     }
 }
 
-// Language options
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum LanguageOption {
@@ -105,11 +82,9 @@ pub enum LanguageOption {
 
 impl Default for LanguageOption {
     fn default() -> Self {
-        // Try to get the system locale
         let locale = sys_locale::get_locale()
             .unwrap_or_else(|| "en".to_string())
             .to_lowercase();
-
         if locale.starts_with("nl") {
             LanguageOption::Nl
         } else if locale.starts_with("bs") {
@@ -124,7 +99,6 @@ impl Default for LanguageOption {
     }
 }
 
-// Main app settings
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
@@ -132,6 +106,7 @@ pub struct AppSettings {
     pub language: LanguageOption,
     pub custom_background: Option<String>,
     pub file_randomiser: FileRandomiserSettings,
+    pub bookmark_colors: Vec<BookmarkColorOption>,
 }
 
 impl Default for AppSettings {
@@ -141,6 +116,32 @@ impl Default for AppSettings {
             language: Default::default(),
             custom_background: None,
             file_randomiser: Default::default(),
+            bookmark_colors: vec![
+                BookmarkColorOption {
+                    hex: "#FF6B6B".to_string(),
+                    label: "Red".to_string(),
+                },
+                BookmarkColorOption {
+                    hex: "#6BCB77".to_string(),
+                    label: "Green".to_string(),
+                },
+                BookmarkColorOption {
+                    hex: "#FFD700".to_string(),
+                    label: "Gold".to_string(),
+                },
+                BookmarkColorOption {
+                    hex: "#4D96FF".to_string(),
+                    label: "Blue".to_string(),
+                },
+                BookmarkColorOption {
+                    hex: "#C77DFF".to_string(),
+                    label: "Purple".to_string(),
+                },
+                BookmarkColorOption {
+                    hex: "#FF922B".to_string(),
+                    label: "Orange".to_string(),
+                },
+            ],
         }
     }
 }

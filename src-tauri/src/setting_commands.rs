@@ -34,15 +34,22 @@ pub fn get_app_settings(app: AppHandle<Wry>) -> Result<AppSettings, String> {
 #[tauri::command]
 pub fn set_app_settings(
     app: AppHandle<Wry>,
-    #[allow(unused_mut)] mut settings: AppSettings, // It is not unused.
+    #[allow(unused_mut)] mut settings: AppSettings,
 ) -> Result<AppSettings, String> {
-    // Force-disable process tracking on non-Windows
     #[cfg(not(target_os = "windows"))]
     {
         settings.file_randomiser.allow_process_tracking = false;
     }
 
+    // Preserve bookmark_colors from the store — never let a frontend
+    // call overwrite manual JSON edits
     let store = app.store("store.json").map_err(|e| e.to_string())?;
+    if let Some(existing) = store.get("settings") {
+        if let Ok(existing_settings) = serde_json::from_value::<AppSettings>(existing) {
+            settings.bookmark_colors = existing_settings.bookmark_colors;
+        }
+    }
+
     store.set("settings", serde_json::to_value(&settings).unwrap());
     store.save().map_err(|e| e.to_string())?;
     Ok(settings)

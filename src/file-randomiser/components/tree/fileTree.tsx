@@ -48,6 +48,7 @@ interface FileTreeProps {
     color: string | null,
     isGlobal: boolean,
   ) => void;
+  bookmarkColors?: string[];
 }
 
 export interface FileTreeHandle {
@@ -89,6 +90,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       treeCollapsed = false,
       showScores = false,
       onBookmarkChangeBulk,
+      bookmarkColors,
     },
     ref,
   ) => {
@@ -583,6 +585,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           {/* File actions */}
           {node.file && (
             <ItemActions
+              bookmarkColors={bookmarkColors}
               onOpen={() => randomiserApi.openPath(node.file!.path)}
               onOpenFolder={async () =>
                 randomiserApi.openPath(await dirname(node.file!.path))
@@ -599,6 +602,7 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
           {/* Folder actions — with recursive bookmark support */}
           {node.children && (
             <ItemActions
+              bookmarkColors={bookmarkColors}
               onOpenFolder={() => randomiserApi.openPath(node.path)}
               onBookmarkChange={(color) => {
                 const files = collectFilesUnder(node);

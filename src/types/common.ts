@@ -14,19 +14,18 @@ export type Bookmark = {
 };
 
 /** Shared bookmark colour cycle used by UI and settings */
-export const bookmarkColorOptions = [
+export type BookmarkColorOption = {
+  hex: string;
+  label: string;
+};
+
+export type BookmarkColor = string;
+
+export const DEFAULT_BOOKMARK_COLOR_OPTIONS: BookmarkColorOption[] = [
   { hex: "#FF6B6B", label: "Red" },
   { hex: "#6BCB77", label: "Green" },
   { hex: "#FFD700", label: "Gold" },
   { hex: "#4D96FF", label: "Blue" },
   { hex: "#C77DFF", label: "Purple" },
   { hex: "#FF922B", label: "Orange" },
-] as const;
-
-export type BookmarkColor = (typeof bookmarkColorOptions)[number]["hex"];
-
-export const bookmarkColors: BookmarkColor[] = bookmarkColorOptions.map(
-  (entry) => entry.hex,
-);
-
-export const bookmarkCycle = [null, ...bookmarkColors] as const;
+];

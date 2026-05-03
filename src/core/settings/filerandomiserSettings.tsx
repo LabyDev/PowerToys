@@ -20,15 +20,15 @@ import {
   setRandomnessLevel,
 } from "../api/appSettingsApi";
 import { AppSettings, ColorWeightEntry } from "../../types/settings";
-import { bookmarkColorOptions } from "../../types/common";
-
-const BUILT_IN_COLORS = bookmarkColorOptions;
+import { DEFAULT_BOOKMARK_COLOR_OPTIONS } from "../../types/common";
 
 const DEFAULT_ENTRY: ColorWeightEntry = { local: 1.0, global: 1.0 };
 
 const FileRandomiserSettings = () => {
   const { t } = useTranslation();
   const { settings, setSettings } = useAppSettings();
+  const colorOptions =
+    settings.bookmarkColors ?? DEFAULT_BOOKMARK_COLOR_OPTIONS;
   const pref = settings.fileRandomiser.bookmarkPreference;
 
   const [isLinux, setIsLinux] = useState(false);
@@ -42,7 +42,7 @@ const FileRandomiserSettings = () => {
     Record<string, ColorWeightEntry>
   >(() =>
     Object.fromEntries(
-      BUILT_IN_COLORS.map(({ hex }) => [
+      colorOptions.map(({ hex }) => [
         hex,
         pref?.colors?.[hex] ?? DEFAULT_ENTRY,
       ]),
@@ -58,7 +58,7 @@ const FileRandomiserSettings = () => {
   useEffect(() => {
     setLocalColorWeights(
       Object.fromEntries(
-        BUILT_IN_COLORS.map(({ hex }) => [
+        colorOptions.map(({ hex }) => [
           hex,
           pref?.colors?.[hex] ?? DEFAULT_ENTRY,
         ]),
@@ -285,7 +285,7 @@ const FileRandomiserSettings = () => {
 
             {pref?.enabled && (
               <Stack gap="lg" mt="xs">
-                {BUILT_IN_COLORS.map(({ hex, label }) => {
+                {colorOptions.map(({ hex, label }) => {
                   const entry: ColorWeightEntry =
                     localColorWeights[hex] ?? DEFAULT_ENTRY;
                   return (

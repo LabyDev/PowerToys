@@ -9,7 +9,6 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { BookmarkInfo } from "../../../types/filerandomiser";
-import { BookmarkColor, bookmarkCycle } from "../../../types/common";
 
 type ItemActionsProps = {
   onOpenFolder?: () => void;
@@ -19,6 +18,7 @@ type ItemActionsProps = {
   onBookmarkChange?: (color: string | null) => void;
   onBookmarkChangeGlobal?: (color: string | null) => void;
   currentBookmark?: BookmarkInfo;
+  bookmarkColors?: string[];
 };
 
 const ItemActions = ({
@@ -29,27 +29,18 @@ const ItemActions = ({
   onBookmarkChange,
   onBookmarkChangeGlobal,
   currentBookmark,
+  bookmarkColors,
 }: ItemActionsProps) => {
   const { t } = useTranslation();
 
   // ------------------- Bookmark cycling -------------------
   const cycleBookmark = (event: React.MouseEvent) => {
     if (!onBookmarkChange) return;
-
-    const isGlobalLocked = currentBookmark?.isGlobal ?? false;
-
-    const currentColor: BookmarkColor | null =
-      currentBookmark?.color &&
-      bookmarkCycle.includes(currentBookmark.color as BookmarkColor)
-        ? (currentBookmark.color as BookmarkColor)
-        : null;
-
-    const nextColor =
-      bookmarkCycle[
-        (bookmarkCycle.indexOf(currentColor) + 1) % bookmarkCycle.length
-      ];
-
-    if (event.shiftKey || isGlobalLocked) {
+    const cycle = [null, ...(bookmarkColors ?? [])];
+    const currentColor = currentBookmark?.color ?? null;
+    const currentIdx = cycle.indexOf(currentColor);
+    const nextColor = cycle[(currentIdx + 1) % cycle.length];
+    if (event.shiftKey || currentBookmark?.isGlobal) {
       onBookmarkChangeGlobal?.(nextColor);
     } else {
       onBookmarkChange(nextColor);
