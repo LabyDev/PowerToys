@@ -13,6 +13,7 @@ export function useAppSettings() {
     language: navigator.language.split("-")[0] as LanguageOption,
     darkMode: "system",
     customBackground: undefined,
+    bookmarkColors: [],
     fileRandomiser: {
       allowProcessTracking: false,
       randomnessLevel: 50,
@@ -27,7 +28,6 @@ export function useAppSettings() {
 
   const [globalBookmarks, setGlobalBookmarksState] = useState<Bookmark[]>([]);
 
-  // Fetch settings and bookmarks on mount
   useEffect(() => {
     getAppSettings().then(setSettingsState).catch(console.error);
     getGlobalBookmarks().then(setGlobalBookmarksState).catch(console.error);
@@ -43,6 +43,7 @@ export function useAppSettings() {
           ...partial.fileRandomiser,
         },
       };
+
       setAppSettings(newSettings).catch(console.error);
       return newSettings;
     });
@@ -79,7 +80,9 @@ export function useAppSettings() {
   useEffect(() => {
     const listener = (e: MediaQueryListEvent) => setSystemDark(e.matches);
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
+
     mq.addEventListener("change", listener);
+
     return () => mq.removeEventListener("change", listener);
   }, []);
 
