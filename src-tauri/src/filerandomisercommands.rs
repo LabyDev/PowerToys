@@ -26,33 +26,38 @@ pub fn get_app_state(state: State<'_, Mutex<AppStateData>>) -> AppStateData {
 pub async fn add_path_via_dialog(
     app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
-) -> Result<Option<SavedPath>, String> {
+) -> Result<Vec<SavedPath>, String> {
     use tauri_plugin_dialog::DialogExt;
 
-    // Run blocking dialog off the main thread
-    let folder =
-        tauri::async_runtime::spawn_blocking(move || app.dialog().file().blocking_pick_folder())
+    // Pick multiple folders (blocking UI call on a blocking thread)
+    let folders =
+        tauri::async_runtime::spawn_blocking(move || app.dialog().file().blocking_pick_folders())
             .await
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Dialog cancelled".to_string())?;
 
     let mut data = app_data.lock().unwrap();
+    let mut added = Vec::new();
 
-    let name = folder
-        .as_path()
-        .and_then(|p| p.file_name())
-        .and_then(|s| s.to_str())
-        .unwrap_or("unknown")
-        .to_string();
+    for folder in folders {
+        let name = folder
+            .as_path()
+            .and_then(|p| p.file_name())
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown")
+            .to_string();
 
-    let new_path = SavedPath {
-        id: data.paths.len() as u64 + 1,
-        name,
-        path: folder,
-    };
+        let new_path = SavedPath {
+            id: data.paths.len() as u64 + 1,
+            name,
+            path: folder,
+        };
 
-    data.paths.push(new_path.clone());
-    Ok(Some(new_path))
+        data.paths.push(new_path.clone());
+        added.push(new_path);
+    }
+
+    Ok(added)
 }
 
 #[tauri::command]
