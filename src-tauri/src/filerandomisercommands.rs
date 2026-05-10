@@ -436,10 +436,10 @@ fn compute_bookmark_factor(
         _ => return 1.0,
     };
 
-    let key = bookmark.color.as_ref().unwrap().to_lowercase();
+    let key = bookmark.color.as_ref().unwrap().to_uppercase();
 
-    match pref.colors.get(&key) {
-        Some(entry) => {
+    match pref.colors.iter().find(|(k, _)| k.to_uppercase() == key) {
+        Some((_, entry)) => {
             let w = if bookmark.is_global {
                 entry.global
             } else {
@@ -448,7 +448,6 @@ fn compute_bookmark_factor(
             // Never let a misconfigured weight completely zero out a file
             w.max(0.0001)
         }
-        // Colour exists on bookmark but isn't in the table → neutral
         None => 1.0,
     }
 }
@@ -490,12 +489,15 @@ pub fn pick_random_file(
     }
 
     let len = candidates.len();
-    let last_index = data.last_picked_index.unwrap_or(0).min(len - 1);
+    let last_index = candidates
+        .iter()
+        .position(|(_, f)| Some(f.id) == data.last_picked_id)
+        .unwrap_or(0);
 
     // --- How large a recency window to penalise ---
     // Scales with library size but caps so it doesn't dominate huge libraries.
     // e.g. 50 files → window ~10, 1000 files → window ~50, 10000 → window ~100
-    let recency_window = ((len as f64).sqrt() * 1.0).clamp(3.0, 50.0) as usize;
+    let recency_window = ((len as f64).sqrt() * 3.0).clamp(10.0, 150.0) as usize;
 
     // --- ORDER BIAS CURVE ---
     // Drops steeply: at r=0.3 it's already ~5%, gone by r=0.5
@@ -505,7 +507,7 @@ pub fn pick_random_file(
     // --- MEMORY PENALTY CURVE ---
     // Peaks around r=0.5, fades toward r=1 (pure chaos needs no memory)
     // memory_influence: r=0 → 0.0, r=0.5 → 1.0, r=1 → 0.0
-    let memory_influence = (4.0 * r * (1.0 - r) * 0.75).min(0.75); // parabola peaking at r=0.5
+    let memory_influence = (4.0 * r * (1.0 - r)).min(1.0); // parabola peaking at r=0.5
 
     let weights: Vec<f64> = candidates
         .iter()
@@ -520,11 +522,20 @@ pub fn pick_random_file(
             // Check position in recency list: 0 = picked last, recency_window-1 = oldest in window
             // Bookmark factor — exempt bookmarked files from recency penalty entirely
             let recency_penalty = if Some(file.id) == data.last_picked_id {
-                0.0
+                if file
+                    .bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.as_ref())
+                    .is_some()
+                {
+                    0.3
+                } else {
+                    0.0
+                }
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
-                    // If file is bookmarked, apply only a light penalty (max 20% reduction)
-                    let fade = pos as f64 / recency_window as f64;
+                    // sqrt fade: stays suppressed longer, recovers slowly near the end
+                    let fade = (pos as f64 / recency_window as f64).sqrt();
                     let full_penalty = 1.0 - fade;
                     if file
                         .bookmark
@@ -532,9 +543,9 @@ pub fn pick_random_file(
                         .and_then(|b| b.color.as_ref())
                         .is_some()
                     {
-                        full_penalty.max(0.8) // bookmarked files never go below 80% of their weight
+                        full_penalty.max(0.8)
                     } else {
-                        full_penalty
+                        full_penalty.max(0.05) // never fully zero, just very unlikely
                     }
                 } else {
                     1.0
@@ -609,12 +620,14 @@ pub fn pick_random_file(
         let recency_penalised = candidates
             .iter()
             .filter(|(_, f)| {
-                data.recency_list
-                    .iter()
-                    .rev()
-                    .position(|&id| id == f.id)
-                    .is_some()
-                    || Some(f.id) == data.last_picked_id
+                Some(f.id) == data.last_picked_id
+                    || data
+                        .recency_list
+                        .iter()
+                        .rev()
+                        .position(|&id| id == f.id)
+                        .map(|pos| pos < recency_window)
+                        .unwrap_or(false)
             })
             .count();
 
@@ -653,49 +666,40 @@ pub fn pick_random_file(
 
     let dist = WeightedIndex::new(&weights).ok()?;
     let chosen = dist.sample(&mut rng);
-    let (picked_index, file) = candidates[chosen].clone();
+    let (_, file) = candidates[chosen].clone();
 
     // --- Debug: chosen file factors ---
     if should_log {
-        let fwd_dist = ((picked_index + len - last_index) % len) as f64;
-        let sigma = (len as f64 * 0.03).max(1.5);
-        let order_w = (-((fwd_dist - 1.0).powi(2)) / (2.0 * sigma * sigma)).exp();
-        let recency_penalty = if Some(file.id) == data.last_picked_id {
-            0.0
-        } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
-            if pos < recency_window {
-                1.0 - (pos as f64 / recency_window as f64)
-            } else {
-                1.0
-            }
-        } else {
-            1.0
-        };
-        let memory_factor = 1.0 - memory_influence * (1.0 - recency_penalty);
-        let bookmark_factor = compute_bookmark_factor(&file, &settings);
-        let bookmark_influence = 1.0 - (r * 0.7);
-        let adjusted_bookmark = 1.0 + (bookmark_factor - 1.0) * bookmark_influence;
-        let base = 1.0 + order_w * order_influence * 10.0;
-        debug_log(&debug, &format!("[pick] chose — bookmark={} global={} | order={:.3} memory={:.3} bookmark_factor={:.3} adjusted={:.3} total={:.3}",
-    file.bookmark.as_ref().and_then(|b| b.color.as_deref()).unwrap_or("none"),
-    file.bookmark.as_ref().map(|b| b.is_global).unwrap_or(false),
-    order_w * order_influence,
-    memory_factor,
-    bookmark_factor,
-    adjusted_bookmark,
-    (base * memory_factor * adjusted_bookmark).max(1e-9)
-));
+        debug_log(
+            &debug,
+            &format!(
+                "[pick] chose — bookmark={} global={} | weight={:.3}",
+                file.bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.as_deref())
+                    .unwrap_or("none"),
+                file.bookmark.as_ref().map(|b| b.is_global).unwrap_or(false),
+                weights[chosen]
+            ),
+        );
     }
 
     // --- Update state ---
-    data.last_picked_index = Some(picked_index);
     data.last_picked_id = Some(file.id);
     *data.pick_counts.entry(file.id).or_insert(0) += 1;
 
     // Update recency list — push to back, trim front if over 2x window
     // (keep a bit extra so window can shrink without losing history)
-    data.recency_list.push(file.id);
-    let max_recency_len = recency_window * 2;
+    if file
+        .bookmark
+        .as_ref()
+        .and_then(|b| b.color.as_ref())
+        .is_none()
+    {
+        data.recency_list.push(file.id);
+    }
+
+    let max_recency_len = recency_window + 10;
     if data.recency_list.len() > max_recency_len {
         let drain_count = data.recency_list.len() - max_recency_len;
         data.recency_list.drain(0..drain_count);
@@ -872,7 +876,10 @@ pub fn get_file_scores(
     }
 
     let len = candidates.len();
-    let last_index = data.last_picked_index.unwrap_or(0).min(len - 1);
+    let last_index = candidates
+        .iter()
+        .position(|(_, f)| Some(f.id) == data.last_picked_id)
+        .unwrap_or(0);
     let recency_window = ((len as f64).sqrt() * 3.0).clamp(5.0, 150.0) as usize;
     let order_influence = (1.0 - r).powf(3.0);
     let memory_influence = 4.0 * r * (1.0 - r);
@@ -885,7 +892,16 @@ pub fn get_file_scores(
             let order_w = (-((fwd_dist - 1.0).powi(2)) / (2.0 * sigma * sigma)).exp();
 
             let recency_penalty = if Some(file.id) == data.last_picked_id {
-                0.0
+                if file
+                    .bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.as_ref())
+                    .is_some()
+                {
+                    0.3
+                } else {
+                    0.0
+                }
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
                     1.0 - (pos as f64 / recency_window as f64)
