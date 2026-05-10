@@ -97,6 +97,34 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
     const parentRef = useRef<HTMLDivElement>(null);
     const animationFrameRef = useRef<number | null>(null);
 
+    // ── Pending folder-bookmark state ──────────────────────────────────────
+    // We keep BOTH a React state (for re-render / visual indicator) and a ref
+    // (for the confirmation handler, which would otherwise read a stale closure
+    // from the first click and never match on the second click).
+    const [pendingFolderBookmark, setPendingFolderBookmark] = useState<{
+      nodeId: string;
+      color: string | null;
+      isGlobal: boolean;
+    } | null>(null);
+    const pendingFolderBookmarkRef = useRef<{
+      nodeId: string;
+      color: string | null;
+      isGlobal: boolean;
+    } | null>(null);
+    const pendingTimeoutRef = useRef<number | null>(null);
+    // Timestamp of the last time we entered pending state, used to debounce
+    // the double-fire from ItemActions (mousedown + click on same interaction).
+    const pendingSetAtRef = useRef<number>(0);
+
+    // Keep ref in sync with state
+    const setPending = (
+      value: { nodeId: string; color: string | null; isGlobal: boolean } | null,
+    ) => {
+      pendingFolderBookmarkRef.current = value;
+      if (value !== null) pendingSetAtRef.current = performance.now();
+      setPendingFolderBookmark(value);
+    };
+
     // ------------------- Score state -------------------
     const [scoreMap, setScoreMap] = useState<Map<number, FileScore>>(new Map());
     const [visibleFactors, setVisibleFactors] = useState<Set<FactorKey>>(
@@ -293,8 +321,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       return result;
     }, [nodes, expandedMap]);
 
-    // getNodeHeight defined AFTER flatNodes so it has a valid closure over it.
-    // Also added flatNodes to its dependency array.
     const getNodeHeight = useCallback(
       (index: number) => {
         const node = flatNodes[index]?.node;
@@ -354,6 +380,48 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
 
       animationFrameRef.current = requestAnimationFrame(step);
     };
+
+    // ── Folder bookmark handler ────────────────────────────────────────────
+    // Folder bookmarks overwrite all children, so both local and global require
+    // a second click to confirm before applying.
+    // NOTE: We match on nodeId + isGlobal only (not color) because the second
+    // click cycles to the next color — we confirm whatever color is pending.
+    const handleFolderBookmark = (
+      node: FileTreeNode,
+      color: string | null,
+      isGlobal: boolean,
+    ) => {
+      const nodeId = getNodeId(node);
+      const current = pendingFolderBookmarkRef.current;
+
+      if (
+        current !== null &&
+        current.nodeId === nodeId &&
+        current.isGlobal === isGlobal
+      ) {
+        if (performance.now() - pendingSetAtRef.current < 200) return;
+        if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current);
+        const confirmedColor = current.color;
+        setPending(null);
+        const files = collectFilesUnder(node);
+        onBookmarkChangeBulk?.(files, confirmedColor, isGlobal);
+        return;
+      }
+
+      if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current);
+      setPending({ nodeId, color, isGlobal });
+      pendingTimeoutRef.current = window.setTimeout(() => {
+        setPending(null);
+      }, 3000);
+    };
+
+    useEffect(() => {
+      return () => {
+        if (animationFrameRef.current)
+          cancelAnimationFrame(animationFrameRef.current);
+        if (pendingTimeoutRef.current) clearTimeout(pendingTimeoutRef.current);
+      };
+    }, []);
 
     // ------------------- Expose methods -------------------
     useImperativeHandle(ref, () => ({
@@ -526,6 +594,14 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         : allChildrenExcluded(node);
       const isCurrent = node.file && currentFileId === node.file.id;
       const nodeHeight = node.file ? fileItemHeight : BASE_ITEM_HEIGHT;
+      const isPending = pendingFolderBookmark?.nodeId === getNodeId(node);
+
+      // Derive a tint colour from the pending bookmark colour (or a neutral
+      // fallback) so the indicator doesn't need an outline at all.
+      const pendingColor =
+        isPending && pendingFolderBookmark?.color
+          ? pendingFolderBookmark.color
+          : "var(--mantine-color-blue-5)";
 
       return (
         <Group
@@ -537,12 +613,19 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             minHeight: nodeHeight,
             maxHeight: nodeHeight,
             boxSizing: "border-box",
+            // Subtle left accent + faint background tint instead of an outline
+            borderLeft: isPending
+              ? `3px solid ${pendingColor}`
+              : "3px solid transparent",
             backgroundColor: isCurrent
               ? "var(--mantine-color-blue-light)"
-              : undefined,
+              : isPending
+                ? "color-mix(in srgb, currentColor 4%, transparent)"
+                : undefined,
             opacity: isExcluded ? 0.5 : 1,
             paddingTop: 4,
             paddingBottom: 4,
+            transition: "border-left-color 0.15s, background-color 0.15s",
           }}
           className="item-actions"
         >
@@ -604,15 +687,20 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             <ItemActions
               bookmarkColors={bookmarkColors}
               onOpenFolder={() => randomiserApi.openPath(node.path)}
-              onBookmarkChange={(color) => {
-                const files = collectFilesUnder(node);
-                onBookmarkChangeBulk?.(files, color, false);
-              }}
-              onBookmarkChangeGlobal={(color) => {
-                const files = collectFilesUnder(node);
-                onBookmarkChangeBulk?.(files, color, true);
-              }}
+              onBookmarkChange={(color) =>
+                handleFolderBookmark(node, color, false)
+              }
+              onBookmarkChangeGlobal={(color) =>
+                handleFolderBookmark(node, color, true)
+              }
               currentBookmark={(() => {
+                const nodeId = getNodeId(node);
+                if (pendingFolderBookmark?.nodeId === nodeId) {
+                  return {
+                    color: pendingFolderBookmark.color,
+                    isGlobal: pendingFolderBookmark.isGlobal,
+                  };
+                }
                 const files = collectFilesUnder(node);
                 if (!files.length) return undefined;
                 const first = files[0].bookmark;

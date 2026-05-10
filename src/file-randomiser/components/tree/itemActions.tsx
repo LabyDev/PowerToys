@@ -35,12 +35,18 @@ const ItemActions = ({
 
   // ------------------- Bookmark cycling -------------------
   const cycleBookmark = (event: React.MouseEvent) => {
-    if (!onBookmarkChange) return;
+    console.log("[cycleBookmark] called", {
+      onBookmarkChange: !!onBookmarkChange,
+      onBookmarkChangeGlobal: !!onBookmarkChangeGlobal,
+    });
+    if (!onBookmarkChange && !onBookmarkChangeGlobal) return;
+
     const cycle = [null, ...(bookmarkColors ?? [])];
     const currentColor = currentBookmark?.color ?? null;
     const currentIdx = cycle.indexOf(currentColor);
     const nextColor = cycle[(currentIdx + 1) % cycle.length];
-    if (event.shiftKey || currentBookmark?.isGlobal) {
+
+    if (event.shiftKey || currentBookmark?.isGlobal || !onBookmarkChange) {
       onBookmarkChangeGlobal?.(nextColor);
     } else {
       onBookmarkChange(nextColor);
@@ -99,7 +105,7 @@ const ItemActions = ({
           "red",
         )}
 
-      {onBookmarkChange && (
+      {(onBookmarkChange || onBookmarkChangeGlobal) && (
         <Tooltip
           label={t("fileRandomiser.itemActions.bookmark")}
           withArrow
