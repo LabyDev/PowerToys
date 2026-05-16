@@ -1,5 +1,6 @@
 use crate::models::{DebugFlags, FileSorterState};
 use std::sync::Mutex;
+mod fileauditorcommands;
 mod filerandomisercommands;
 mod filesortercommands;
 pub mod models;
@@ -84,7 +85,12 @@ pub fn run() {
             filesortercommands::include_path,
             filesortercommands::exclude_path,
             filesortercommands::force_target,
-            filesortercommands::reveal_in_explorer
+            filesortercommands::reveal_in_explorer,
+            // File auditor
+            fileauditorcommands::pick_audit_folder,
+            fileauditorcommands::audit_list_files,
+            fileauditorcommands::open_audit_file,
+            fileauditorcommands::delete_to_trash
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

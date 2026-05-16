@@ -1,5 +1,21 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use serde::{Deserialize, Serialize};
 use tauri_plugin_dialog::FilePath;
+
+pub fn hash_from_meta(meta: &std::fs::Metadata) -> u64 {
+    let modified = meta
+        .modified()
+        .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let mut hasher = DefaultHasher::new();
+    meta.len().hash(&mut hasher);
+    modified.hash(&mut hasher);
+    hasher.finish()
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

@@ -7,6 +7,7 @@ import FileRandomiserSettings from "../settings/filerandomiserSettings";
 import Settings from "../settings/settings";
 import { FileRandomiserProvider } from "../hooks/fileRandomiserStateProvider";
 import FileSorter from "../../file-sorter/fileSorter";
+import FileAuditor from "../../file-auditor/fileAuditor";
 
 export function App() {
   const location = useLocation();
@@ -62,6 +63,14 @@ export function App() {
                 element={
                   <PageWrapper>
                     <FileSorter />
+                  </PageWrapper>
+                }
+              />
+              <Route
+                path="/FileAuditor"
+                element={
+                  <PageWrapper>
+                    <FileAuditor />
                   </PageWrapper>
                 }
               />

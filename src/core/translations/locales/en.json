@@ -3,7 +3,21 @@
     "appTitle": "PowerToys",
     "fileRandomiserButton": "File Randomiser",
     "fileSorterButton": "File Sorter",
+    "fileAuditorButton": "File Auditor",
     "settingsButton": "Settings"
+  },
+  "fileAuditor": {
+    "title": "File Auditor",
+    "description": "Traverse a folder file-by-file. Use WASD + 1–5 to navigate, bookmark, or delete.",
+    "pickFolder": "Pick Folder",
+    "changeFolder": "Change Folder",
+    "filesFound": "{{count}} files found",
+    "startAudit": "Start Audit",
+    "stopAudit": "Stop [Esc]",
+    "clearBookmark": "[0] clear",
+    "keyPrev": "[A] Prev",
+    "keyNext": "[D] Next",
+    "keyDelete": "[S] Delete"
   },
   "fileRandomiser": {
     "title": "Randomise Files",

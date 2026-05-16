@@ -2,6 +2,7 @@ import { Card, Flex, Image, Button, Stack, Text } from "@mantine/core";
 import {
   ShuffleIcon,
   SortAscendingIcon,
+  MagnifyingGlassIcon,
   GearSixIcon,
 } from "@phosphor-icons/react";
 import { NavLink } from "react-router";
@@ -74,6 +75,15 @@ function App() {
             leftSection={<SortAscendingIcon />}
           >
             {t("mainPage.fileSorterButton")}
+          </Button>
+
+          <Button
+            fullWidth
+            component={NavLink}
+            to="/FileAuditor"
+            leftSection={<MagnifyingGlassIcon />}
+          >
+            {t("mainPage.fileAuditorButton")}
           </Button>
 
           <Button

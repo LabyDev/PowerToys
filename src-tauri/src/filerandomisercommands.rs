@@ -3,6 +3,7 @@ use crate::models::{
     SavedPath,
 };
 use crate::models::{FilterAction, RandomiserPreset};
+use crate::models::common::hash_from_meta;
 use crate::setting_commands::get_app_settings;
 use std::collections::HashMap;
 use chrono::Utc;
@@ -241,22 +242,6 @@ pub fn crawl_paths(
         false
     }
 
-    fn hash_from_meta(meta: &std::fs::Metadata) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-
-        let modified = meta
-            .modified()
-            .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-
-        let mut hasher = DefaultHasher::new();
-        meta.len().hash(&mut hasher);
-        modified.hash(&mut hasher);
-        hasher.finish()
-    }
 
     // Collect all files
     // Collect (path, hash) together so metadata is only read once

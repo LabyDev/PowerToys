@@ -103,6 +103,14 @@ const FileRandomiser = () => {
     }
   }, [settings.fileRandomiser.allowProcessTracking]);
 
+  // Re-apply bookmarks whenever globalBookmarks loads or changes (e.g. after File Auditor updates them)
+  useEffect(() => {
+    setData((prev) => ({
+      ...prev,
+      files: applyBookmarks(prev.files, lastAppliedPresetRef.current?.bookmarks),
+    }));
+  }, [globalBookmarks]);
+
   useEffect(() => {
     const preset = lastAppliedPresetRef.current;
     setPresetState((p) => ({

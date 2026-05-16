@@ -1,0 +1,23 @@
+.audit-fullscreen {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  height: 92vh;
+  gap: 1.5rem;
+}
+
+.audit-file-info {
+  flex: 1;
+  justify-content: center;
+}
+
+.audit-filename,
+.audit-filepath {
+  word-break: break-all;
+}
+
+.audit-setup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
