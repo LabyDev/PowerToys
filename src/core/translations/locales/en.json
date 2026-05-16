@@ -178,6 +178,28 @@
         "75": "75",
         "100": "100"
       }
+    },
+    "bookmarkPreference": {
+      "title": "Bookmark Preference",
+      "description": "Give bookmarked files a higher chance of being picked. Set a weight per colour for local and global bookmarks — 1.0 is neutral, higher values increase pick chance.",
+      "checkboxLabel": "Enable bookmark preference",
+      "localLabel": "Local",
+      "globalLabel": "Global"
+    },
+    "pathWeights": {
+      "title": "Path Weights",
+      "description": "Apply per-file and per-folder pick probability multipliers. Set weights from the file tree using the weight button on each item.",
+      "checkboxLabel": "Enable path weights",
+      "localLabel": "Local (preset)",
+      "globalLabel": "Global",
+      "shiftHint": "Shift-click to switch local / global",
+      "resetTitle": "Reset to 1×",
+      "buttonTitle": "Weight (Shift: global)"
+    },
+    "debugScores": {
+      "title": "Debug Scores",
+      "description": "Show pick probability scores inline in the file tree. Useful for verifying bookmark weights and randomness behaviour.",
+      "checkboxLabel": "Show scores in file tree"
     }
   }
 }

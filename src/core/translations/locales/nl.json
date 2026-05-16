@@ -178,6 +178,28 @@
         "75": "75",
         "100": "100"
       }
+    },
+    "bookmarkPreference": {
+      "title": "Bladwijzervoorkeur",
+      "description": "Geef gebookmarkte bestanden een hogere kans om geselecteerd te worden. Stel een gewicht per kleur in voor lokale en globale bladwijzers — 1,0 is neutraal, hogere waarden verhogen de selectiekans.",
+      "checkboxLabel": "Bladwijzervoorkeur inschakelen",
+      "localLabel": "Lokaal",
+      "globalLabel": "Globaal"
+    },
+    "pathWeights": {
+      "title": "Padgewichten",
+      "description": "Pas selectiekans-vermenigvuldigers toe per bestand en per map. Gewichten zijn instelbaar via de gewichtsknop in de bestandsboom.",
+      "checkboxLabel": "Padgewichten inschakelen",
+      "localLabel": "Lokaal (preset)",
+      "globalLabel": "Globaal",
+      "shiftHint": "Shift-klikken om te wisselen tussen lokaal / globaal",
+      "resetTitle": "Terugzetten naar 1×",
+      "buttonTitle": "Gewicht (Shift: globaal)"
+    },
+    "debugScores": {
+      "title": "Debug-scores",
+      "description": "Toon selectiekans-scores inline in de bestandsboom. Handig voor het controleren van bladwijzergewichten en willekeurig gedrag.",
+      "checkboxLabel": "Scores tonen in bestandsboom"
     }
   }
 }

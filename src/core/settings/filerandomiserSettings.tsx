@@ -81,11 +81,9 @@ const FileRandomiserSettings = () => {
 
   const saveSettings = async (updated: AppSettings): Promise<void> => {
     try {
-      console.log("saving settings:", JSON.stringify(updated.fileRandomiser));
       const result = await invoke<AppSettings>("set_app_settings", {
         settings: updated,
       });
-      console.log("returned settings:", JSON.stringify(result.fileRandomiser));
       setSettings(result);
     } catch (err) {
       console.error("Failed to save settings:", err);
@@ -125,7 +123,6 @@ const FileRandomiserSettings = () => {
   // ---- Show scores toggle ----
 
   const handleShowScoresToggle = async (checked: boolean): Promise<void> => {
-    console.log("toggle clicked, checked:", checked);
     await saveSettings({
       ...settings,
       fileRandomiser: {
@@ -267,15 +264,17 @@ const FileRandomiserSettings = () => {
 
           {/* Bookmark preference */}
           <Stack gap="sm">
-            <Title order={4}>Bookmark preference</Title>
+            <Title order={4}>
+              {t("fileRandomiserSettings.bookmarkPreference.title")}
+            </Title>
             <Text size="sm" c="dimmed">
-              Give bookmarked files a higher chance of being picked. Set a
-              weight per colour for local and global bookmarks — 1.0 is neutral,
-              higher values increase pick chance.
+              {t("fileRandomiserSettings.bookmarkPreference.description")}
             </Text>
             <Checkbox
               checked={pref?.enabled ?? false}
-              label="Enable bookmark preference"
+              label={t(
+                "fileRandomiserSettings.bookmarkPreference.checkboxLabel",
+              )}
               onChange={(e) =>
                 handleBookmarkPrefToggle(e.currentTarget.checked)
               }
@@ -315,7 +314,9 @@ const FileRandomiserSettings = () => {
                             c="dimmed"
                             style={{ width: 42, flexShrink: 0 }}
                           >
-                            Local
+                            {t(
+                              "fileRandomiserSettings.bookmarkPreference.localLabel",
+                            )}
                           </Text>
                           <Slider
                             value={entry.local}
@@ -348,7 +349,9 @@ const FileRandomiserSettings = () => {
                             c="dimmed"
                             style={{ width: 42, flexShrink: 0 }}
                           >
-                            Global
+                            {t(
+                              "fileRandomiserSettings.bookmarkPreference.globalLabel",
+                            )}
                           </Text>
                           <Slider
                             value={entry.global}
@@ -386,14 +389,15 @@ const FileRandomiserSettings = () => {
 
           {/* Path weights */}
           <Stack gap="sm">
-            <Title order={4}>Path weights</Title>
+            <Title order={4}>
+              {t("fileRandomiserSettings.pathWeights.title")}
+            </Title>
             <Text size="sm" c="dimmed">
-              Apply per-file and per-folder pick probability multipliers. Set
-              weights from the file tree using the weight button on each item.
+              {t("fileRandomiserSettings.pathWeights.description")}
             </Text>
             <Checkbox
               checked={settings.fileRandomiser.pathWeightsEnabled ?? false}
-              label="Enable path weights"
+              label={t("fileRandomiserSettings.pathWeights.checkboxLabel")}
               onChange={(e) =>
                 saveSettings({
                   ...settings,
@@ -412,14 +416,15 @@ const FileRandomiserSettings = () => {
 
           {/* Debug scores */}
           <Stack gap="sm">
-            <Title order={4}>Debug scores</Title>
+            <Title order={4}>
+              {t("fileRandomiserSettings.debugScores.title")}
+            </Title>
             <Text size="sm" c="dimmed">
-              Show pick probability scores inline in the file tree. Useful for
-              verifying bookmark weights and randomness behaviour.
+              {t("fileRandomiserSettings.debugScores.description")}
             </Text>
             <Checkbox
               checked={settings.fileRandomiser.showScores ?? false}
-              label="Show scores in file tree"
+              label={t("fileRandomiserSettings.debugScores.checkboxLabel")}
               onChange={(e) => handleShowScoresToggle(e.currentTarget.checked)}
               size="md"
               color="violet"

@@ -35,10 +35,6 @@ const ItemActions = ({
 
   // ------------------- Bookmark cycling -------------------
   const cycleBookmark = (event: React.MouseEvent) => {
-    console.log("[cycleBookmark] called", {
-      onBookmarkChange: !!onBookmarkChange,
-      onBookmarkChangeGlobal: !!onBookmarkChangeGlobal,
-    });
     if (!onBookmarkChange && !onBookmarkChangeGlobal) return;
 
     const cycle = [null, ...(bookmarkColors ?? [])];

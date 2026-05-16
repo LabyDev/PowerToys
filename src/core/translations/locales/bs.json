@@ -178,6 +178,28 @@
         "75": "75",
         "100": "100"
       }
+    },
+    "bookmarkPreference": {
+      "title": "Postavke oznaka",
+      "description": "Daj datotekama s oznakama veću šansu da budu odabrane. Postavi težinu po boji za lokalne i globalne oznake — 1,0 je neutralno, veće vrijednosti povećavaju šansu odabira.",
+      "checkboxLabel": "Omogući postavke oznaka",
+      "localLabel": "Lokalno",
+      "globalLabel": "Globalno"
+    },
+    "pathWeights": {
+      "title": "Težine putanja",
+      "description": "Primijeni multiplikatore vjerovatnoće odabira po datoteci i folderu. Težine se postavljaju putem dugmeta za težinu u stablu datoteka.",
+      "checkboxLabel": "Omogući težine putanja",
+      "localLabel": "Lokalno (preset)",
+      "globalLabel": "Globalno",
+      "shiftHint": "Shift-klik za prebacivanje lokalno / globalno",
+      "resetTitle": "Resetuj na 1×",
+      "buttonTitle": "Težina (Shift: globalno)"
+    },
+    "debugScores": {
+      "title": "Dijagnostički rezultati",
+      "description": "Prikaži bodove vjerovatnoće odabira u stablu datoteka. Korisno za provjeru težina oznaka i nasumičnog ponašanja.",
+      "checkboxLabel": "Prikaži bodove u stablu datoteka"
     }
   }
 }

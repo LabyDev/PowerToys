@@ -178,6 +178,28 @@
         "75": "75",
         "100": "100"
       }
+    },
+    "bookmarkPreference": {
+      "title": "Preferencja zakładek",
+      "description": "Daj zaznaczonym plikom większą szansę na wybranie. Ustaw wagę dla każdego koloru zakładek lokalnych i globalnych — 1,0 jest neutralne, wyższe wartości zwiększają szansę wyboru.",
+      "checkboxLabel": "Włącz preferencję zakładek",
+      "localLabel": "Lokalne",
+      "globalLabel": "Globalne"
+    },
+    "pathWeights": {
+      "title": "Wagi ścieżek",
+      "description": "Zastosuj mnożniki prawdopodobieństwa wyboru dla plików i folderów. Wagi ustawia się przyciskiem wagi w drzewie plików.",
+      "checkboxLabel": "Włącz wagi ścieżek",
+      "localLabel": "Lokalne (preset)",
+      "globalLabel": "Globalne",
+      "shiftHint": "Shift-kliknij, aby przełączyć lokalne / globalne",
+      "resetTitle": "Resetuj do 1×",
+      "buttonTitle": "Waga (Shift: globalne)"
+    },
+    "debugScores": {
+      "title": "Wyniki diagnostyki",
+      "description": "Pokaż wyniki prawdopodobieństwa wyboru w drzewie plików. Przydatne do weryfikacji wag zakładek i losowości.",
+      "checkboxLabel": "Pokaż wyniki w drzewie plików"
     }
   }
 }

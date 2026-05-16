@@ -178,6 +178,28 @@
         "75": "75",
         "100": "100"
       }
+    },
+    "bookmarkPreference": {
+      "title": "Lesezeichen-Präferenz",
+      "description": "Gib mit Lesezeichen versehenen Dateien eine höhere Auswahlwahrscheinlichkeit. Stelle ein Gewicht pro Farbe für lokale und globale Lesezeichen ein — 1,0 ist neutral, höhere Werte erhöhen die Auswahlchance.",
+      "checkboxLabel": "Lesezeichen-Präferenz aktivieren",
+      "localLabel": "Lokal",
+      "globalLabel": "Global"
+    },
+    "pathWeights": {
+      "title": "Pfadgewichtungen",
+      "description": "Wende datei- und ordnerspezifische Auswahlmultiplikatoren an. Gewichtungen können im Dateibaum über die Gewichtungsschaltfläche gesetzt werden.",
+      "checkboxLabel": "Pfadgewichtungen aktivieren",
+      "localLabel": "Lokal (Preset)",
+      "globalLabel": "Global",
+      "shiftHint": "Umschalt-Klick zum Wechsel lokal / global",
+      "resetTitle": "Auf 1× zurücksetzen",
+      "buttonTitle": "Gewichtung (Umschalt: global)"
+    },
+    "debugScores": {
+      "title": "Debug-Punktzahlen",
+      "description": "Zeige Auswahlwahrscheinlichkeitswerte direkt im Dateibaum an. Nützlich zur Überprüfung von Lesezeichen-Gewichtungen und Zufallsverhalten.",
+      "checkboxLabel": "Punktzahlen im Dateibaum anzeigen"
     }
   }
 }

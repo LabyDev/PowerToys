@@ -54,7 +54,7 @@ The interface includes:
 
 ### Toolbar
 
-- Add path
+- Add path (supports selecting multiple folders at once)
 - Crawl
 - Next file
 - Random file
@@ -102,6 +102,17 @@ Available colors:
 
 Bookmarks can be referenced directly in filters.
 
+Bookmarking a **folder** applies the color to all files inside it. Because this is a destructive bulk action, a second click is required to confirm. The pending state is indicated by a left border highlight and clears automatically after 3 seconds.
+
+### Bookmark Preference
+
+Bookmarked files can be given a higher pick probability.
+
+- Enabled in File Randomiser Settings
+- Set a weight multiplier per color for local (preset-scoped) and global bookmarks
+- 1.0 is neutral; higher values increase the chance of that color being picked
+- Applies on top of the randomness level
+
 ### Hidden Bookmark Filter Syntax
 
 Trigger:
@@ -140,6 +151,17 @@ Examples:
 - Shuffle disabled results in sequential traversal
 
 Sequential mode respects current filters and exclusions.
+
+### Path Weights
+
+Individual files and folders can be given a pick probability multiplier.
+
+- Enabled in File Randomiser Settings
+- Weight button appears on each item in the file tree when enabled
+- Range: 0.1× to 5×, default 1× (neutral)
+- Click the weight button to set a local (preset-scoped) weight
+- Shift-click to set a global weight
+- Folder weights apply as a multiplier for all files inside that folder
 
 ### Randomness Level
 
