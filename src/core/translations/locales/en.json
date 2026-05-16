@@ -14,10 +14,19 @@
     "filesFound": "{{count}} files found",
     "startAudit": "Start Audit",
     "stopAudit": "Stop [Esc]",
-    "clearBookmark": "[0] clear",
-    "keyPrev": "[A] Prev",
-    "keyNext": "[D] Next",
-    "keyDelete": "[S] Delete"
+    "clearBookmark": "Clear bookmark",
+    "keyPrev": "Prev",
+    "keyNext": "Next",
+    "keyDelete": "Delete",
+    "bookmarked": "Bookmarked",
+    "rootFolder": "root",
+    "autoOpen": "Auto-open files",
+    "autoOpenDescription": "Automatically open each file in its default app as you navigate",
+    "resumeSession": "Resume Session",
+    "resumeFrom": "File {{index}} of {{total}}",
+    "resumeFolder": "{{path}}",
+    "discardSession": "Start Fresh",
+    "resume": "Resume"
   },
   "fileRandomiser": {
     "title": "Randomise Files",
