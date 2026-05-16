@@ -276,6 +276,42 @@ When sorting:
 
 The last operation can be restored at any time.
 
+## Building
+
+### Windows prerequisites
+
+- [Rust](https://rustup.rs/)
+- [Bun](https://bun.sh/)
+- [Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (MSVC + Windows SDK)
+- [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (usually pre-installed on Windows 10/11)
+
+### WSL2 prerequisites (Linux targets)
+
+Install these once inside your WSL2 distribution:
+
+```bash
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Bun
+curl -fsSL https://bun.sh/install | bash
+
+# Tauri v2 system dependencies (Ubuntu/Debian)
+sudo apt update && sudo apt install -y \
+  libwebkit2gtk-4.1-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev \
+  patchelf
+```
+
+### Running the release build
+
+```bash
+bun run release
+```
+
+Builds the Windows installer and all Linux packages, then copies the artifacts to `release/`.
+
 ## Support the Project
 
 If you find this project useful and would like to support its development, you can do so here:
