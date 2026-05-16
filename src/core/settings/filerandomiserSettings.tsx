@@ -384,6 +384,32 @@ const FileRandomiserSettings = () => {
 
           <Divider />
 
+          {/* Path weights */}
+          <Stack gap="sm">
+            <Title order={4}>Path weights</Title>
+            <Text size="sm" c="dimmed">
+              Apply per-file and per-folder pick probability multipliers. Set
+              weights from the file tree using the weight button on each item.
+            </Text>
+            <Checkbox
+              checked={settings.fileRandomiser.pathWeightsEnabled ?? false}
+              label="Enable path weights"
+              onChange={(e) =>
+                saveSettings({
+                  ...settings,
+                  fileRandomiser: {
+                    ...settings.fileRandomiser,
+                    pathWeightsEnabled: e.currentTarget.checked,
+                  },
+                })
+              }
+              size="md"
+              color="orange"
+            />
+          </Stack>
+
+          <Divider />
+
           {/* Debug scores */}
           <Stack gap="sm">
             <Title order={4}>Debug scores</Title>

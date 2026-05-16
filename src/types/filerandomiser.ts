@@ -24,6 +24,7 @@ export type RandomiserPreset = {
   filterRules: FilterRule[];
   shuffle?: boolean;
   bookmarks: Bookmark[];
+  pathWeights?: Record<string, number>;
 };
 
 /** State of current preset in UI */

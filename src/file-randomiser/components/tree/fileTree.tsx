@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Group, Text } from "@mantine/core";
+import { ActionIcon, Box, Group, Popover, Slider, Text } from "@mantine/core";
 import { CaretRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import {
   useState,
@@ -49,6 +49,12 @@ interface FileTreeProps {
     isGlobal: boolean,
   ) => void;
   bookmarkColors?: string[];
+  showWeights?: boolean;
+  // path → multiplier; local (preset-scoped) and global weights
+  localPathWeights?: Record<string, number>;
+  globalPathWeights?: Record<string, number>;
+  onLocalPathWeightChange?: (path: string, weight: number) => void;
+  onGlobalPathWeightChange?: (path: string, weight: number) => void;
 }
 
 export interface FileTreeHandle {
@@ -89,8 +95,13 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       freshCrawl = false,
       treeCollapsed = false,
       showScores = false,
+      showWeights = false,
       onBookmarkChangeBulk,
       bookmarkColors,
+      localPathWeights = {},
+      globalPathWeights = {},
+      onLocalPathWeightChange,
+      onGlobalPathWeightChange,
     },
     ref,
   ) => {
@@ -337,13 +348,10 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       overscan: 10,
     });
 
-    // Force virtualizer to re-measure all items whenever the item height
-    // changes (showScores toggled, or a factor turned on/off).
     useEffect(() => {
       virtualizer.measure();
     }, [fileItemHeight]);
 
-    // Callback ref passed to each row div so the virtualizer reads actual DOM height
     const measureElement = useCallback(
       (el: Element | null) => {
         if (el) virtualizer.measureElement(el);
@@ -363,7 +371,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       const distance = target - start;
       const startTime = performance.now();
 
-      // Ease in-out cubic
       const ease = (t: number) =>
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -429,14 +436,11 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
         const scroller = parentRef.current;
         if (!scroller) return;
 
-        // Build the new map synchronously from the ref
         const newMap = { ...fileTreeExpandedMapRef.current };
         expandParents(fileId, nodes, newMap);
 
-        // Update state so the tree re-renders
         setExpandedMap(newMap);
 
-        // Compute scroll position using the new map directly
         const recomputed = flattenTree(nodes, 0, newMap);
         const index = recomputed.findIndex((n) => n.node.file?.id === fileId);
         if (index === -1) return;
@@ -585,6 +589,136 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       );
     };
 
+    // ------------------- Path weight helpers -------------------
+    // Returns the most-specific matching weight for a given path.
+    // Exact match wins, then longest prefix match.
+    const getEffectiveWeight = (
+      nodePath: string,
+      weights: Record<string, number>,
+    ): number => {
+      if (weights[nodePath] !== undefined) return weights[nodePath];
+      let best: number | undefined;
+      let bestLen = -1;
+      for (const [key, val] of Object.entries(weights)) {
+        if (nodePath.startsWith(key) && key.length > bestLen) {
+          best = val;
+          bestLen = key.length;
+        }
+      }
+      return best ?? 1.0;
+    };
+
+    const WeightButton = ({ nodePath }: { nodePath: string }) => {
+      const local = getEffectiveWeight(nodePath, localPathWeights);
+      const global = getEffectiveWeight(nodePath, globalPathWeights);
+
+      const [localVal, setLocalVal] = useState(localPathWeights[nodePath] ?? 1.0);
+      const [globalVal, setGlobalVal] = useState(globalPathWeights[nodePath] ?? 1.0);
+      const [open, setOpen] = useState(false);
+      const [mode, setMode] = useState<"local" | "global">("local");
+
+      useEffect(() => {
+        setLocalVal(localPathWeights[nodePath] ?? 1.0);
+      }, [localPathWeights[nodePath]]);
+      useEffect(() => {
+        setGlobalVal(globalPathWeights[nodePath] ?? 1.0);
+      }, [globalPathWeights[nodePath]]);
+
+      const isLocalModified = (localPathWeights[nodePath] ?? 1.0) !== 1.0;
+      const isGlobalModified = (globalPathWeights[nodePath] ?? 1.0) !== 1.0;
+      const isModified = isLocalModified || isGlobalModified;
+      const displayVal = isModified ? Math.max(local, global).toFixed(1) : "1";
+
+      const sliderVal = mode === "local" ? localVal : globalVal;
+      const setSliderVal = mode === "local" ? setLocalVal : setGlobalVal;
+      const onChangeEnd = (v: number) => {
+        if (mode === "local") onLocalPathWeightChange?.(nodePath, v);
+        else onGlobalPathWeightChange?.(nodePath, v);
+      };
+      const onReset = () => {
+        if (mode === "local") {
+          setLocalVal(1.0);
+          onLocalPathWeightChange?.(nodePath, 1.0);
+        } else {
+          setGlobalVal(1.0);
+          onGlobalPathWeightChange?.(nodePath, 1.0);
+        }
+      };
+
+      return (
+        <Popover
+          opened={open}
+          onChange={setOpen}
+          position="left"
+          withArrow
+          shadow="md"
+          clickOutsideEvents={["mousedown"]}
+        >
+          <Popover.Target>
+            <ActionIcon
+              variant={isModified ? "light" : "subtle"}
+              color={isModified ? "teal" : "gray"}
+              className={`item-action ${Math.max(local, global) > 1.0 ? "item-action--bookmark" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMode(e.shiftKey ? "global" : "local");
+                setOpen((o) => !o);
+              }}
+              title="Weight (Shift: global)"
+            >
+              <Text size="xs" ff="monospace" fw={600}>
+                {displayVal}×
+              </Text>
+            </ActionIcon>
+          </Popover.Target>
+
+          <Popover.Dropdown
+            onClick={(e) => e.stopPropagation()}
+            style={{ minWidth: 220 }}
+          >
+            <Group justify="space-between" mb={8}>
+              <Text size="xs" fw={600} style={{ wordBreak: "break-all" }}>
+                {nodePath.split(/[\\/]/).pop()}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {mode === "local" ? "Local (preset)" : "Global"}
+              </Text>
+            </Group>
+
+            <Group gap="xs" align="center" wrap="nowrap">
+              <Slider
+                value={sliderVal}
+                onChange={setSliderVal}
+                onChangeEnd={onChangeEnd}
+                min={0.1}
+                max={5}
+                step={0.1}
+                style={{ flex: 1 }}
+                color={mode === "local" ? "yellow" : "blue"}
+                label={(v) => `${v.toFixed(1)}×`}
+              />
+              <Text size="xs" ff="monospace" style={{ width: 32, flexShrink: 0, textAlign: "right" }}>
+                {sliderVal.toFixed(1)}×
+              </Text>
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                color="gray"
+                onClick={onReset}
+                title="Reset to 1.0"
+                disabled={sliderVal === 1.0}
+              >
+                ↺
+              </ActionIcon>
+            </Group>
+            <Text size="9px" c="dimmed" mt={6}>
+              Shift-click to switch local / global
+            </Text>
+          </Popover.Dropdown>
+        </Popover>
+      );
+    };
+
     // ------------------- Render -------------------
     const renderNode = ({ node, depth }: FlattenedNode) => {
       const id = getNodeId(node);
@@ -665,6 +799,11 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
             {showScores && node.file && renderScoreRows(node.file)}
           </Box>
 
+          {/* File weight */}
+          {showWeights && node.file && (
+            <WeightButton nodePath={node.file.path as unknown as string} />
+          )}
+
           {/* File actions */}
           {node.file && (
             <ItemActions
@@ -681,6 +820,9 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
               currentBookmark={node.file.bookmark || undefined}
             />
           )}
+
+          {/* Folder weight */}
+          {showWeights && node.children && <WeightButton nodePath={node.path} />}
 
           {/* Folder actions — with recursive bookmark support */}
           {node.children && (

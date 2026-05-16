@@ -32,6 +32,8 @@ export type AppSettings = {
     globalBookmarks: Bookmark[];
     bookmarkPreference: BookmarkPreference;
     showScores: boolean;
+    pathWeights?: Record<string, number>;
+    pathWeightsEnabled?: boolean;
   };
   bookmarkColors: BookmarkColorOption[];
 };

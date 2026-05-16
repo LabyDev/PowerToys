@@ -54,6 +54,8 @@ pub struct AppStateData {
     pub last_picked_index: Option<usize>,
     pub pick_counts: HashMap<u64, u32>,
     pub recency_list: Vec<u64>,
+    #[serde(default)]
+    pub preset_path_weights: HashMap<String, f64>,
 }
 
 impl Default for AppStateData {
@@ -68,6 +70,7 @@ impl Default for AppStateData {
             last_picked_index: None,
             pick_counts: HashMap::new(),
             recency_list: vec![],
+            preset_path_weights: HashMap::new(),
         }
     }
 }
@@ -82,6 +85,8 @@ pub struct RandomiserPreset {
     pub shuffle: Option<bool>,
     #[serde(default)]
     pub bookmarks: Vec<Bookmark>,
+    #[serde(default)]
+    pub path_weights: HashMap<String, f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

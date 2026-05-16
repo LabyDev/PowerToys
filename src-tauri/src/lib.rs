@@ -71,6 +71,7 @@ pub fn run() {
             filerandomisercommands::save_preset,
             filerandomisercommands::open_path,
             filerandomisercommands::get_file_scores,
+            filerandomisercommands::set_preset_path_weights,
             filerandomisercommands::update_file_bookmark,
             filerandomisercommands::update_file_bookmarks_bulk,
             // File sorter

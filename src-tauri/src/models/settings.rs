@@ -42,6 +42,8 @@ pub struct FileRandomiserSettings {
     pub global_bookmarks: Vec<Bookmark>,
     pub bookmark_preference: BookmarkPreference,
     pub show_scores: bool,
+    pub path_weights: HashMap<String, f64>,
+    pub path_weights_enabled: bool,
 }
 
 impl Default for FileRandomiserSettings {
@@ -52,6 +54,8 @@ impl Default for FileRandomiserSettings {
             global_bookmarks: vec![],
             bookmark_preference: BookmarkPreference::default(),
             show_scores: false,
+            path_weights: HashMap::new(),
+            path_weights_enabled: false,
         }
     }
 }

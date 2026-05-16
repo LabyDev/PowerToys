@@ -69,3 +69,7 @@ export const pickRandomFile = () => {
 export const openPath = (path: string) => {
   return invoke("open_path", { path });
 };
+
+export const setPresetPathWeights = (weights: Record<string, number>) => {
+  return invoke("set_preset_path_weights", { weights });
+};

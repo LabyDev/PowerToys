@@ -30,7 +30,7 @@ import PresetControls from "./components/presetControls";
 import Section from "../common/section";
 
 const FileRandomiser = () => {
-  const { settings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
+  const { settings, setSettings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
   const { t } = useTranslation();
 
   const {
@@ -478,6 +478,8 @@ const FileRandomiser = () => {
       bookmarks: preset.bookmarks,
     });
 
+    randomiserApi.setPresetPathWeights(preset.pathWeights ?? {});
+
     await updateFiltersAndCrawl({
       ...data,
       paths: preset.paths,
@@ -500,6 +502,7 @@ const FileRandomiser = () => {
       filterRules: data.filterRules,
       bookmarks: preset?.bookmarks ?? [],
       shuffle,
+      pathWeights: preset?.pathWeights ?? {},
     } as RandomiserPreset);
 
     // Update ref
@@ -510,6 +513,7 @@ const FileRandomiser = () => {
       filterRules: data.filterRules,
       bookmarks: preset?.bookmarks ?? [],
       shuffle,
+      pathWeights: preset?.pathWeights ?? {},
     };
 
     setPresetState((p) => ({
@@ -532,6 +536,7 @@ const FileRandomiser = () => {
       filterRules: data.filterRules,
       bookmarks: presetState?.bookmarks ?? [],
       shuffle,
+      pathWeights: lastAppliedPresetRef.current?.pathWeights ?? {},
     };
 
     await presetApi.savePreset(newPreset);
@@ -839,6 +844,7 @@ const FileRandomiser = () => {
                 bookmarkColors={bookmarkColorHexes}
                 setFreshCrawl={setFreshCrawl}
                 showScores={showScores}
+                showWeights={settings.fileRandomiser.pathWeightsEnabled ?? false}
                 onExclude={async (file) => {
                   const rule = {
                     id: crypto.randomUUID(),
@@ -862,6 +868,36 @@ const FileRandomiser = () => {
                 freshCrawl={freshCrawl}
                 treeCollapsed={treeCollapsed}
                 onBookmarkChangeBulk={handleBookmarkChangeBulk}
+                // Pass these to FileTree:
+                localPathWeights={
+                  lastAppliedPresetRef.current?.pathWeights ?? {}
+                }
+                globalPathWeights={settings.fileRandomiser.pathWeights ?? {}}
+                onLocalPathWeightChange={(path, weight) => {
+                  const preset = lastAppliedPresetRef.current;
+                  const next = {
+                    ...(preset?.pathWeights ?? {}),
+                    [path]: weight,
+                  };
+                  if (preset)
+                    lastAppliedPresetRef.current = {
+                      ...preset,
+                      pathWeights: next,
+                    };
+                  randomiserApi.setPresetPathWeights(next);
+                  setPresetState((p) => ({ ...p, dirty: true }));
+                }}
+                onGlobalPathWeightChange={(path, weight) => {
+                  setSettings({
+                    fileRandomiser: {
+                      ...settings.fileRandomiser,
+                      pathWeights: {
+                        ...(settings.fileRandomiser.pathWeights ?? {}),
+                        [path]: weight,
+                      },
+                    },
+                  });
+                }}
               />
             </Box>
           </Section>

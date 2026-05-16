@@ -4,6 +4,7 @@ use crate::models::{
 };
 use crate::models::{FilterAction, RandomiserPreset};
 use crate::setting_commands::get_app_settings;
+use std::collections::HashMap;
 use chrono::Utc;
 use ignore::WalkBuilder;
 use rand::distr::weighted::WeightedIndex;
@@ -461,6 +462,26 @@ fn debug_log(flags: &crate::models::DebugFlags, msg: &str) {
         }
     }
 }
+
+fn find_path_weight(path: &str, weights: &HashMap<String, f64>) -> f64 {
+    weights.get(path).copied().unwrap_or_else(|| {
+        weights
+            .iter()
+            .filter(|(k, _)| path.starts_with(k.as_str()))
+            .max_by_key(|(k, _)| k.len())
+            .map(|(_, v)| *v)
+            .unwrap_or(1.0)
+    })
+}
+
+#[tauri::command]
+pub fn set_preset_path_weights(
+    app_data: State<'_, Mutex<AppStateData>>,
+    weights: HashMap<String, f64>,
+) {
+    app_data.lock().unwrap().preset_path_weights = weights;
+}
+
 #[tauri::command]
 pub fn pick_random_file(
     app: tauri::AppHandle,
@@ -568,10 +589,22 @@ pub fn pick_random_file(
 
             let adjusted_bookmark = 1.0 + (bookmark_factor - 1.0) * bookmark_influence;
 
+            // Path weight — global × preset; most specific prefix wins in each map
+            let path_weight = if settings.file_randomiser.path_weights_enabled {
+                let path_str = match &file.path {
+                    FilePath::Path(p) => p.to_string_lossy().to_string(),
+                    FilePath::Url(u) => u.to_string(),
+                };
+                find_path_weight(&path_str, &settings.file_randomiser.path_weights)
+                    * find_path_weight(&path_str, &data.preset_path_weights)
+            } else {
+                1.0
+            };
+
             // --- Combine everything ---
             let base = 1.0 + order_w * order_influence * 10.0;
 
-            (base * memory_factor * adjusted_bookmark).max(1e-9)
+            (base * memory_factor * adjusted_bookmark * path_weight).max(1e-9)
         })
         .collect();
 
@@ -916,8 +949,19 @@ pub fn get_file_scores(
             let bookmark_factor = compute_bookmark_factor(file, &settings);
             let bookmark_influence = 1.0 - (r * 0.7);
             let adjusted_bookmark = 1.0 + (bookmark_factor - 1.0) * bookmark_influence;
+            let path_weight = if settings.file_randomiser.path_weights_enabled {
+                let path_str = match &file.path {
+                    FilePath::Path(p) => p.to_string_lossy().to_string(),
+                    FilePath::Url(u) => u.to_string(),
+                };
+                find_path_weight(&path_str, &settings.file_randomiser.path_weights)
+                    * find_path_weight(&path_str, &data.preset_path_weights)
+            } else {
+                1.0
+            };
+
             let base = 1.0 + order_w * order_influence * 10.0;
-            let total = (base * memory_factor * adjusted_bookmark).max(1e-9);
+            let total = (base * memory_factor * adjusted_bookmark * path_weight).max(1e-9);
 
             FileScore {
                 id: file.id,
