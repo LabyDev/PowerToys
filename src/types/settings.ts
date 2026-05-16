@@ -1,4 +1,4 @@
-import { Bookmark } from "./common";
+import { Bookmark, BookmarkColorOption } from "./common";
 
 /** Language options */
 export type LanguageOption = "en" | "nl" | "bs" | "de" | "pl";
@@ -15,11 +15,6 @@ export type ColorWeightEntry = {
 export type BookmarkPreference = {
   enabled: boolean;
   colors: Record<string, ColorWeightEntry>;
-};
-
-export type BookmarkColorOption = {
-  hex: string;
-  label: string;
 };
 
 export type AppSettings = {

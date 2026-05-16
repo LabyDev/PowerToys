@@ -18,6 +18,7 @@ import FileSorterToolbar from "./components/toolbar";
 import SortPreviewTree from "./components/sortPreviewTree";
 import ConsolePanel from "./components/consolePanel";
 import { FileSorterState } from "../types/filesorter";
+import { formatBytes } from "../utils/formatBytes";
 import { buildSortPreviewTree } from "../core/utilities/buildSortPreviewTree";
 import {
   getSortPreview,
@@ -176,32 +177,15 @@ const FileSorter = () => {
     }
   };
 
-  // Build preview tree
-  const previewTree = state.currentPath
-    ? buildSortPreviewTree(state.currentPath, state.files, state.preview)
-    : null;
-
-  const filteredPreviewTree = previewTree
+  const filteredPreviewTree = state.currentPath
     ? buildSortPreviewTree(
-        state.currentPath!,
+        state.currentPath,
         state.files.filter((f) =>
           f.name.toLowerCase().includes(query.toLowerCase()),
         ),
         state.preview,
       )
     : null;
-
-  const formatBytes = (bytes: number, locale = navigator.language) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return (
-      new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(
-        bytes / Math.pow(k, i),
-      ) + ` ${sizes[i]}`
-    );
-  };
 
   return (
     <Box p="md" h="92vh">

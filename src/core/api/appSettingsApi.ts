@@ -1,45 +1,40 @@
 import { invoke } from "@tauri-apps/api/core";
-import { AppSettings } from "../../types/settings";
+import {
+  AppSettings,
+  DarkModeOption,
+  LanguageOption,
+} from "../../types/settings";
 import { Bookmark } from "../../types/common";
 
-/**
- * Fetches the current application settings
- */
-export const getAppSettings = () => {
-  return invoke<AppSettings>("get_app_settings");
-};
+export const getAppSettings = () => invoke<AppSettings>("get_app_settings");
 
-/**
- * Updates the application settings
- */
-export const setAppSettings = (settings: AppSettings) => {
-  return invoke<void>("set_app_settings", { settings });
-};
+export const setAppSettings = (settings: AppSettings) =>
+  invoke<void>("set_app_settings", { settings });
 
-/**
- * Fetches the global bookmarks
- */
-export const getGlobalBookmarks = () => {
-  return invoke<Bookmark[]>("get_global_bookmarks");
-};
+export const getGlobalBookmarks = () =>
+  invoke<Bookmark[]>("get_global_bookmarks");
 
-/**
- * Sets the global bookmarks and persists them
- */
-export const setGlobalBookmarks = (bookmarks: Bookmark[]) => {
-  return invoke<void>("set_global_bookmarks", { bookmarks });
-};
+export const setGlobalBookmarks = (bookmarks: Bookmark[]) =>
+  invoke<void>("set_global_bookmarks", { bookmarks });
 
-/**
- * Toggles the file randomiser process tracking
- */
-export const toggleProcessTracking = (enable: boolean) => {
-  return invoke<AppSettings>("toggle_process_tracking", { enable });
-};
+export const toggleProcessTracking = (enable: boolean) =>
+  invoke<AppSettings>("toggle_process_tracking", { enable });
 
-/**
- * Sets the randomness level for the file randomiser
- */
-export const setRandomnessLevel = (level: number) => {
-  return invoke<AppSettings>("set_randomness_level", { level });
-};
+export const setRandomnessLevel = (level: number) =>
+  invoke<AppSettings>("set_randomness_level", { level });
+
+export const setDarkMode = (mode: DarkModeOption) =>
+  invoke<AppSettings>("set_dark_mode", { mode });
+
+export const setLanguage = (language: LanguageOption) =>
+  invoke<AppSettings>("set_language", { language });
+
+export const setCustomBackground = () =>
+  invoke<AppSettings>("set_custom_background");
+
+export const clearCustomBackground = () =>
+  invoke<AppSettings>("clear_custom_background");
+
+export const openSettingsFolder = () => invoke<void>("open_settings_folder");
+
+export const restartApp = () => invoke<void>("restart_app");

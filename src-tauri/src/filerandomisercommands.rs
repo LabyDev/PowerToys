@@ -324,7 +324,7 @@ pub fn crawl_paths(
         })
         .collect();
 
-    data.files = file_entries.clone();
+    data.files = file_entries;
     data.files.clone()
 }
 
@@ -1009,6 +1009,24 @@ pub fn get_file_scores(
     Ok(scores)
 }
 
+fn apply_bookmark(
+    files: &mut Vec<crate::models::FileEntry>,
+    hashes: &std::collections::HashSet<&str>,
+    color: &Option<String>,
+    is_global: bool,
+) {
+    for file in files.iter_mut() {
+        if let Some(h) = &file.hash {
+            if hashes.contains(h.as_str()) {
+                file.bookmark = color.as_ref().map(|c| crate::models::BookmarkInfo {
+                    color: Some(c.clone()),
+                    is_global,
+                });
+            }
+        }
+    }
+}
+
 #[tauri::command]
 pub fn update_file_bookmark(
     app_data: State<'_, Mutex<AppStateData>>,
@@ -1017,14 +1035,8 @@ pub fn update_file_bookmark(
     is_global: bool,
 ) -> Result<(), String> {
     let mut data = app_data.lock().unwrap();
-    for file in data.files.iter_mut() {
-        if file.hash.as_deref() == Some(hash.as_str()) {
-            file.bookmark = color.as_ref().map(|c| crate::models::BookmarkInfo {
-                color: Some(c.clone()),
-                is_global,
-            });
-        }
-    }
+    let hashes = std::collections::HashSet::from([hash.as_str()]);
+    apply_bookmark(&mut data.files, &hashes, &color, is_global);
     Ok(())
 }
 
@@ -1037,15 +1049,6 @@ pub fn update_file_bookmarks_bulk(
 ) -> Result<(), String> {
     let mut data = app_data.lock().unwrap();
     let hash_set: std::collections::HashSet<&str> = hashes.iter().map(|h| h.as_str()).collect();
-    for file in data.files.iter_mut() {
-        if let Some(hash) = &file.hash {
-            if hash_set.contains(hash.as_str()) {
-                file.bookmark = color.as_ref().map(|c| crate::models::BookmarkInfo {
-                    color: Some(c.clone()),
-                    is_global,
-                });
-            }
-        }
-    }
+    apply_bookmark(&mut data.files, &hash_set, &color, is_global);
     Ok(())
 }
