@@ -1,6 +1,5 @@
 import { Box, Button, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Virtuoso } from "react-virtuoso";
 import { dirname } from "@tauri-apps/api/path";
@@ -30,7 +29,8 @@ import PresetControls from "./components/presetControls";
 import Section from "../common/section";
 
 const FileRandomiser = () => {
-  const { settings, setSettings, globalBookmarks, setGlobalBookmarks } = useAppSettings();
+  const { settings, setSettings, globalBookmarks, setGlobalBookmarks } =
+    useAppSettings();
   const { t } = useTranslation();
 
   const {
@@ -107,7 +107,10 @@ const FileRandomiser = () => {
   useEffect(() => {
     setData((prev) => ({
       ...prev,
-      files: applyBookmarks(prev.files, lastAppliedPresetRef.current?.bookmarks),
+      files: applyBookmarks(
+        prev.files,
+        lastAppliedPresetRef.current?.bookmarks,
+      ),
     }));
   }, [globalBookmarks]);
 
@@ -168,12 +171,7 @@ const FileRandomiser = () => {
     async (files: FileEntry[], color: string | null, isGlobal: boolean) => {
       const hashes = files.map((f) => f.hash).filter(Boolean) as string[];
 
-      // Single Rust call for all files
-      await invoke("update_file_bookmarks_bulk", {
-        hashes,
-        color,
-        isGlobal,
-      });
+      await randomiserApi.updateFileBookmarksBulk(hashes, color, isGlobal);
 
       if (isGlobal) {
         const existing = globalBookmarks ?? [];
@@ -249,11 +247,7 @@ const FileRandomiser = () => {
           ),
         }));
 
-        await invoke("update_file_bookmark", {
-          hash: file.hash,
-          color: color,
-          isGlobal: isGlobal,
-        });
+        await randomiserApi.updateFileBookmark(file.hash, color, isGlobal);
         setBookmarksDirty(true);
       } else {
         // --- LOCAL PRESET BOOKMARK ---
@@ -296,11 +290,7 @@ const FileRandomiser = () => {
           ),
         }));
 
-        await invoke("update_file_bookmark", {
-          hash: file.hash,
-          color: color,
-          isGlobal: isGlobal,
-        });
+        await randomiserApi.updateFileBookmark(file.hash, color, isGlobal);
         setBookmarksDirty(true);
       }
     },
@@ -636,16 +626,16 @@ const FileRandomiser = () => {
   // ------------------------ Tree Builder ------------------------
   const buildFileTree = (files: FileEntry[]): FileTreeNode[] => {
     const root: Record<string, any> = {};
-    const seperator = sep();
+    const separator = sep();
     files.forEach((file) => {
-      const parts = file.path.split(seperator);
+      const parts = file.path.split(separator);
       let current = root;
 
       parts.forEach((part, i) => {
         if (!current[part]) {
           current[part] = {
             name: part,
-            path: parts.slice(0, i + 1).join(seperator),
+            path: parts.slice(0, i + 1).join(separator),
             children: {},
           };
         }
@@ -712,14 +702,6 @@ const FileRandomiser = () => {
   );
 
   const showScores = settings?.fileRandomiser?.showScores ?? false;
-
-  // Then use `showLoading` for the overlay:
-  <LoadingOverlay
-    visible={showLoading}
-    zIndex={1000}
-    overlayProps={{ blur: 2 }}
-    loaderProps={{ type: "dots" }}
-  />;
 
   return (
     <Box p="md" h="92vh">
@@ -805,9 +787,7 @@ const FileRandomiser = () => {
                       handleCrawl();
                     }}
                     onRemove={async () => {
-                      const removed = await invoke<boolean>("remove_path", {
-                        id: item.id,
-                      });
+                      const removed = await randomiserApi.removePath(item.id);
                       if (removed) handleCrawl();
                     }}
                   />
@@ -852,7 +832,9 @@ const FileRandomiser = () => {
                 bookmarkColors={bookmarkColorHexes}
                 setFreshCrawl={setFreshCrawl}
                 showScores={showScores}
-                showWeights={settings.fileRandomiser.pathWeightsEnabled ?? false}
+                showWeights={
+                  settings.fileRandomiser.pathWeightsEnabled ?? false
+                }
                 onExclude={async (file) => {
                   const rule = {
                     id: crypto.randomUUID(),

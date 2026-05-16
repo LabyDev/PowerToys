@@ -39,6 +39,7 @@ Debug flags for `tauri dev`:
 All Tauri commands are invoked via typed wrappers in `src/core/api/`:
 - `fileRandomiserApi.ts` — file randomiser commands
 - `fileSorterApi.ts` — file sorter commands
+- `fileAuditorApi.ts` — file auditor commands
 - `appSettingsApi.ts` — settings commands
 - `presetsApi.ts` — preset CRUD
 
@@ -72,6 +73,7 @@ Routes are defined in `src/core/app/App.tsx`:
 - `/FileRandomiser` — File Randomiser tool
 - `/FileRandomiserSettings` — Randomiser-specific settings
 - `/FileSorter` — File Sorter tool
+- `/FileAuditor` — File Auditor tool
 - `/Settings` — Global app settings
 
 ### Translations

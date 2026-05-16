@@ -17,6 +17,7 @@ import { DEFAULT_BOOKMARK_COLOR_OPTIONS } from "../types/common";
 import * as auditorApi from "../core/api/fileAuditorApi";
 import type { AuditFileEntry } from "../core/api/fileAuditorApi";
 import "./fileAuditor.css";
+import { formatBytes } from "../utils/formatBytes";
 
 const SESSION_KEY = "fileAuditor_session";
 type SavedSession = { folderPath: string; index: number; total: number };
@@ -33,12 +34,6 @@ const saveSession = (folderPath: string, index: number, total: number) =>
     JSON.stringify({ folderPath, index, total }),
   );
 const clearSession = () => localStorage.removeItem(SESSION_KEY);
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
-}
 
 const FileAuditor = () => {
   const { t } = useTranslation();

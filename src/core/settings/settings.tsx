@@ -12,8 +12,15 @@ import {
 } from "@mantine/core";
 import { FolderOpenIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useAppSettings } from "../hooks/useAppSettings";
+import {
+  setDarkMode,
+  setLanguage,
+  setCustomBackground,
+  clearCustomBackground,
+  openSettingsFolder,
+  restartApp,
+} from "../api/appSettingsApi";
 import {
   DarkModeOption,
   AppSettings,
@@ -29,9 +36,7 @@ const AppSettingsPage = () => {
 
   const handleDarkModeChange = async (value: DarkModeOption) => {
     try {
-      const updatedSettings: AppSettings = await invoke("set_dark_mode", {
-        mode: value,
-      });
+      const updatedSettings: AppSettings = await setDarkMode(value);
       setSettings(updatedSettings);
       setPendingChange(true);
     } catch (err) {
@@ -41,9 +46,7 @@ const AppSettingsPage = () => {
 
   const handleLanguageChange = async (value: LanguageOption) => {
     try {
-      const updatedSettings: AppSettings = await invoke("set_language", {
-        language: value,
-      });
+      const updatedSettings: AppSettings = await setLanguage(value);
       setSettings(updatedSettings);
       i18n.changeLanguage(value);
     } catch (err) {
@@ -53,9 +56,7 @@ const AppSettingsPage = () => {
 
   const handleBackgroundSelect = async () => {
     try {
-      const updatedSettings: AppSettings = await invoke(
-        "set_custom_background",
-      );
+      const updatedSettings: AppSettings = await setCustomBackground();
       setSettings(updatedSettings);
       setPendingChange(true);
     } catch (err) {
@@ -65,9 +66,7 @@ const AppSettingsPage = () => {
 
   const handleBackgroundClear = async () => {
     try {
-      const updatedSettings: AppSettings = await invoke(
-        "clear_custom_background",
-      );
+      const updatedSettings: AppSettings = await clearCustomBackground();
       setSettings(updatedSettings);
       setPendingChange(true);
     } catch (err) {
@@ -77,7 +76,7 @@ const AppSettingsPage = () => {
 
   const handleOpenSettingsFolder = async () => {
     try {
-      await invoke("open_settings_folder");
+      await openSettingsFolder();
     } catch (err) {
       console.error("Failed to open settings folder:", err);
     }
@@ -85,7 +84,7 @@ const AppSettingsPage = () => {
 
   const handleRestartApp = async () => {
     try {
-      await invoke("restart_app");
+      await restartApp();
     } catch (err) {
       console.error("Failed to restart app:", err);
     }

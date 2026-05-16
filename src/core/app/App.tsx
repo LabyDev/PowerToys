@@ -9,83 +9,47 @@ import { FileRandomiserProvider } from "../hooks/fileRandomiserStateProvider";
 import FileSorter from "../../file-sorter/fileSorter";
 import FileAuditor from "../../file-auditor/fileAuditor";
 
+const PageWrapper = ({ children }: { children: React.ReactNode }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.1 }}
+    style={{ height: "100%" }}
+  >
+    {children}
+  </motion.div>
+);
+
+const routes = [
+  { path: "/", element: <MainPage /> },
+  { path: "/FileRandomiser", element: <FileRandomiser /> },
+  { path: "/FileRandomiserSettings", element: <FileRandomiserSettings /> },
+  { path: "/FileSorter", element: <FileSorter /> },
+  { path: "/FileAuditor", element: <FileAuditor /> },
+  { path: "/Settings", element: <Settings /> },
+];
+
 export function App() {
   const location = useLocation();
   const isAtRoot = location.pathname === "/";
 
-  // Page wrapper for subtle fade+slide
-  const PageWrapper = ({ children }: { children: React.ReactNode }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.1 }}
-      style={{ height: "100%" }}
-    >
-      {children}
-    </motion.div>
-  );
-
   return (
-    <>
-      <FileRandomiserProvider>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={location.pathname} style={{ height: "100%" }}>
-            {!isAtRoot && <NavBar />}
-            <Routes location={location} key={location.pathname}>
+    <FileRandomiserProvider>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={location.pathname} style={{ height: "100%" }}>
+          {!isAtRoot && <NavBar />}
+          <Routes location={location} key={location.pathname}>
+            {routes.map(({ path, element }) => (
               <Route
-                path="/"
-                element={
-                  <PageWrapper>
-                    <MainPage />
-                  </PageWrapper>
-                }
+                key={path}
+                path={path}
+                element={<PageWrapper>{element}</PageWrapper>}
               />
-              <Route
-                path="/FileRandomiser"
-                element={
-                  <PageWrapper>
-                    <FileRandomiser />
-                  </PageWrapper>
-                }
-              />
-              <Route
-                path="/FileRandomiserSettings"
-                element={
-                  <PageWrapper>
-                    <FileRandomiserSettings />
-                  </PageWrapper>
-                }
-              />
-
-              <Route
-                path="/FileSorter"
-                element={
-                  <PageWrapper>
-                    <FileSorter />
-                  </PageWrapper>
-                }
-              />
-              <Route
-                path="/FileAuditor"
-                element={
-                  <PageWrapper>
-                    <FileAuditor />
-                  </PageWrapper>
-                }
-              />
-              <Route
-                path="/Settings"
-                element={
-                  <PageWrapper>
-                    <Settings />
-                  </PageWrapper>
-                }
-              />
-            </Routes>
-          </motion.div>
-        </AnimatePresence>
-      </FileRandomiserProvider>
-    </>
+            ))}
+          </Routes>
+        </motion.div>
+      </AnimatePresence>
+    </FileRandomiserProvider>
   );
 }
