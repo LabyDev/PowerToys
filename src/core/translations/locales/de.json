@@ -27,7 +27,8 @@
     "resumeFolder": "{{path}}",
     "discardSession": "Neu starten",
     "resume": "Fortsetzen",
-    "autoOpenTracked": "Auto-öffnen (verfolgt)"
+    "autoOpenTracked": "Auto-öffnen (verfolgt)",
+    "keyCloseViewer": "Viewer schließen"
   },
   "fileRandomiser": {
     "title": "Dateien zufällig auswählen",
@@ -180,6 +181,11 @@
         "de": "Deutsch",
         "pl": "Polnisch"
       }
+    },
+    "dataFolder": {
+      "title": "Datenordner",
+      "description": "Enthält store.json (Lesezeichen, Einstellungen) und Presets. Öffnen Sie ihn für Backups oder zur Datenmigration.",
+      "openButton": "AppData-Ordner öffnen"
     }
   },
   "fileAuditorSettings": {
@@ -193,15 +199,22 @@
     "keyDelete": "In Papierkorb",
     "keyStop": "Audit stoppen",
     "keyClearBookmark": "Markierung entfernen",
+    "keyCloseViewer": "Viewer schließen",
     "keyBookmarkSlot": "Markierung {{n}}",
     "pressKey": "Taste drücken…",
     "processTracking": {
-      "title": "Prozessverfolgung (Experimentell)",
+      "title": "Prozessverfolgung",
       "description": "Wenn aktiviert, werden Dateien über ein sichtbares Befehlsfenster geöffnet. Der Auditor geht automatisch weiter, wenn der Viewer geschlossen wird.\nWichtig: Wenn eine App unerwartet schließt, zu früh oder in einer bestehenden Instanz geöffnet wird, kann dies Probleme verursachen.",
       "checkboxLabel": "Prozessverfolgung aktivieren",
       "checkboxDescription": "Aktiviert die Funktion; Verfolgung muss noch in der Hauptansicht umgeschaltet werden.",
       "unsupportedOnLinux": "Prozessverfolgung wird unter Linux nicht unterstützt.",
       "checkboxUnavailable": "Nicht verfügbar unter Linux"
+    },
+    "globalShortcut": {
+      "title": "Globaler Viewer-schließen-Shortcut",
+      "description": "Registriert den Viewer-schließen-Shortcut als systemweiten Hotkey während der Prüfung. So können Sie den Viewer schließen, selbst wenn er den Fokus hat, ohne zu PowerToys wechseln zu müssen.",
+      "checkboxLabel": "Globalen Shortcut aktivieren",
+      "checkboxDescription": "Nur aktiv beim Prüfen mit aktiviertem Auto-Öffnen."
     }
   },
   "fileRandomiserSettings": {

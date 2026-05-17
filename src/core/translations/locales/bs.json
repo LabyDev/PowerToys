@@ -27,7 +27,8 @@
     "resumeFolder": "{{path}}",
     "discardSession": "Počni iznova",
     "resume": "Nastavi",
-    "autoOpenTracked": "Auto-otvori (praćeno)"
+    "autoOpenTracked": "Auto-otvori (praćeno)",
+    "keyCloseViewer": "Zatvori preglednik"
   },
   "fileRandomiser": {
     "title": "Nasumični Fajlovi",
@@ -180,6 +181,11 @@
         "de": "Njemački",
         "pl": "Poljski"
       }
+    },
+    "dataFolder": {
+      "title": "Mapa podataka",
+      "description": "Sadrži store.json (oznake, postavke) i presete. Otvorite je za pravljenje rezervnih kopija ili migraciju podataka.",
+      "openButton": "Otvori AppData mapu"
     }
   },
   "fileAuditorSettings": {
@@ -193,15 +199,22 @@
     "keyDelete": "Obriši u smeće",
     "keyStop": "Zaustavi pregled",
     "keyClearBookmark": "Ukloni oznaku",
+    "keyCloseViewer": "Zatvori preglednik",
     "keyBookmarkSlot": "Oznaka {{n}}",
     "pressKey": "Pritisni tipku…",
     "processTracking": {
-      "title": "Praćenje procesa (Eksperimentalno)",
+      "title": "Praćenje procesa",
       "description": "Kada je omogućeno, fajlovi se otvaraju putem vidljivog prozora komande. Auditor automatski prelazi naprijed kada se viewer zatvori.\nVažno: Ako aplikacija neočekivano zatvori, prerano, ili se otvori u postojećoj instanci, može izazvati probleme.",
       "checkboxLabel": "Omogući praćenje procesa",
       "checkboxDescription": "Omogućava funkciju; praćenje još uvijek mora biti uključeno u glavnom prikazu.",
       "unsupportedOnLinux": "Praćenje procesa nije podržano na Linuxu.",
       "checkboxUnavailable": "Nedostupno na Linuxu"
+    },
+    "globalShortcut": {
+      "title": "Globalni prečac za zatvaranje viewera",
+      "description": "Registruje prečac za zatvaranje viewera kao sistemski hotkey tokom pregleda. Omogućava zatvaranje viewera čak i kada je fokusiran, bez prebacivanja na PowerToys.",
+      "checkboxLabel": "Omogući globalni prečac",
+      "checkboxDescription": "Aktivno samo tokom pregleda s uključenim auto-otvaranjem."
     }
   },
   "fileRandomiserSettings": {

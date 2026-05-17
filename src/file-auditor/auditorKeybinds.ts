@@ -7,4 +7,5 @@ export const DEFAULT_AUDITOR_KEYBINDS: FileAuditorKeybinds = {
   bookmarks: ["1", "2", "3", "4", "5"],
   clearBookmark: "0",
   stop: "Escape",
+  closeViewer: "w",
 };

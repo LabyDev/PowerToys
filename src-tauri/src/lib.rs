@@ -33,6 +33,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         // App state
         .manage(models::settings::AppSettings::default())
         .manage(Mutex::new(

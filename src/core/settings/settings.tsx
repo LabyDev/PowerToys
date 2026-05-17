@@ -155,13 +155,19 @@ const AppSettingsPage = () => {
                   {t("settingsPage.appearance.customBackgroundClear")}
                 </Button>
               )}
+            </Group>
 
+            <Divider mt="sm" />
+
+            <Title order={5} mt="sm">{t("settingsPage.dataFolder.title")}</Title>
+            <Text size="sm" c="dimmed">{t("settingsPage.dataFolder.description")}</Text>
+            <Group gap="sm">
               <Button
                 variant="light"
                 leftSection={<FolderOpenIcon size={16} />}
                 onClick={handleOpenSettingsFolder}
               >
-                Open settings folder
+                {t("settingsPage.dataFolder.openButton")}
               </Button>
             </Group>
 

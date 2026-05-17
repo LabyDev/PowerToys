@@ -24,10 +24,12 @@ export type FileAuditorKeybinds = {
   bookmarks: string[];
   clearBookmark: string;
   stop: string;
+  closeViewer: string;
 };
 
 export type FileAuditorSettings = {
   allowProcessTracking?: boolean;
+  globalCloseViewerShortcut?: boolean;
   keybinds: FileAuditorKeybinds;
 };
 

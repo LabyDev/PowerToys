@@ -27,7 +27,8 @@
     "resumeFolder": "{{path}}",
     "discardSession": "Start Fresh",
     "resume": "Resume",
-    "autoOpenTracked": "Auto-open (tracked)"
+    "autoOpenTracked": "Auto-open (tracked)",
+    "keyCloseViewer": "Close viewer"
   },
   "fileRandomiser": {
     "title": "Randomise Files",
@@ -180,6 +181,11 @@
         "de": "German",
         "pl": "Polish"
       }
+    },
+    "dataFolder": {
+      "title": "Data Folder",
+      "description": "Contains store.json (bookmarks, settings) and presets. Open it to make backups or migrate your data.",
+      "openButton": "Open AppData folder"
     }
   },
   "fileAuditorSettings": {
@@ -193,15 +199,22 @@
     "keyDelete": "Delete to Trash",
     "keyStop": "Stop Audit",
     "keyClearBookmark": "Clear Bookmark",
+    "keyCloseViewer": "Close Viewer",
     "keyBookmarkSlot": "Bookmark {{n}}",
     "pressKey": "Press a key…",
     "processTracking": {
-      "title": "Process Tracking (Experimental)",
+      "title": "Process Tracking",
       "description": "When enabled, files open via a visible command window. The auditor auto-advances when the viewer is closed.\nImportant: If an app closes unexpectedly, too soon, or opens in an existing instance, it may cause issues.",
       "checkboxLabel": "Enable process tracking feature",
       "checkboxDescription": "Enables the feature; tracking still must be toggled in the main auditor view.",
       "unsupportedOnLinux": "Process tracking is not supported on Linux.",
       "checkboxUnavailable": "Unavailable on Linux"
+    },
+    "globalShortcut": {
+      "title": "Global Close-Viewer Shortcut",
+      "description": "Registers the Close Viewer keybind as a system-wide hotkey while auditing. This lets you close the viewer even when it has focus, without switching back to PowerToys.",
+      "checkboxLabel": "Enable global shortcut",
+      "checkboxDescription": "Only active while auditing with auto-open enabled."
     }
   },
   "fileRandomiserSettings": {

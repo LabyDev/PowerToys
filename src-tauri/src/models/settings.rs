@@ -112,6 +112,7 @@ pub struct FileAuditorKeybinds {
     pub bookmarks: Vec<String>,
     pub clear_bookmark: String,
     pub stop: String,
+    pub close_viewer: String,
 }
 
 impl Default for FileAuditorKeybinds {
@@ -123,6 +124,7 @@ impl Default for FileAuditorKeybinds {
             bookmarks: ["1", "2", "3", "4", "5"].map(String::from).into(),
             clear_bookmark: "0".into(),
             stop: "Escape".into(),
+            close_viewer: "w".into(),
         }
     }
 }
@@ -131,6 +133,7 @@ impl Default for FileAuditorKeybinds {
 #[serde(rename_all = "camelCase", default)]
 pub struct FileAuditorSettings {
     pub allow_process_tracking: bool,
+    pub global_close_viewer_shortcut: bool,
     pub keybinds: FileAuditorKeybinds,
 }
 
@@ -138,6 +141,7 @@ impl Default for FileAuditorSettings {
     fn default() -> Self {
         Self {
             allow_process_tracking: false,
+            global_close_viewer_shortcut: false,
             keybinds: Default::default(),
         }
     }

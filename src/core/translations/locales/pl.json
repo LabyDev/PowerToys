@@ -27,7 +27,8 @@
     "resumeFolder": "{{path}}",
     "discardSession": "Zacznij od nowa",
     "resume": "Wznów",
-    "autoOpenTracked": "Auto-otwórz (śledzone)"
+    "autoOpenTracked": "Auto-otwórz (śledzone)",
+    "keyCloseViewer": "Zamknij podgląd"
   },
   "fileRandomiser": {
     "title": "Losuj Pliki",
@@ -180,6 +181,11 @@
         "de": "Niemiecki",
         "pl": "Polski"
       }
+    },
+    "dataFolder": {
+      "title": "Folder danych",
+      "description": "Zawiera store.json (zakładki, ustawienia) i presety. Otwórz go, aby wykonać kopię zapasową lub przenieść dane.",
+      "openButton": "Otwórz folder AppData"
     }
   },
   "fileAuditorSettings": {
@@ -193,15 +199,22 @@
     "keyDelete": "Do kosza",
     "keyStop": "Zatrzymaj audyt",
     "keyClearBookmark": "Usuń zakładkę",
+    "keyCloseViewer": "Zamknij podgląd",
     "keyBookmarkSlot": "Zakładka {{n}}",
     "pressKey": "Naciśnij klawisz…",
     "processTracking": {
-      "title": "Śledzenie procesów (Eksperymentalne)",
+      "title": "Śledzenie procesów",
       "description": "Gdy włączone, pliki otwierają się przez widoczne okno poleceń. Audytor automatycznie przechodzi dalej po zamknięciu przeglądarki.\nWażne: Jeśli aplikacja zamknie się nieoczekiwanie, zbyt wcześnie lub otworzy istniejącą instancję, może to powodować problemy.",
       "checkboxLabel": "Włącz śledzenie procesów",
       "checkboxDescription": "Włącza funkcję; śledzenie musi być jeszcze przełączone w głównym widoku.",
       "unsupportedOnLinux": "Śledzenie procesów nie jest obsługiwane na Linuksie.",
       "checkboxUnavailable": "Niedostępne na Linuksie"
+    },
+    "globalShortcut": {
+      "title": "Globalny skrót zamykania przeglądarki",
+      "description": "Rejestruje skrót zamykania przeglądarki jako ogólnosystemowy hotkey podczas audytu. Pozwala zamknąć przeglądarkę nawet gdy jest aktywna, bez przełączania się do PowerToys.",
+      "checkboxLabel": "Włącz globalny skrót",
+      "checkboxDescription": "Aktywne tylko podczas audytu z włączonym automatycznym otwieraniem."
     }
   },
   "fileRandomiserSettings": {

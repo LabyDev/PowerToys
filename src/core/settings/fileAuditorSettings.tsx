@@ -178,8 +178,24 @@ const FileAuditorSettings = () => {
     }
   };
 
-  const keybinds: FileAuditorKeybinds =
-    settings.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
+  const handleGlobalShortcutToggle = async (checked: boolean) => {
+    try {
+      await setSettings({
+        fileAuditor: {
+          ...settings.fileAuditor,
+          keybinds: settings.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS,
+          globalCloseViewerShortcut: checked,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to toggle global close-viewer shortcut:", err);
+    }
+  };
+
+  const keybinds: FileAuditorKeybinds = {
+    ...DEFAULT_AUDITOR_KEYBINDS,
+    ...settings.fileAuditor?.keybinds,
+  };
 
   const pressKeyPlaceholder = t("fileAuditorSettings.pressKey");
 
@@ -199,6 +215,7 @@ const FileAuditorSettings = () => {
     { id: "delete", key: keybinds.delete },
     { id: "clearBookmark", key: keybinds.clearBookmark },
     { id: "stop", key: keybinds.stop },
+    { id: "closeViewer", key: keybinds.closeViewer },
     ...keybinds.bookmarks.map((k, i) => ({ id: `bookmark_${i}`, key: k })),
   ];
 
@@ -232,6 +249,7 @@ const FileAuditorSettings = () => {
         bookmarks: bookmarkSlots,
         clearBookmark: "0",
         stop: "Escape",
+        closeViewer: "ArrowUp",
       });
     }
   };
@@ -289,6 +307,14 @@ const FileAuditorSettings = () => {
               }
               onChange={(e) => handleTrackingToggle(e.currentTarget.checked)}
             />
+            {!isLinux && (settings.fileAuditor?.allowProcessTracking ?? false) && (
+              <Checkbox
+                checked={settings.fileAuditor?.globalCloseViewerShortcut ?? false}
+                label={t("fileAuditorSettings.globalShortcut.checkboxLabel")}
+                description={t("fileAuditorSettings.globalShortcut.checkboxDescription")}
+                onChange={(e) => handleGlobalShortcutToggle(e.currentTarget.checked)}
+              />
+            )}
           </Stack>
 
           <Divider />
@@ -306,6 +332,7 @@ const FileAuditorSettings = () => {
                 ["keyDelete", "delete"],
                 ["keyStop", "stop"],
                 ["keyClearBookmark", "clearBookmark"],
+                ["keyCloseViewer", "closeViewer"],
               ] as [string, keyof Omit<FileAuditorKeybinds, "bookmarks">][]
             ).map(([labelKey, field]) => (
               <KeybindRow

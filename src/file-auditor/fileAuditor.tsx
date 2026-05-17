@@ -17,10 +17,19 @@ import { useAppSettings } from "../core/hooks/useAppSettings";
 import { DEFAULT_BOOKMARK_COLOR_OPTIONS } from "../types/common";
 import * as auditorApi from "../core/api/fileAuditorApi";
 import type { AuditFileEntry } from "../core/api/fileAuditorApi";
+import {
+  register as registerShortcut,
+  unregister as unregisterShortcut,
+} from "@tauri-apps/plugin-global-shortcut";
 import "./fileAuditor.css";
 import { formatBytes } from "../utils/formatBytes";
 import { displayKey } from "../utils/displayKey";
 import { DEFAULT_AUDITOR_KEYBINDS } from "./auditorKeybinds";
+
+function toAccelerator(key: string): string {
+  if (key.length === 1) return key.toUpperCase();
+  return key;
+}
 
 const SESSION_KEY = "fileAuditor_session";
 type SavedSession = {
@@ -202,7 +211,19 @@ const FileAuditor = () => {
       setIsAuditing(false);
       return;
     }
-    const nextIdx = Math.min(idx, remaining.length - 1);
+
+    // Find next file in sorted visual order, skipping the deleted entry.
+    // sortedIndicesRef still has old indices; map them to remaining via path lookup.
+    const remainingPaths = new Set(remaining.map((x) => x.path));
+    const nextSorted = sortedIndicesRef.current
+      .filter((gi) => f[gi] && remainingPaths.has(f[gi].path))
+      .map((gi) => remaining.findIndex((x) => x.path === f[gi].path));
+    const sortedPos = sortedIndicesRef.current.indexOf(idx);
+    // Pick the candidate at the same sorted position, or the last one
+    const nextIdx =
+      nextSorted[Math.min(sortedPos, nextSorted.length - 1)] ??
+      Math.min(idx, remaining.length - 1);
+
     indexRef.current = nextIdx;
     setIndex(nextIdx);
     if (autoOpenRef.current)
@@ -247,7 +268,13 @@ const FileAuditor = () => {
       else if (key === kb.next.toLowerCase()) await navigate(1);
       else if (key === kb.delete.toLowerCase()) await deleteFile();
       else if (key === kb.clearBookmark.toLowerCase()) await clearBookmark();
-      else if (key === kb.stop.toLowerCase()) {
+      else if (
+        (kb.closeViewer ?? "w").toLowerCase() === key &&
+        autoOpenRef.current &&
+        filesRef.current[indexRef.current]
+      ) {
+        await auditorApi.closeTrackedFile(filesRef.current[indexRef.current].path);
+      } else if (key === kb.stop.toLowerCase()) {
         if (trackingEnabledRef.current && filesRef.current[indexRef.current])
           await auditorApi.forgetTrackedFile(
             filesRef.current[indexRef.current].path,
@@ -262,6 +289,26 @@ const FileAuditor = () => {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isAuditing, navigate, deleteFile, setBookmark, clearBookmark, settings]);
+
+  const allowTracking = settings?.fileAuditor?.allowProcessTracking ?? false;
+
+  useEffect(() => {
+    const globalEnabled = settings?.fileAuditor?.globalCloseViewerShortcut ?? false;
+    if (!isAuditing || !autoOpen || !allowTracking || !globalEnabled) return;
+    const kb = settings?.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
+    const accelerator = toAccelerator(kb.closeViewer ?? "w");
+    let registered = false;
+    registerShortcut(accelerator, (event) => {
+      if (event.state !== "Pressed") return;
+      const f = filesRef.current[indexRef.current];
+      if (f) auditorApi.closeTrackedFile(f.path);
+    })
+      .then(() => { registered = true; })
+      .catch(console.error);
+    return () => {
+      if (registered) unregisterShortcut(accelerator).catch(() => {});
+    };
+  }, [isAuditing, autoOpen, allowTracking, settings]);
 
   const handlePickFolder = async () => {
     const path = await auditorApi.pickAuditFolder();
@@ -453,6 +500,18 @@ const FileAuditor = () => {
                 <Button color="red" size="md" onClick={deleteFile}>
                   {t("fileAuditor.keyDelete")} [{displayKey(kb.delete)}]
                 </Button>
+                {autoOpen && allowTracking && (
+                  <Button
+                    variant="default"
+                    size="md"
+                    onClick={async () => {
+                      const f = filesRef.current[indexRef.current];
+                      if (f) await auditorApi.closeTrackedFile(f.path);
+                    }}
+                  >
+                    {t("fileAuditor.keyCloseViewer")} [{displayKey(kb.closeViewer ?? "w")}]
+                  </Button>
+                )}
               </Group>
             </Stack>
           </Box>

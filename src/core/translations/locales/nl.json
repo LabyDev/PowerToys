@@ -27,7 +27,8 @@
     "resumeFolder": "{{path}}",
     "discardSession": "Opnieuw beginnen",
     "resume": "Hervatten",
-    "autoOpenTracked": "Auto-open (gevolgd)"
+    "autoOpenTracked": "Auto-open (gevolgd)",
+    "keyCloseViewer": "Viewer sluiten"
   },
   "fileRandomiser": {
     "title": "Bestanden Randomiseren",
@@ -180,6 +181,11 @@
         "de": "Duits",
         "pl": "Pools"
       }
+    },
+    "dataFolder": {
+      "title": "Gegevensmap",
+      "description": "Bevat store.json (bladwijzers, instellingen) en presets. Open het om back-ups te maken of uw gegevens te migreren.",
+      "openButton": "Open AppData-map"
     }
   },
   "fileAuditorSettings": {
@@ -193,15 +199,22 @@
     "keyDelete": "Naar prullenbak",
     "keyStop": "Controle stoppen",
     "keyClearBookmark": "Bladwijzer verwijderen",
+    "keyCloseViewer": "Viewer sluiten",
     "keyBookmarkSlot": "Bladwijzer {{n}}",
     "pressKey": "Druk een toets…",
     "processTracking": {
-      "title": "Procesvolging (Experimenteel)",
+      "title": "Procesvolging",
       "description": "Wanneer ingeschakeld, worden bestanden geopend via een zichtbaar opdrachtvenster. De auditor gaat automatisch door wanneer de viewer wordt gesloten.\nBelangrijk: Als een app onverwacht sluit, te snel, of in een bestaande instantie opent, kan dit problemen veroorzaken.",
       "checkboxLabel": "Procesvolging inschakelen",
       "checkboxDescription": "Schakelt de functie in; volging moet nog worden ingeschakeld in de hoofdweergave.",
       "unsupportedOnLinux": "Procesvolging wordt niet ondersteund op Linux.",
       "checkboxUnavailable": "Niet beschikbaar op Linux"
+    },
+    "globalShortcut": {
+      "title": "Globale Viewer-sluitsneltoets",
+      "description": "Registreert de sluitsneltoets als systeembrede snelkoppeling tijdens het controleren. Zo kun je de viewer sluiten zelfs als die gefocust is, zonder terug te schakelen naar PowerToys.",
+      "checkboxLabel": "Globale sneltoets inschakelen",
+      "checkboxDescription": "Alleen actief tijdens het controleren met auto-open ingeschakeld."
     }
   },
   "fileRandomiserSettings": {
