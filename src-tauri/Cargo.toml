@@ -1,6 +1,6 @@
 [package]
 name = "powertoys"
-version = "3.0.0"
+version = "3.1.0"
 description = "A small collection of personal utilities built as a passion project using Tauri. "
 authors = ["Laby"]
 edition = "2021"

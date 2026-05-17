@@ -21,11 +21,11 @@
 
 ## Tools
 
-| Tool | Purpose |
-|------|---------|
+| Tool                                | Purpose                                                                   |
+| ----------------------------------- | ------------------------------------------------------------------------- |
 | [File Randomiser](#file-randomiser) | Pick files at random or sequentially with filters, bookmarks, and presets |
-| [File Sorter](#file-sorter) | Group files into folders by name similarity. Preview before committing |
-| [File Auditor](#file-auditor) | Keyboard-driven file review: keep, delete, or bookmark at speed |
+| [File Sorter](#file-sorter)         | Group files into folders by name similarity. Preview before committing    |
+| [File Auditor](#file-auditor)       | Keyboard-driven file review: keep, delete, or bookmark at speed           |
 
 ---
 
@@ -33,7 +33,7 @@
 
 **Break out of routine.** Load one or more folders, apply filter rules, and let the randomiser pick your next file. Or step through sequentially. Bookmarks, weighted picks, and presets make it as simple or as granular as you want.
 
-<!-- Screenshot: File Randomiser main view (file tree, toolbar, filters panel) -->
+![File Randomiser main view showing the file tree, toolbar, and filters panel](./media/filerandomiser.png)
 
 ### Workflow
 
@@ -43,27 +43,27 @@ The file tree shows all indexed files with included/excluded counts. Paths can b
 
 ### Toolbar
 
-| Action | Description |
-|--------|-------------|
-| Add path | Select one or more folders |
-| Crawl | Index all files under the added paths |
-| Next | Step to the next file (sequential mode) |
-| Random | Pick a random file |
-| Shuffle | Toggle shuffle / sequential mode |
+| Action   | Description                                              |
+| -------- | -------------------------------------------------------- |
+| Add path | Select one or more folders                               |
+| Crawl    | Index all files under the added paths                    |
+| Next     | Step to the next file (sequential mode)                  |
+| Random   | Pick a random file                                       |
+| Shuffle  | Toggle shuffle / sequential mode                         |
 | Tracking | Auto-advance when the current file closes (Windows only) |
-| Search | Search across paths, files, and history |
+| Search   | Search across paths, files, and history                  |
 
 ### Filtering
 
 The **Filters & Exclusions** panel supports rule-based filtering. Rules are evaluated in order and can be rearranged by drag.
 
-| Rule type | Description |
-|-----------|-------------|
-| Contains | Filename contains a string |
-| Starts with | Filename starts with a string |
-| Ends with | Filename ends with a string |
-| Regex | Full regex match |
-| Bookmark | Match by bookmark color / scope |
+| Rule type   | Description                     |
+| ----------- | ------------------------------- |
+| Contains    | Filename contains a string      |
+| Starts with | Filename starts with a string   |
+| Ends with   | Filename ends with a string     |
+| Regex       | Full regex match                |
+| Bookmark    | Match by bookmark color / scope |
 
 Each rule can **include or exclude**, and toggle **case sensitivity**. If no include rules exist, all files are included unless excluded.
 
@@ -87,12 +87,12 @@ Bookmarks can be referenced directly in filter rules using the `@bookmarks` synt
 @bookmarks[:global|:nonglobal][:color1,color2,...]
 ```
 
-| Option | Effect |
-|--------|--------|
-| `@bookmarks` | All bookmarks |
-| `@bookmarks:global` | Global bookmarks only |
-| `@bookmarks:nonglobal` | Preset-local bookmarks only |
-| `@bookmarks:red` | Red bookmarks only |
+| Option                       | Effect                       |
+| ---------------------------- | ---------------------------- |
+| `@bookmarks`                 | All bookmarks                |
+| `@bookmarks:global`          | Global bookmarks only        |
+| `@bookmarks:nonglobal`       | Preset-local bookmarks only  |
+| `@bookmarks:red`             | Red bookmarks only           |
 | `@bookmarks:global:red,blue` | Global red or blue bookmarks |
 
 </details>
@@ -129,7 +129,7 @@ Changes save automatically.
 - **Shuffle on** picks randomly
 - **Shuffle off** traverses sequentially, respecting current filters
 
-### Process Tracking *(Windows only)*
+### Process Tracking _(Windows only)_
 
 When enabled in settings and toggled on in the toolbar, closing a file automatically triggers the next pick. Manual picking is disabled while active.
 
@@ -152,7 +152,7 @@ Available actions: Save, Save As, Rename, Clear, Open presets folder. Unsaved ch
 
 **Stop manually sorting downloads folders.** Pick a directory, preview how files would be grouped by name similarity, adjust the threshold, then execute. Fully undoable.
 
-<!-- Screenshot: File Sorter - preview tree with statistics panel -->
+![File Sorter - preview tree with statistics panel](./media/filesorter.png)
 
 ### Workflow
 
@@ -171,11 +171,11 @@ Files are grouped by filename similarity (extension stripped):
 
 Adjustable from **10%** to **100%**. Preview updates live.
 
-| Value | Behavior |
-|-------|----------|
-| Low (10-40%) | Aggressive grouping, broad matches |
-| Medium (50-70%) | Balanced default |
-| High (80-100%) | Strict matching, near-identical names only |
+| Value           | Behavior                                   |
+| --------------- | ------------------------------------------ |
+| Low (10-40%)    | Aggressive grouping, broad matches         |
+| Medium (50-70%) | Balanced default                           |
+| High (80-100%)  | Strict matching, near-identical names only |
 
 ### Preview
 
@@ -188,12 +188,12 @@ The live tree shows existing folders, new folders to be created, and planned fil
 
 ### Per-File Controls
 
-| Action | Description |
-|--------|-------------|
-| Exclude | Remove a file from the plan |
-| Include | Re-add a previously excluded file |
-| Force target | Manually assign a destination folder |
-| Reveal in explorer | Open the file's current location |
+| Action             | Description                          |
+| ------------------ | ------------------------------------ |
+| Exclude            | Remove a file from the plan          |
+| Include            | Re-add a previously excluded file    |
+| Force target       | Manually assign a destination folder |
+| Reveal in explorer | Open the file's current location     |
 
 ### Execution & Undo
 
@@ -207,7 +207,7 @@ The live tree shows existing folders, new folders to be created, and planned fil
 
 **Tear through a backlog of files without touching the mouse.** Navigate, delete to trash, and bookmark, all from the keyboard. Your position is saved automatically so you can pick up exactly where you left off.
 
-<!-- Screenshot: File Auditor - review interface with file info panel and sidebar -->
+![File Auditor - review interface with file info panel and sidebar](./media/fileauditor.png)
 
 ### Workflow
 
@@ -217,14 +217,14 @@ The live tree shows existing folders, new folders to be created, and planned fil
 
 All keys are configurable in **File Auditor Settings** (gear icon in the navbar). Two built-in presets are available:
 
-| Action | Left Hand (default) | Right Hand |
-|--------|---------------------|------------|
-| Previous file | <kbd>A</kbd> | <kbd>←</kbd> |
-| Next file | <kbd>D</kbd> | <kbd>→</kbd> |
-| Delete to trash | <kbd>S</kbd> | <kbd>Delete</kbd> |
-| Bookmark 1–N | <kbd>1</kbd>–<kbd>N</kbd> | <kbd>1</kbd>–<kbd>N</kbd> |
-| Clear bookmark | <kbd>0</kbd> | <kbd>0</kbd> |
-| Stop auditing | <kbd>Esc</kbd> | <kbd>Esc</kbd> |
+| Action          | Left Hand (default)       | Right Hand                |
+| --------------- | ------------------------- | ------------------------- |
+| Previous file   | <kbd>A</kbd>              | <kbd>←</kbd>              |
+| Next file       | <kbd>D</kbd>              | <kbd>→</kbd>              |
+| Delete to trash | <kbd>S</kbd>              | <kbd>Delete</kbd>         |
+| Bookmark 1–N    | <kbd>1</kbd>–<kbd>N</kbd> | <kbd>1</kbd>–<kbd>N</kbd> |
+| Clear bookmark  | <kbd>0</kbd>              | <kbd>0</kbd>              |
+| Stop auditing   | <kbd>Esc</kbd>            | <kbd>Esc</kbd>            |
 
 Bookmark slots are dynamic — one key per color defined in the global bookmark color settings.
 
@@ -313,10 +313,10 @@ bun run tauri dev
 
 Debug flags:
 
-| Flag | Effect |
-|------|--------|
+| Flag                 | Effect                                 |
+| -------------------- | -------------------------------------- |
 | `--debug-randomiser` | Enables debug output in the randomiser |
-| `--log-file <path>` | Write logs to a file |
+| `--log-file <path>`  | Write logs to a file                   |
 
 Frontend only (Tauri APIs unavailable):
 
