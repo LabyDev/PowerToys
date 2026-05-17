@@ -89,22 +89,24 @@ const FileAuditor = () => {
     if (!folderPath || !files.length)
       return [] as { relFolder: string; files: GroupFile[] }[];
     const sep = folderPath.includes("\\") ? "\\" : "/";
-    const groups: { relFolder: string; files: GroupFile[] }[] = [];
-    let lastFolder = "";
+    const map = new Map<string, GroupFile[]>();
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const parentFull = file.path.substring(0, file.path.lastIndexOf(sep));
       const relFolder = parentFull.startsWith(folderPath)
         ? parentFull.slice(folderPath.length).replace(/^[/\\]/, "") || "."
         : parentFull;
-      if (relFolder !== lastFolder) {
-        lastFolder = relFolder;
-        groups.push({ relFolder, files: [{ ...file, globalIdx: i }] });
-      } else {
-        groups[groups.length - 1].files.push({ ...file, globalIdx: i });
-      }
+      const group = map.get(relFolder);
+      if (group) group.push({ ...file, globalIdx: i });
+      else map.set(relFolder, [{ ...file, globalIdx: i }]);
     }
-    return groups;
+    return Array.from(map.entries())
+      .sort(([a], [b]) => {
+        if (a === ".") return -1;
+        if (b === ".") return 1;
+        return a.localeCompare(b);
+      })
+      .map(([relFolder, files]) => ({ relFolder, files }));
   }, [files, folderPath]);
 
   const jumpTo = useCallback(async (idx: number) => {
