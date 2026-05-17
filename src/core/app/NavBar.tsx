@@ -24,6 +24,7 @@ export function NavBar() {
   };
 
   const isFileRandomiser = location.pathname === "/FileRandomiser";
+  const isFileAuditor = location.pathname === "/FileAuditor";
 
   return (
     <header className={classes.header} data-theme={colorScheme}>
@@ -54,6 +55,19 @@ export function NavBar() {
               leftSection={<GearSixIcon size={16} />}
               component={Link}
               to="/FileRandomiserSettings"
+              className="nav-settings-btn"
+            >
+              {t("navbar.settings")}
+            </Button>
+          )}
+
+          {/* Settings button shown only on FileAuditor */}
+          {isFileAuditor && (
+            <Button
+              variant="subtle"
+              leftSection={<GearSixIcon size={16} />}
+              component={Link}
+              to="/FileAuditorSettings"
               className="nav-settings-btn"
             >
               {t("navbar.settings")}

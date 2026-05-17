@@ -17,6 +17,19 @@ export type BookmarkPreference = {
   colors: Record<string, ColorWeightEntry>;
 };
 
+export type FileAuditorKeybinds = {
+  prev: string;
+  next: string;
+  delete: string;
+  bookmarks: string[];
+  clearBookmark: string;
+  stop: string;
+};
+
+export type FileAuditorSettings = {
+  keybinds: FileAuditorKeybinds;
+};
+
 export type AppSettings = {
   language: LanguageOption;
   darkMode: DarkModeOption;
@@ -30,5 +43,6 @@ export type AppSettings = {
     pathWeights?: Record<string, number>;
     pathWeightsEnabled?: boolean;
   };
+  fileAuditor?: FileAuditorSettings;
   bookmarkColors: BookmarkColorOption[];
 };

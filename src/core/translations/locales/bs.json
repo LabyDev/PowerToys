@@ -8,12 +8,12 @@
   },
   "fileAuditor": {
     "title": "Pregled Fajlova",
-    "description": "Pregledaj fasciklu fajl po fajl. Koristite WASD + 1–5 za navigaciju, označavanje ili brisanje.",
+    "description": "Pregledaj fasciklu fajl po fajl. Koristite prilagodljive prečice za navigaciju, označavanje ili brisanje.",
     "pickFolder": "Odaberi fasciklu",
     "changeFolder": "Promijeni fasciklu",
     "filesFound": "{{count}} fajlova pronađeno",
     "startAudit": "Pokreni pregled",
-    "stopAudit": "Zaustavi [Esc]",
+    "stopAudit": "Zaustavi",
     "clearBookmark": "Ukloni oznaku",
     "keyPrev": "Prethodni",
     "keyNext": "Sljedeći",
@@ -180,6 +180,20 @@
         "pl": "Poljski"
       }
     }
+  },
+  "fileAuditorSettings": {
+    "title": "Postavke Pregleda Fajlova",
+    "presetsTitle": "Predefinirane prečice",
+    "presetLeft": "Lijeva ruka",
+    "presetRight": "Desna ruka",
+    "keybindsTitle": "Prečice",
+    "keyPrev": "Prethodni",
+    "keyNext": "Sljedeći",
+    "keyDelete": "Obriši u smeće",
+    "keyStop": "Zaustavi pregled",
+    "keyClearBookmark": "Ukloni oznaku",
+    "keyBookmarkSlot": "Oznaka {{n}}",
+    "pressKey": "Pritisni tipku…"
   },
   "fileRandomiserSettings": {
     "title": "Postavke nasumičnih fajlova",

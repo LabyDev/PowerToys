@@ -103,6 +103,36 @@ impl Default for LanguageOption {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileAuditorKeybinds {
+    pub prev: String,
+    pub next: String,
+    pub delete: String,
+    pub bookmarks: Vec<String>,
+    pub clear_bookmark: String,
+    pub stop: String,
+}
+
+impl Default for FileAuditorKeybinds {
+    fn default() -> Self {
+        Self {
+            prev: "a".into(),
+            next: "d".into(),
+            delete: "s".into(),
+            bookmarks: ["1", "2", "3", "4", "5"].map(String::from).into(),
+            clear_bookmark: "0".into(),
+            stop: "Escape".into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct FileAuditorSettings {
+    pub keybinds: FileAuditorKeybinds,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
@@ -110,6 +140,7 @@ pub struct AppSettings {
     pub language: LanguageOption,
     pub custom_background: Option<String>,
     pub file_randomiser: FileRandomiserSettings,
+    pub file_auditor: FileAuditorSettings,
     pub bookmark_colors: Vec<BookmarkColorOption>,
 }
 
@@ -120,6 +151,7 @@ impl Default for AppSettings {
             language: Default::default(),
             custom_background: None,
             file_randomiser: Default::default(),
+            file_auditor: Default::default(),
             bookmark_colors: vec![
                 BookmarkColorOption {
                     hex: "#FF6B6B".to_string(),

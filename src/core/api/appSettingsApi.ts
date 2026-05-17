@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import {
   AppSettings,
   DarkModeOption,
+  FileAuditorKeybinds,
   LanguageOption,
 } from "../../types/settings";
 import { Bookmark } from "../../types/common";
@@ -34,6 +35,9 @@ export const setCustomBackground = () =>
 
 export const clearCustomBackground = () =>
   invoke<AppSettings>("clear_custom_background");
+
+export const setFileAuditorKeybinds = (keybinds: FileAuditorKeybinds) =>
+  invoke<AppSettings>("set_file_auditor_keybinds", { keybinds });
 
 export const openSettingsFolder = () => invoke<void>("open_settings_folder");
 

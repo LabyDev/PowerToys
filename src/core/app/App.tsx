@@ -4,6 +4,7 @@ import MainPage from "../mainpage/MainPage";
 import { Routes, Route, useLocation } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import FileRandomiserSettings from "../settings/filerandomiserSettings";
+import FileAuditorSettings from "../settings/fileAuditorSettings";
 import Settings from "../settings/settings";
 import { FileRandomiserProvider } from "../hooks/fileRandomiserStateProvider";
 import FileSorter from "../../file-sorter/fileSorter";
@@ -27,6 +28,7 @@ const routes = [
   { path: "/FileRandomiserSettings", element: <FileRandomiserSettings /> },
   { path: "/FileSorter", element: <FileSorter /> },
   { path: "/FileAuditor", element: <FileAuditor /> },
+  { path: "/FileAuditorSettings", element: <FileAuditorSettings /> },
   { path: "/Settings", element: <Settings /> },
 ];
 

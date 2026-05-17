@@ -1,4 +1,4 @@
-use crate::models::settings::AppSettings;
+use crate::models::settings::{AppSettings, FileAuditorKeybinds};
 use crate::models::Bookmark;
 use crate::models::DarkModeOption;
 use crate::models::LanguageOption;
@@ -172,6 +172,17 @@ pub fn set_global_bookmarks(
     settings.file_randomiser.global_bookmarks = bookmarks.clone();
     set_app_settings(app, settings)?;
     Ok(bookmarks)
+}
+
+#[tauri::command]
+pub fn set_file_auditor_keybinds(
+    app: AppHandle<Wry>,
+    keybinds: FileAuditorKeybinds,
+) -> Result<AppSettings, String> {
+    let mut settings = get_app_settings(app.clone())?;
+    settings.file_auditor.keybinds = keybinds;
+    set_app_settings(app, settings.clone())?;
+    Ok(settings)
 }
 
 #[tauri::command]

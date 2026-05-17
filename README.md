@@ -215,14 +215,18 @@ The live tree shows existing folders, new folders to be created, and planned fil
 
 ### Keyboard Controls
 
-| Key | Action |
-|-----|--------|
-| <kbd>A</kbd> | Previous file |
-| <kbd>D</kbd> | Next file |
-| <kbd>S</kbd> | Delete to trash (auto-advances) |
-| <kbd>1</kbd>-<kbd>5</kbd> | Assign bookmark color |
-| <kbd>0</kbd> | Clear bookmark |
-| <kbd>Esc</kbd> | Stop auditing |
+All keys are configurable in **File Auditor Settings** (gear icon in the navbar). Two built-in presets are available:
+
+| Action | Left Hand (default) | Right Hand |
+|--------|---------------------|------------|
+| Previous file | <kbd>A</kbd> | <kbd>←</kbd> |
+| Next file | <kbd>D</kbd> | <kbd>→</kbd> |
+| Delete to trash | <kbd>S</kbd> | <kbd>Delete</kbd> |
+| Bookmark 1–N | <kbd>1</kbd>–<kbd>N</kbd> | <kbd>1</kbd>–<kbd>N</kbd> |
+| Clear bookmark | <kbd>0</kbd> | <kbd>0</kbd> |
+| Stop auditing | <kbd>Esc</kbd> | <kbd>Esc</kbd> |
+
+Bookmark slots are dynamic — one key per color defined in the global bookmark color settings.
 
 ### File Info Panel
 
@@ -240,7 +244,7 @@ Your audit session is saved automatically. On reopen, a **Resume** dialog shows 
 
 ### Bookmarks
 
-Same four colors as File Randomiser (**Red**, **Green**, **Gold**, **Blue**) shared via the global bookmark store. Press <kbd>1</kbd>-<kbd>5</kbd> or click the color buttons to assign; <kbd>0</kbd> to clear.
+Shares the global bookmark color palette with File Randomiser. Press the configured bookmark keys or click the color buttons to assign; the clear key to remove. Colors are defined globally in `store.json` and apply across all tools.
 
 ### Auto-Open
 

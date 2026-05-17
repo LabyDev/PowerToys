@@ -8,12 +8,12 @@
   },
   "fileAuditor": {
     "title": "Datei-Auditor",
-    "description": "Durchsuche einen Ordner Datei für Datei. Navigiere, markiere oder lösche mit WASD + 1–5.",
+    "description": "Durchsuche einen Ordner Datei für Datei. Navigiere, markiere oder lösche mit konfigurierbaren Tastenkombinationen.",
     "pickFolder": "Ordner auswählen",
     "changeFolder": "Ordner wechseln",
     "filesFound": "{{count}} Dateien gefunden",
     "startAudit": "Audit starten",
-    "stopAudit": "Stoppen [Esc]",
+    "stopAudit": "Stoppen",
     "clearBookmark": "Lesezeichen entfernen",
     "keyPrev": "Zurück",
     "keyNext": "Weiter",
@@ -180,6 +180,20 @@
         "pl": "Polnisch"
       }
     }
+  },
+  "fileAuditorSettings": {
+    "title": "Einstellungen für den Datei-Auditor",
+    "presetsTitle": "Tastenkürzel-Vorlagen",
+    "presetLeft": "Linke Hand",
+    "presetRight": "Rechte Hand",
+    "keybindsTitle": "Tastenkürzel",
+    "keyPrev": "Zurück",
+    "keyNext": "Weiter",
+    "keyDelete": "In Papierkorb",
+    "keyStop": "Audit stoppen",
+    "keyClearBookmark": "Markierung entfernen",
+    "keyBookmarkSlot": "Markierung {{n}}",
+    "pressKey": "Taste drücken…"
   },
   "fileRandomiserSettings": {
     "title": "Einstellungen für Dateien zufällig auswählen",

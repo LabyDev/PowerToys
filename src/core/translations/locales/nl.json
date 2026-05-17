@@ -8,12 +8,12 @@
   },
   "fileAuditor": {
     "title": "Bestanden Controleren",
-    "description": "Doorloop een map bestand voor bestand. Gebruik WASD + 1–5 om te navigeren, bladwijzers in te stellen of te verwijderen.",
+    "description": "Doorloop een map bestand voor bestand. Gebruik instelbare sneltoetsen om te navigeren, bladwijzers in te stellen of te verwijderen.",
     "pickFolder": "Map kiezen",
     "changeFolder": "Map wijzigen",
     "filesFound": "{{count}} bestanden gevonden",
     "startAudit": "Controle starten",
-    "stopAudit": "Stoppen [Esc]",
+    "stopAudit": "Stoppen",
     "clearBookmark": "Bladwijzer verwijderen",
     "keyPrev": "Vorige",
     "keyNext": "Volgende",
@@ -180,6 +180,20 @@
         "pl": "Pools"
       }
     }
+  },
+  "fileAuditorSettings": {
+    "title": "Bestanden Controleren Instellingen",
+    "presetsTitle": "Sneltoets-presets",
+    "presetLeft": "Linkerhand",
+    "presetRight": "Rechterhand",
+    "keybindsTitle": "Sneltoetsen",
+    "keyPrev": "Vorige",
+    "keyNext": "Volgende",
+    "keyDelete": "Naar prullenbak",
+    "keyStop": "Controle stoppen",
+    "keyClearBookmark": "Bladwijzer verwijderen",
+    "keyBookmarkSlot": "Bladwijzer {{n}}",
+    "pressKey": "Druk een toets…"
   },
   "fileRandomiserSettings": {
     "title": "Bestanden Randomiseren Instellingen",

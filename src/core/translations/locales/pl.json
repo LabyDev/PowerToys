@@ -8,12 +8,12 @@
   },
   "fileAuditor": {
     "title": "Audyt Plików",
-    "description": "Przeglądaj folder plik po pliku. Używaj WASD + 1–5 do nawigacji, zakładek lub usuwania.",
+    "description": "Przeglądaj folder plik po pliku. Używaj konfigurowalnych skrótów klawiszowych do nawigacji, zakładek lub usuwania.",
     "pickFolder": "Wybierz folder",
     "changeFolder": "Zmień folder",
     "filesFound": "Znaleziono {{count}} plików",
     "startAudit": "Rozpocznij audyt",
-    "stopAudit": "Zatrzymaj [Esc]",
+    "stopAudit": "Zatrzymaj",
     "clearBookmark": "Usuń zakładkę",
     "keyPrev": "Poprzedni",
     "keyNext": "Następny",
@@ -180,6 +180,20 @@
         "pl": "Polski"
       }
     }
+  },
+  "fileAuditorSettings": {
+    "title": "Ustawienia Audytu Plików",
+    "presetsTitle": "Presety skrótów",
+    "presetLeft": "Lewa ręka",
+    "presetRight": "Prawa ręka",
+    "keybindsTitle": "Skróty klawiszowe",
+    "keyPrev": "Poprzedni",
+    "keyNext": "Następny",
+    "keyDelete": "Do kosza",
+    "keyStop": "Zatrzymaj audyt",
+    "keyClearBookmark": "Usuń zakładkę",
+    "keyBookmarkSlot": "Zakładka {{n}}",
+    "pressKey": "Naciśnij klawisz…"
   },
   "fileRandomiserSettings": {
     "title": "Ustawienia Losowania Plików",

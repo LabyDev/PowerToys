@@ -8,12 +8,12 @@
   },
   "fileAuditor": {
     "title": "File Auditor",
-    "description": "Traverse a folder file-by-file. Use WASD + 1–5 to navigate, bookmark, or delete.",
+    "description": "Traverse a folder file-by-file. Use configurable keyboard shortcuts to navigate, bookmark, or delete.",
     "pickFolder": "Pick Folder",
     "changeFolder": "Change Folder",
     "filesFound": "{{count}} files found",
     "startAudit": "Start Audit",
-    "stopAudit": "Stop [Esc]",
+    "stopAudit": "Stop",
     "clearBookmark": "Clear bookmark",
     "keyPrev": "Prev",
     "keyNext": "Next",
@@ -180,6 +180,20 @@
         "pl": "Polish"
       }
     }
+  },
+  "fileAuditorSettings": {
+    "title": "File Auditor Settings",
+    "presetsTitle": "Keybind Presets",
+    "presetLeft": "Left Hand",
+    "presetRight": "Right Hand",
+    "keybindsTitle": "Keybinds",
+    "keyPrev": "Previous",
+    "keyNext": "Next",
+    "keyDelete": "Delete to Trash",
+    "keyStop": "Stop Audit",
+    "keyClearBookmark": "Clear Bookmark",
+    "keyBookmarkSlot": "Bookmark {{n}}",
+    "pressKey": "Press a key…"
   },
   "fileRandomiserSettings": {
     "title": "File Randomiser Settings",

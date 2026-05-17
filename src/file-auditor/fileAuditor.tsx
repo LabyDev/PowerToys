@@ -18,6 +18,8 @@ import * as auditorApi from "../core/api/fileAuditorApi";
 import type { AuditFileEntry } from "../core/api/fileAuditorApi";
 import "./fileAuditor.css";
 import { formatBytes } from "../utils/formatBytes";
+import { displayKey } from "../utils/displayKey";
+import { DEFAULT_AUDITOR_KEYBINDS } from "./auditorKeybinds";
 
 const SESSION_KEY = "fileAuditor_session";
 type SavedSession = { folderPath: string; index: number; total: number };
@@ -180,33 +182,26 @@ const FileAuditor = () => {
 
   useEffect(() => {
     if (!isAuditing) return;
+    const kb = settings?.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
     const onKey = async (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      switch (e.key.toLowerCase()) {
-        case "d":
-          await navigate(1);
-          break;
-        case "a":
-          await navigate(-1);
-          break;
-        case "s":
-          await deleteFile();
-          break;
-        case "0":
-          await clearBookmark();
-          break;
-        case "escape":
-          clearSession();
-          setIsAuditing(false);
-          break;
-        default:
-          if (e.key >= "1" && e.key <= "5") await setBookmark(Number(e.key));
+      const key = e.key.toLowerCase();
+      if (key === kb.prev.toLowerCase()) await navigate(-1);
+      else if (key === kb.next.toLowerCase()) await navigate(1);
+      else if (key === kb.delete.toLowerCase()) await deleteFile();
+      else if (key === kb.clearBookmark.toLowerCase()) await clearBookmark();
+      else if (key === kb.stop.toLowerCase()) {
+        clearSession();
+        setIsAuditing(false);
+      } else {
+        const slot = kb.bookmarks.findIndex((k) => k.toLowerCase() === key);
+        if (slot !== -1) await setBookmark(slot + 1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isAuditing, navigate, deleteFile, setBookmark, clearBookmark]);
+  }, [isAuditing, navigate, deleteFile, setBookmark, clearBookmark, settings]);
 
   const handlePickFolder = async () => {
     const path = await auditorApi.pickAuditFolder();
@@ -257,6 +252,7 @@ const FileAuditor = () => {
   };
 
   const bookmarkColor = currentBookmark?.color ?? null;
+  const kb = settings?.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
 
   if (isAuditing && currentFile) {
     return (
@@ -274,7 +270,7 @@ const FileAuditor = () => {
               setIsAuditing(false);
             }}
           >
-            {t("fileAuditor.stopAudit")}
+            {t("fileAuditor.stopAudit")} [{displayKey(kb.stop)}]
           </Button>
         </Group>
 
@@ -364,7 +360,8 @@ const FileAuditor = () => {
                   />
                 ))}
                 <Button size="xs" variant="subtle" onClick={clearBookmark}>
-                  {t("fileAuditor.clearBookmark")} [0]
+                  {t("fileAuditor.clearBookmark")} [
+                  {displayKey(kb.clearBookmark)}]
                 </Button>
               </Group>
               <Group gap="md">
@@ -373,13 +370,13 @@ const FileAuditor = () => {
                   size="md"
                   onClick={() => navigate(-1)}
                 >
-                  ← {t("fileAuditor.keyPrev")} [A]
+                  ← {t("fileAuditor.keyPrev")} [{displayKey(kb.prev)}]
                 </Button>
                 <Button variant="default" size="md" onClick={() => navigate(1)}>
-                  {t("fileAuditor.keyNext")} [D] →
+                  {t("fileAuditor.keyNext")} [{displayKey(kb.next)}] →
                 </Button>
                 <Button color="red" size="md" onClick={deleteFile}>
-                  {t("fileAuditor.keyDelete")} [S]
+                  {t("fileAuditor.keyDelete")} [{displayKey(kb.delete)}]
                 </Button>
               </Group>
             </Stack>
