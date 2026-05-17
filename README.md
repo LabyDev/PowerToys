@@ -1,293 +1,288 @@
 <p align="center">
-  <img src="./public/powertoys.svg" alt="Powertoys Logo" height="120" />
+  <img src="./public/powertoys.svg" alt="Laby's PowerToys Logo" height="120" />
 </p>
 
-# PowerToys
+<h1 align="center">Laby's PowerToys</h1>
 
-A small collection of personal utilities built as a passion project using Tauri.
+<p align="center">
+  A personal collection of file management utilities built with Tauri.<br/>
+  Originally Python tools from nearly a decade ago, now a proper desktop app.
+</p>
 
-Originally started as Python tools nearly a decade ago, later refined and expanded with new features. See the early versions [here](/museum/readme.md).
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue" alt="Platform" />
+  <img src="https://img.shields.io/badge/license-LSAPL%20v1.0-lightgrey" alt="License" />
+  <a href="https://www.buymeacoffee.com/aperturecoffee">
+    <img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow" alt="Buy Me A Coffee" />
+  </a>
+</p>
 
-Supported platforms: Windows and Linux.
+---
 
-## Features
+## Tools
 
-### Custom Background Support
+| Tool | Purpose |
+|------|---------|
+| [File Randomiser](#file-randomiser) | Pick files at random or sequentially with filters, bookmarks, and presets |
+| [File Sorter](#file-sorter) | Group files into folders by name similarity. Preview before committing |
+| [File Auditor](#file-auditor) | Keyboard-driven file review: keep, delete, or bookmark at speed |
 
-Set a custom background image from the Settings page.  
-The background can be selected or cleared at any time. Some appearance changes require a restart.
-
-### Dark Mode
-
-Supports light, dark, and system themes.  
-Theme changes apply after restarting the application.
-
-### Language Support
-
-Available in:
-
-- English
-- German
-- Dutch
-- Polish
-- Bosnian
+---
 
 ## File Randomiser
 
-Randomly selects files from configured paths with filtering, bookmarking, presets, and optional tracking.
+**Break out of routine.** Load one or more folders, apply filter rules, and let the randomiser pick your next file. Or step through sequentially. Bookmarks, weighted picks, and presets make it as simple or as granular as you want.
 
-### Overview
+<!-- Screenshot: File Randomiser main view (file tree, toolbar, filters panel) -->
 
-The workflow follows four stages:
+### Workflow
 
-1. Add path
-2. Crawl
-3. Filter
-4. Pick
+> **Add paths -> Crawl -> Filter -> Pick**
 
-The interface includes:
-
-- Expandable path tree
-- Included and excluded counters
-- Global search across paths, files, and history
-- Timestamped open history
+The file tree shows all indexed files with included/excluded counts. Paths can be added individually or as a batch.
 
 ### Toolbar
 
-- Add path (supports selecting multiple folders at once)
-- Crawl
-- Next file
-- Random file
-- Shuffle
-- Tracking
-- Search
+| Action | Description |
+|--------|-------------|
+| Add path | Select one or more folders |
+| Crawl | Index all files under the added paths |
+| Next | Step to the next file (sequential mode) |
+| Random | Pick a random file |
+| Shuffle | Toggle shuffle / sequential mode |
+| Tracking | Auto-advance when the current file closes (Windows only) |
+| Search | Search across paths, files, and history |
 
-When tracking is active, manual picking is disabled.
+### Filtering
 
-### Filtering System
+The **Filters & Exclusions** panel supports rule-based filtering. Rules are evaluated in order and can be rearranged by drag.
 
-The Filters and Exclusions panel allows rule based filtering.
+| Rule type | Description |
+|-----------|-------------|
+| Contains | Filename contains a string |
+| Starts with | Filename starts with a string |
+| Ends with | Filename ends with a string |
+| Regex | Full regex match |
+| Bookmark | Match by bookmark color / scope |
 
-#### Rule Types
-
-- Contains
-- Starts with
-- Ends with
-- Regex
-- Bookmark
-
-Each rule can:
-
-- Include or exclude files
-- Be case sensitive
-
-Rules are evaluated in order and can be rearranged.  
-If no include rules exist, all files are included unless excluded.
+Each rule can **include or exclude**, and toggle **case sensitivity**. If no include rules exist, all files are included unless excluded.
 
 ### Bookmarks
 
-Files can be color marked.
+Files can be color-marked with four colors: **Red**, **Green**, **Gold**, **Blue**.
 
 - Click the bookmark icon to cycle colors
-- Shift click to set a global bookmark
-- Global bookmarks apply across presets
-- Preset bookmarks are local
+- <kbd>Shift</kbd>+click to set as a **global bookmark** (persists across presets)
+- Preset bookmarks are local to the active preset
+- Bookmarking a **folder** applies the color to all files inside it. Requires a second click to confirm as it is a destructive bulk action
 
-Available colors:
+Bookmarks can be referenced directly in filter rules using the `@bookmarks` syntax.
 
-- Red
-- Green
-- Gold
-- Blue
+> **Advanced:** Global bookmarks are stored in `%APPDATA%\eu.laby.powertoys\store.json` and can be edited manually if needed.
 
-Bookmarks can be referenced directly in filters.
-
-Bookmarking a **folder** applies the color to all files inside it. Because this is a destructive bulk action, a second click is required to confirm. The pending state is indicated by a left border highlight and clears automatically after 3 seconds.
-
-### Bookmark Preference
-
-Bookmarked files can be given a higher pick probability.
-
-- Enabled in File Randomiser Settings
-- Set a weight multiplier per color for local (preset-scoped) and global bookmarks
-- 1.0 is neutral; higher values increase the chance of that color being picked
-- Applies on top of the randomness level
-
-### Hidden Bookmark Filter Syntax
-
-Trigger:
-
-```
-@bookmarks
-```
-
-Format:
+<details>
+<summary>Bookmark filter syntax</summary>
 
 ```
 @bookmarks[:global|:nonglobal][:color1,color2,...]
 ```
 
-Options:
+| Option | Effect |
+|--------|--------|
+| `@bookmarks` | All bookmarks |
+| `@bookmarks:global` | Global bookmarks only |
+| `@bookmarks:nonglobal` | Preset-local bookmarks only |
+| `@bookmarks:red` | Red bookmarks only |
+| `@bookmarks:global:red,blue` | Global red or blue bookmarks |
 
-- `@bookmarks` required
-- `:global` only global bookmarks
-- `:nonglobal` only preset local bookmarks
-- `:color1,color2,...` comma separated colors
+</details>
 
-Examples:
+### Bookmark Preference
 
-```
-@bookmarks
-@bookmarks:global
-@bookmarks:nonglobal
-@bookmarks:red
-@bookmarks:global:red,blue
-@bookmarks:nonglobal:green,yellow
-```
+Give bookmarked files a higher pick probability. Configured in **File Randomiser Settings**:
 
-### Shuffle and Sequential Mode
-
-- Shuffle enabled results in random selection
-- Shuffle disabled results in sequential traversal
-
-Sequential mode respects current filters and exclusions.
+- Set a weight multiplier per color for local and global bookmarks
+- `1.0` is neutral; higher values increase pick chance for that color
+- Applied on top of the randomness level
 
 ### Path Weights
 
-Individual files and folders can be given a pick probability multiplier.
+Assign a pick-probability multiplier to individual files or folders.
 
-- Enabled in File Randomiser Settings
-- Weight button appears on each item in the file tree when enabled
-- Range: 0.1× to 5×, default 1× (neutral)
-- Click the weight button to set a local (preset-scoped) weight
-- Shift-click to set a global weight
-- Folder weights apply as a multiplier for all files inside that folder
+- Enable in **File Randomiser Settings** so weight buttons appear in the file tree
+- Range: **0.1x** to **5x** (default **1x**)
+- Click to set a preset-local weight; <kbd>Shift</kbd>+click to set a global weight
+- Folder weights multiply through to all files inside
 
 ### Randomness Level
 
-A slider from 0 to 100 controls selection behavior.
+A slider from **0** to **100** controls how the randomiser selects files:
 
-- 0 favors sequential order
-- 50 balanced default
-- 100 fully random
+- **0** favors sequential order
+- **50** is the balanced default
+- **100** is fully random
 
-Changes are saved automatically.
+Changes save automatically.
 
-### Process Tracking
+### Shuffle & Sequential Mode
 
-Available on Windows only.
+- **Shuffle on** picks randomly
+- **Shuffle off** traverses sequentially, respecting current filters
 
-When enabled in settings and toggled in the toolbar:
+### Process Tracking *(Windows only)*
 
-- Closing a file automatically triggers the next selection
-- Respects shuffle mode
-- Manual picking is disabled while active
+When enabled in settings and toggled on in the toolbar, closing a file automatically triggers the next pick. Manual picking is disabled while active.
 
-Linux does not support process tracking.  
-Unstable or fast closing applications may cause unexpected behavior including high resource usage or system instability.
+> [!CAUTION]
+> Unstable or fast-closing apps may cause unexpected behavior including high resource usage or system instability.
+
+### History
+
+Every opened file is logged with a timestamp. Click a history entry to scroll the file tree to that file. Searchable alongside paths and filenames.
 
 ### Presets
 
-Presets store:
+Presets store: **paths**, **filter rules**, **shuffle state**, and **local bookmarks**.
 
-- Paths
-- Filter rules
-- Shuffle state
-- Local bookmark state
+Available actions: Save, Save As, Rename, Clear, Open presets folder. Unsaved changes are flagged automatically.
 
-Available actions:
-
-- Save
-- Save as
-- Rename
-- Clear
-- Open presets folder
-
-Unsaved changes are detected automatically.
+---
 
 ## File Sorter
 
-Organizes files inside a selected directory using name similarity.  
-Everything is previewed first. No changes are made until confirmed.
+**Stop manually sorting downloads folders.** Pick a directory, preview how files would be grouped by name similarity, adjust the threshold, then execute. Fully undoable.
 
-Fully undoable.
+<!-- Screenshot: File Sorter - preview tree with statistics panel -->
 
-### How It Works
+### Workflow
 
-1. Select a directory
-2. Build preview plan
-3. Adjust similarity threshold
-4. Review preview
-5. Execute sorting
-6. Optionally restore
+> **Select directory -> Build preview -> Adjust threshold -> Review -> Execute -> Optionally restore**
 
 ### Similarity Matching
 
-Files are grouped based on filename similarity without extensions.
+Files are grouped by filename similarity (extension stripped):
 
-- Compared against existing folders
-- If similarity meets the threshold, the file moves into the best match
-- If no match exists, a new folder is created
-
-When multiple folders match, the highest similarity wins.
+- Compared against existing and candidate folders
+- If similarity meets the threshold, the file moves to the best match
+- If no folder matches, a new one is created
+- When multiple folders match, the highest similarity wins
 
 ### Match Threshold
 
-Adjustable from 10 percent to 100 percent.
+Adjustable from **10%** to **100%**. Preview updates live.
 
-- Lower values create more aggressive grouping
-- Higher values create stricter matching
-- 100 percent only matches near identical names
-
-Preview updates automatically.
+| Value | Behavior |
+|-------|----------|
+| Low (10-40%) | Aggressive grouping, broad matches |
+| Medium (50-70%) | Balanced default |
+| High (80-100%) | Strict matching, near-identical names only |
 
 ### Preview
 
-The live tree preview shows:
-
-- Existing folders
-- New folders
-- Planned file moves
-
-Includes real time statistics:
+The live tree shows existing folders, new folders to be created, and planned file moves, color-coded for clarity. Statistics update in real time:
 
 - Files to move
 - Folders to create
 - Total folders affected
 - Total size to move
 
-### Manual Controls
+### Per-File Controls
 
-Per file options:
+| Action | Description |
+|--------|-------------|
+| Exclude | Remove a file from the plan |
+| Include | Re-add a previously excluded file |
+| Force target | Manually assign a destination folder |
+| Reveal in explorer | Open the file's current location |
 
-- Exclude or include
-- Force target folder
-- Reveal in file explorer
+### Execution & Undo
 
-All changes update the preview immediately.
+- Folders are created as needed; name collisions are handled safely
+- All moves are recorded. The last operation can be **fully restored** at any time
+- A console panel logs all operations and feedback
 
-### Execution and Undo
+---
 
-When sorting:
+## File Auditor
 
-- Folders are created as needed
-- Name collisions are handled safely
-- All moves are recorded
+**Tear through a backlog of files without touching the mouse.** Navigate, delete to trash, and bookmark, all from the keyboard. Your position is saved automatically so you can pick up exactly where you left off.
 
-The last operation can be restored at any time.
+<!-- Screenshot: File Auditor - review interface with file info panel and sidebar -->
 
-## Building
+### Workflow
 
-### Windows prerequisites
+> **Select folder -> Start auditing -> Navigate -> Keep / Delete / Bookmark -> Resume later**
+
+### Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| <kbd>A</kbd> | Previous file |
+| <kbd>D</kbd> | Next file |
+| <kbd>S</kbd> | Delete to trash (auto-advances) |
+| <kbd>1</kbd>-<kbd>5</kbd> | Assign bookmark color |
+| <kbd>0</kbd> | Clear bookmark |
+| <kbd>Esc</kbd> | Stop auditing |
+
+### File Info Panel
+
+For each file the panel shows:
+
+- Filename (large), full path
+- File size (auto-formatted: B / KB / MB / GB)
+- Last modified timestamp
+- Bookmark badge (if set)
+- Position counter, e.g. **5 / 127**
+
+### Session Persistence
+
+Your audit session is saved automatically. On reopen, a **Resume** dialog shows the folder path and last position so you can continue immediately or start fresh.
+
+### Bookmarks
+
+Same four colors as File Randomiser (**Red**, **Green**, **Gold**, **Blue**) shared via the global bookmark store. Press <kbd>1</kbd>-<kbd>5</kbd> or click the color buttons to assign; <kbd>0</kbd> to clear.
+
+### Auto-Open
+
+A toggle enables opening each file in its default application as you navigate. Useful for reviewing media or documents without manually launching them.
+
+### Sidebar
+
+Files are grouped by subfolder with relative paths displayed. The current file is always scrolled into view automatically.
+
+---
+
+## App Features
+
+### Appearance
+
+- **Dark mode**: Light, Dark, or follow system preference
+- **Custom background**: Set any image from the Settings page
+
+### Language
+
+Available in: **English**, **German**, **Dutch**, **Polish**, **Bosnian**
+
+Language is detected automatically from system locale.
+
+---
+
+## Development & Building
+
+### Prerequisites
+
+<details>
+<summary>Windows</summary>
 
 - [Rust](https://rustup.rs/)
 - [Bun](https://bun.sh/)
 - [Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (MSVC + Windows SDK)
-- [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (usually pre-installed on Windows 10/11)
+- [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (pre-installed on Windows 10/11)
 
-### WSL2 prerequisites (Linux targets)
+</details>
 
-Install these once inside your WSL2 distribution:
+<details>
+<summary>WSL2 / Linux</summary>
 
 ```bash
 # Rust
@@ -304,27 +299,51 @@ sudo apt update && sudo apt install -y \
   patchelf
 ```
 
-### Running the release build
+</details>
+
+### Running in dev mode
+
+```bash
+bun run tauri dev
+```
+
+Debug flags:
+
+| Flag | Effect |
+|------|--------|
+| `--debug-randomiser` | Enables debug output in the randomiser |
+| `--log-file <path>` | Write logs to a file |
+
+Frontend only (Tauri APIs unavailable):
+
+```bash
+bun run dev
+```
+
+### Building for release
 
 ```bash
 bun run release
 ```
 
-Builds the Windows installer and all Linux packages, then copies the artifacts to `release/`.
+Builds the Windows installer and all Linux packages, then copies artifacts to `release/`.
+
+---
 
 ## Support the Project
 
-If you find this project useful and would like to support its development, you can do so here:
+If you find this useful, consider supporting its development:
 
 <a href="https://www.buymeacoffee.com/aperturecoffee" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="45">
 </a>
 
-Support is optional and greatly appreciated.
+Support is entirely optional and greatly appreciated.
 
-## License and Disclaimer
+---
 
-Licensed under the Laby’s Source Available Passion License LSAPL v1.0.  
-Personal, non commercial use only. No redistribution of source or modified versions.
+## License
+
+Licensed under the **Laby's Source Available Passion License LSAPL v1.0**. Personal, non-commercial use only. No redistribution of source or modified versions.
 
 See the [LICENSE](./LICENSE) file for full terms.

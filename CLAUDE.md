@@ -87,3 +87,14 @@ Process tracking (auto-advance when a file closes) uses Windows APIs via the `wi
 ### Settings persistence
 
 Settings are stored via `tauri-plugin-store` (JSON file managed by Tauri). Presets are stored as individual JSON files in the app data directory. Access via `setting_commands.rs`.
+
+## Tools
+
+### File Randomiser
+Multi-path file picker. Shuffle or sequential mode. Filter rules (contains / starts with / ends with / regex / bookmark). Bookmarks (Red, Green, Gold, Blue — global or preset-scoped). Path weights (0.1×–5×). Randomness slider (0–100). Process tracking on Windows (auto-advance when file closes). Presets store paths + rules + bookmarks. Open history with timestamps.
+
+### File Sorter
+Similarity-based file grouping. Select folder → preview plan → adjust threshold (10–100%) → execute → undo. Per-file controls: exclude, force target folder, reveal in explorer. Console log panel for feedback.
+
+### File Auditor
+Keyboard-driven file review. Select folder → navigate with <kbd>A</kbd>/<kbd>D</kbd>, delete to trash with <kbd>S</kbd>, bookmark with <kbd>1</kbd>–<kbd>5</kbd>/<kbd>0</kbd>, stop with <kbd>Esc</kbd>. Auto-advance after deletion. Session persistence via localStorage — resume dialog on reopen. Auto-open toggle (launch file in default app on navigate). Sidebar groups files by subfolder.
