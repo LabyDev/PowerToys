@@ -9,6 +9,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { BookmarkIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../hooks/useAppSettings";
@@ -126,15 +127,7 @@ const KeybindRow = ({
   <Group align="center" gap="sm" wrap="nowrap">
     <Group gap="xs" align="center" style={{ flex: 1, minWidth: 0 }}>
       {colorSwatch && (
-        <Box
-          style={{
-            width: 13,
-            height: 13,
-            borderRadius: 3,
-            background: colorSwatch,
-            flexShrink: 0,
-          }}
-        />
+        <BookmarkIcon size={14} weight="fill" style={{ color: colorSwatch, flexShrink: 0 }} />
       )}
       <Text size="sm" truncate>
         {label}

@@ -10,6 +10,7 @@ import {
   Text,
   Transition,
 } from "@mantine/core";
+import { BookmarkIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../core/hooks/useAppSettings";
@@ -384,8 +385,8 @@ const FileAuditor = () => {
 
           {/* Right column: file tree */}
           <ScrollArea className="audit-file-list" p="xs">
-            {fileGroups.map(({ relFolder, files: groupFiles }) => (
-              <Box key={relFolder} mb="sm">
+            {fileGroups.map(({ relFolder, files: groupFiles }, groupIdx) => (
+              <Box key={`${groupIdx}-${relFolder}`} mb="sm">
                 <Divider
                   label={
                     relFolder === "." ? t("fileAuditor.rootFolder") : relFolder
@@ -395,6 +396,9 @@ const FileAuditor = () => {
                 />
                 {groupFiles.map((file) => {
                   const isCurrent = file.globalIdx === index;
+                  const fileBm = globalBookmarks?.find(
+                    (b) => b.hash === file.hash,
+                  );
                   return (
                     <Box
                       key={file.path}
@@ -412,9 +416,21 @@ const FileAuditor = () => {
                         transition: "background 0.15s ease",
                       }}
                     >
-                      <Text size="sm" truncate>
-                        {file.name}
-                      </Text>
+                      <Group gap={4} align="center" wrap="nowrap">
+                        <Text size="sm" truncate style={{ flex: 1 }}>
+                          {file.name}
+                        </Text>
+                        {fileBm && (
+                          <BookmarkIcon
+                            size={18}
+                            weight="fill"
+                            style={{
+                              color: fileBm.color ?? undefined,
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                      </Group>
                     </Box>
                   );
                 })}
