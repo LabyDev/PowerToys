@@ -127,10 +127,20 @@ impl Default for FileAuditorKeybinds {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct FileAuditorSettings {
+    pub allow_process_tracking: bool,
     pub keybinds: FileAuditorKeybinds,
+}
+
+impl Default for FileAuditorSettings {
+    fn default() -> Self {
+        Self {
+            allow_process_tracking: false,
+            keybinds: Default::default(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]

@@ -27,6 +27,7 @@ export type FileAuditorKeybinds = {
 };
 
 export type FileAuditorSettings = {
+  allowProcessTracking?: boolean;
   keybinds: FileAuditorKeybinds;
 };
 

@@ -26,7 +26,8 @@
     "resumeFrom": "Plik {{index}} z {{total}}",
     "resumeFolder": "{{path}}",
     "discardSession": "Zacznij od nowa",
-    "resume": "Wznów"
+    "resume": "Wznów",
+    "autoOpenTracked": "Auto-otwórz (śledzone)"
   },
   "fileRandomiser": {
     "title": "Losuj Pliki",
@@ -193,7 +194,15 @@
     "keyStop": "Zatrzymaj audyt",
     "keyClearBookmark": "Usuń zakładkę",
     "keyBookmarkSlot": "Zakładka {{n}}",
-    "pressKey": "Naciśnij klawisz…"
+    "pressKey": "Naciśnij klawisz…",
+    "processTracking": {
+      "title": "Śledzenie procesów (Eksperymentalne)",
+      "description": "Gdy włączone, pliki otwierają się przez widoczne okno poleceń. Audytor automatycznie przechodzi dalej po zamknięciu przeglądarki.\nWażne: Jeśli aplikacja zamknie się nieoczekiwanie, zbyt wcześnie lub otworzy istniejącą instancję, może to powodować problemy.",
+      "checkboxLabel": "Włącz śledzenie procesów",
+      "checkboxDescription": "Włącza funkcję; śledzenie musi być jeszcze przełączone w głównym widoku.",
+      "unsupportedOnLinux": "Śledzenie procesów nie jest obsługiwane na Linuksie.",
+      "checkboxUnavailable": "Niedostępne na Linuksie"
+    }
   },
   "fileRandomiserSettings": {
     "title": "Ustawienia Losowania Plików",

@@ -39,6 +39,9 @@ export const clearCustomBackground = () =>
 export const setFileAuditorKeybinds = (keybinds: FileAuditorKeybinds) =>
   invoke<AppSettings>("set_file_auditor_keybinds", { keybinds });
 
+export const toggleAuditorProcessTracking = (enable: boolean) =>
+  invoke<AppSettings>("toggle_auditor_process_tracking", { enable });
+
 export const openSettingsFolder = () => invoke<void>("open_settings_folder");
 
 export const restartApp = () => invoke<void>("restart_app");

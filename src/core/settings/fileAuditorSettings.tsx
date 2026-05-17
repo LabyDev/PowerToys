@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Checkbox,
   Divider,
   Group,
   Paper,
@@ -10,10 +11,14 @@ import {
   Title,
 } from "@mantine/core";
 import { BookmarkIcon } from "@phosphor-icons/react";
-import { useRef, useState } from "react";
+import { platform, Platform } from "@tauri-apps/plugin-os";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../hooks/useAppSettings";
-import { setFileAuditorKeybinds } from "../api/appSettingsApi";
+import {
+  setFileAuditorKeybinds,
+  toggleAuditorProcessTracking,
+} from "../api/appSettingsApi";
 import { DEFAULT_BOOKMARK_COLOR_OPTIONS } from "../../types/common";
 import type { FileAuditorKeybinds } from "../../types/settings";
 import { displayKey } from "../../utils/displayKey";
@@ -127,7 +132,11 @@ const KeybindRow = ({
   <Group align="center" gap="sm" wrap="nowrap">
     <Group gap="xs" align="center" style={{ flex: 1, minWidth: 0 }}>
       {colorSwatch && (
-        <BookmarkIcon size={14} weight="fill" style={{ color: colorSwatch, flexShrink: 0 }} />
+        <BookmarkIcon
+          size={14}
+          weight="fill"
+          style={{ color: colorSwatch, flexShrink: 0 }}
+        />
       )}
       <Text size="sm" truncate>
         {label}
@@ -147,6 +156,27 @@ const FileAuditorSettings = () => {
   const { settings, setSettings } = useAppSettings();
   const bookmarkColors =
     settings.bookmarkColors ?? DEFAULT_BOOKMARK_COLOR_OPTIONS;
+
+  const [isLinux, setIsLinux] = useState(false);
+
+  useEffect(() => {
+    try {
+      const currentPlatform: Platform = platform();
+      setIsLinux(currentPlatform === "linux");
+    } catch (err) {
+      console.error("Failed to detect platform:", err);
+    }
+  }, []);
+
+  const handleTrackingToggle = async (checked: boolean) => {
+    if (isLinux) return;
+    try {
+      const updated = await toggleAuditorProcessTracking(checked);
+      setSettings(updated);
+    } catch (err) {
+      console.error("Failed to toggle auditor process tracking:", err);
+    }
+  };
 
   const keybinds: FileAuditorKeybinds =
     settings.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
@@ -213,7 +243,7 @@ const FileAuditorSettings = () => {
         p="lg"
         radius="md"
         withBorder
-        style={{ maxWidth: 520, margin: "0 auto" }}
+        style={{ maxWidth: 760, margin: "0 auto" }}
       >
         <Stack gap="xl">
           <Title order={3}>{t("fileAuditorSettings.title")}</Title>
@@ -230,6 +260,35 @@ const FileAuditorSettings = () => {
                 {t("fileAuditorSettings.presetRight")}
               </Button>
             </Group>
+          </Stack>
+
+          <Divider />
+
+          {/* Process tracking */}
+          <Stack gap="sm">
+            <Title order={4}>
+              {t("fileAuditorSettings.processTracking.title")}
+            </Title>
+            <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-line" }}>
+              {isLinux
+                ? t("fileAuditorSettings.processTracking.unsupportedOnLinux")
+                : t("fileAuditorSettings.processTracking.description")}
+            </Text>
+            <Checkbox
+              checked={
+                isLinux
+                  ? false
+                  : (settings.fileAuditor?.allowProcessTracking ?? false)
+              }
+              disabled={isLinux}
+              label={t("fileAuditorSettings.processTracking.checkboxLabel")}
+              description={
+                isLinux
+                  ? t("fileAuditorSettings.processTracking.checkboxUnavailable")
+                  : t("fileAuditorSettings.processTracking.checkboxDescription")
+              }
+              onChange={(e) => handleTrackingToggle(e.currentTarget.checked)}
+            />
           </Stack>
 
           <Divider />

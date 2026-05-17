@@ -57,6 +57,28 @@ pub fn set_app_settings(
     Ok(settings)
 }
 
+/// Toggle auditor process tracking
+#[tauri::command]
+pub fn toggle_auditor_process_tracking(
+    app: AppHandle<Wry>,
+    enable: bool,
+) -> Result<AppSettings, String> {
+    let mut settings = get_app_settings(app.clone())?;
+
+    #[cfg(target_os = "windows")]
+    {
+        settings.file_auditor.allow_process_tracking = enable;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        settings.file_auditor.allow_process_tracking = false;
+    }
+
+    set_app_settings(app, settings.clone())?;
+    Ok(settings)
+}
+
 /// Toggle process tracking
 #[tauri::command]
 pub fn toggle_process_tracking(app: AppHandle<Wry>, enable: bool) -> Result<AppSettings, String> {

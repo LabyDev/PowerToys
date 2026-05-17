@@ -26,7 +26,8 @@
     "resumeFrom": "File {{index}} of {{total}}",
     "resumeFolder": "{{path}}",
     "discardSession": "Start Fresh",
-    "resume": "Resume"
+    "resume": "Resume",
+    "autoOpenTracked": "Auto-open (tracked)"
   },
   "fileRandomiser": {
     "title": "Randomise Files",
@@ -193,7 +194,15 @@
     "keyStop": "Stop Audit",
     "keyClearBookmark": "Clear Bookmark",
     "keyBookmarkSlot": "Bookmark {{n}}",
-    "pressKey": "Press a key…"
+    "pressKey": "Press a key…",
+    "processTracking": {
+      "title": "Process Tracking (Experimental)",
+      "description": "When enabled, files open via a visible command window. The auditor auto-advances when the viewer is closed.\nImportant: If an app closes unexpectedly, too soon, or opens in an existing instance, it may cause issues.",
+      "checkboxLabel": "Enable process tracking feature",
+      "checkboxDescription": "Enables the feature; tracking still must be toggled in the main auditor view.",
+      "unsupportedOnLinux": "Process tracking is not supported on Linux.",
+      "checkboxUnavailable": "Unavailable on Linux"
+    }
   },
   "fileRandomiserSettings": {
     "title": "File Randomiser Settings",

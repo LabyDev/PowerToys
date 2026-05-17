@@ -23,7 +23,12 @@ import { displayKey } from "../utils/displayKey";
 import { DEFAULT_AUDITOR_KEYBINDS } from "./auditorKeybinds";
 
 const SESSION_KEY = "fileAuditor_session";
-type SavedSession = { folderPath: string; index: number; total: number };
+type SavedSession = {
+  folderPath: string;
+  index: number;
+  total: number;
+  displayIndex?: number;
+};
 const loadSession = (): SavedSession | null => {
   try {
     return JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null");
@@ -31,10 +36,15 @@ const loadSession = (): SavedSession | null => {
     return null;
   }
 };
-const saveSession = (folderPath: string, index: number, total: number) =>
+const saveSession = (
+  folderPath: string,
+  index: number,
+  total: number,
+  displayIndex?: number,
+) =>
   localStorage.setItem(
     SESSION_KEY,
-    JSON.stringify({ folderPath, index, total }),
+    JSON.stringify({ folderPath, index, total, displayIndex }),
   );
 const clearSession = () => localStorage.removeItem(SESSION_KEY);
 
@@ -55,18 +65,32 @@ const FileAuditor = () => {
   }, []);
 
   const autoOpenRef = useRef(true);
+  const trackingEnabledRef = useRef(false);
+  const sortedIndicesRef = useRef<number[]>([]);
 
   useEffect(() => {
     autoOpenRef.current = autoOpen;
   }, [autoOpen]);
+
+  useEffect(() => {
+    trackingEnabledRef.current =
+      settings?.fileAuditor?.allowProcessTracking ?? false;
+  }, [settings?.fileAuditor?.allowProcessTracking]);
 
   const indexRef = useRef(0);
   const filesRef = useRef<AuditFileEntry[]>([]);
 
   useEffect(() => {
     indexRef.current = index;
-    if (isAuditing && folderPath)
-      saveSession(folderPath, index, filesRef.current.length);
+    if (isAuditing && folderPath) {
+      const pos = sortedIndicesRef.current.indexOf(index);
+      saveSession(
+        folderPath,
+        index,
+        filesRef.current.length,
+        pos >= 0 ? pos : undefined,
+      );
+    }
   }, [index, isAuditing, folderPath]);
   useEffect(() => {
     filesRef.current = files;
@@ -109,12 +133,31 @@ const FileAuditor = () => {
       .map(([relFolder, files]) => ({ relFolder, files }));
   }, [files, folderPath]);
 
+  useEffect(() => {
+    sortedIndicesRef.current = fileGroups.flatMap((g) =>
+      g.files.map((f) => f.globalIdx),
+    );
+  }, [fileGroups]);
+
+  const sortedPos = useMemo(
+    () =>
+      fileGroups.flatMap((g) => g.files.map((f) => f.globalIdx)).indexOf(index),
+    [fileGroups, index],
+  );
+
   const jumpTo = useCallback(async (idx: number) => {
     const f = filesRef.current;
     if (!f[idx]) return;
+    if (
+      trackingEnabledRef.current &&
+      idx !== indexRef.current &&
+      f[indexRef.current]
+    )
+      await auditorApi.closeTrackedFile(f[indexRef.current].path);
     indexRef.current = idx;
     setIndex(idx);
-    if (autoOpenRef.current) await auditorApi.openAuditFile(f[idx].path);
+    if (autoOpenRef.current)
+      await auditorApi.openAuditFile(f[idx].path, trackingEnabledRef.current);
   }, []);
 
   const currentFile = isAuditing ? (files[index] ?? null) : null;
@@ -124,11 +167,18 @@ const FileAuditor = () => {
 
   const navigate = useCallback(async (delta: number) => {
     const f = filesRef.current;
-    if (!f.length) return;
-    const next = Math.max(0, Math.min(indexRef.current + delta, f.length - 1));
+    const order = sortedIndicesRef.current;
+    if (!f.length || !order.length) return;
+    const currentPos = order.indexOf(indexRef.current);
+    const startPos = currentPos === -1 ? 0 : currentPos;
+    const nextPos = Math.max(0, Math.min(startPos + delta, order.length - 1));
+    const next = order[nextPos];
+    if (trackingEnabledRef.current && f[indexRef.current])
+      await auditorApi.closeTrackedFile(f[indexRef.current].path);
     indexRef.current = next;
     setIndex(next);
-    if (autoOpenRef.current) await auditorApi.openAuditFile(f[next].path);
+    if (autoOpenRef.current)
+      await auditorApi.openAuditFile(f[next].path, trackingEnabledRef.current);
   }, []);
 
   const deleteFile = useCallback(async () => {
@@ -156,7 +206,10 @@ const FileAuditor = () => {
     indexRef.current = nextIdx;
     setIndex(nextIdx);
     if (autoOpenRef.current)
-      await auditorApi.openAuditFile(remaining[nextIdx].path);
+      await auditorApi.openAuditFile(
+        remaining[nextIdx].path,
+        trackingEnabledRef.current,
+      );
   }, []);
 
   const setBookmark = useCallback(
@@ -195,6 +248,10 @@ const FileAuditor = () => {
       else if (key === kb.delete.toLowerCase()) await deleteFile();
       else if (key === kb.clearBookmark.toLowerCase()) await clearBookmark();
       else if (key === kb.stop.toLowerCase()) {
+        if (trackingEnabledRef.current && filesRef.current[indexRef.current])
+          await auditorApi.forgetTrackedFile(
+            filesRef.current[indexRef.current].path,
+          );
         clearSession();
         setIsAuditing(false);
       } else {
@@ -222,11 +279,16 @@ const FileAuditor = () => {
 
   const handleStart = async () => {
     if (!files.length) return;
+    const startIdx = sortedIndicesRef.current[0] ?? 0;
     clearSession();
-    setIndex(0);
-    indexRef.current = 0;
+    setIndex(startIdx);
+    indexRef.current = startIdx;
     setIsAuditing(true);
-    if (autoOpen) await auditorApi.openAuditFile(files[0].path);
+    if (autoOpen)
+      await auditorApi.openAuditFile(
+        files[startIdx].path,
+        trackingEnabledRef.current,
+      );
   };
 
   const handleResume = async () => {
@@ -242,7 +304,10 @@ const FileAuditor = () => {
       indexRef.current = resumeIdx;
       setIsAuditing(true);
       if (autoOpenRef.current && result[resumeIdx])
-        await auditorApi.openAuditFile(result[resumeIdx].path);
+        await auditorApi.openAuditFile(
+          result[resumeIdx].path,
+          trackingEnabledRef.current,
+        );
       setSavedSession(null);
     } finally {
       setIsLoading(false);
@@ -262,13 +327,20 @@ const FileAuditor = () => {
       <Box className="audit-fullscreen">
         <Group justify="space-between" align="center">
           <Text size="xl" fw={600}>
-            {index + 1} / {files.length}
+            {Math.max(0, sortedPos) + 1} / {files.length}
           </Text>
           <Button
             size="xs"
             variant="subtle"
             color="red"
-            onClick={() => {
+            onClick={async () => {
+              if (
+                trackingEnabledRef.current &&
+                filesRef.current[indexRef.current]
+              )
+                await auditorApi.forgetTrackedFile(
+                  filesRef.current[indexRef.current].path,
+                );
               clearSession();
               setIsAuditing(false);
             }}
@@ -493,7 +565,7 @@ const FileAuditor = () => {
               </Text>
               <Text size="sm">
                 {t("fileAuditor.resumeFrom", {
-                  index: savedSession.index + 1,
+                  index: (savedSession.displayIndex ?? savedSession.index) + 1,
                   total: savedSession.total,
                 })}
               </Text>
@@ -514,7 +586,11 @@ const FileAuditor = () => {
           </Paper>
         )}
         <Checkbox
-          label={t("fileAuditor.autoOpen")}
+          label={
+            settings?.fileAuditor?.allowProcessTracking
+              ? t("fileAuditor.autoOpenTracked")
+              : t("fileAuditor.autoOpen")
+          }
           description={t("fileAuditor.autoOpenDescription")}
           checked={autoOpen}
           onChange={(e) => setAutoOpen(e.currentTarget.checked)}

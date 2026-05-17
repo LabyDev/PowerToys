@@ -2,7 +2,12 @@ use crate::models::common::hash_from_meta;
 use chrono::DateTime;
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Mutex;
+use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
+
+pub struct TrackedProcessMap(pub Mutex<HashMap<String, usize>>);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -75,13 +80,98 @@ pub async fn audit_list_files(path: String) -> Result<Vec<AuditFileEntry>, Strin
 }
 
 #[tauri::command]
-pub fn open_audit_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
+pub fn open_audit_file(app: tauri::AppHandle, path: String, track: bool) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    if track {
+        use windows::core::PCWSTR;
+        use windows::Win32::Foundation::{CloseHandle, HANDLE};
+        use windows::Win32::System::Threading::{WaitForSingleObject, INFINITE};
+        use windows::Win32::UI::Shell::{
+            SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW, ShellExecuteExW,
+        };
+
+        let file_wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
+        let mut sei: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
+        sei.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+        sei.lpFile = PCWSTR(file_wide.as_ptr());
+        sei.nShow = 1; // SW_SHOWNORMAL
+
+        let launched = unsafe {
+            ShellExecuteExW(&mut sei).is_ok() && !sei.hProcess.0.is_null()
+        };
+
+        if launched {
+            let handle_raw = sei.hProcess.0 as usize;
+            let map = app.state::<TrackedProcessMap>();
+            map.0.lock().unwrap().insert(path.clone(), handle_raw);
+
+            let app_clone = app.clone();
+            let path_clone = path.clone();
+            std::thread::spawn(move || {
+                let raw_ptr = handle_raw as *mut std::ffi::c_void;
+                unsafe {
+                    WaitForSingleObject(HANDLE(raw_ptr), INFINITE);
+                    let _ = CloseHandle(HANDLE(raw_ptr));
+                }
+                // Clean up map entry if the viewer was closed naturally by the user
+                let map = app_clone.state::<TrackedProcessMap>();
+                map.0.lock().unwrap().remove(&path_clone);
+            });
+            return Ok(());
+        }
+        // Fall through to non-tracked open if ShellExecuteEx didn't give a handle
+        // (e.g. file opened in an existing app instance)
+    }
+
     app.opener()
         .open_path(&path, None::<String>)
         .map_err(|e| e.to_string())
 }
 
+/// Remove a path from the tracking map without killing the process.
+/// Used when stopping the audit — viewer stays open.
 #[tauri::command]
-pub fn delete_to_trash(path: String) -> Result<(), String> {
+pub fn forget_tracked_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let map = app.state::<TrackedProcessMap>();
+    map.0.lock().unwrap().remove(&path);
+    Ok(())
+}
+
+/// Remove from map and kill the viewer process.
+/// Used when navigating — close current file before opening the next.
+#[tauri::command]
+pub fn close_tracked_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let map = app.state::<TrackedProcessMap>();
+    let handle_raw = map.0.lock().unwrap().remove(&path);
+    #[cfg(target_os = "windows")]
+    if let Some(raw) = handle_raw {
+        use windows::Win32::Foundation::HANDLE;
+        use windows::Win32::System::Threading::TerminateProcess;
+        let raw_ptr = raw as *mut std::ffi::c_void;
+        unsafe {
+            let _ = TerminateProcess(HANDLE(raw_ptr), 1);
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_to_trash(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let map = app.state::<TrackedProcessMap>();
+        let handle_raw = map.0.lock().unwrap().remove(&path);
+        if let Some(raw) = handle_raw {
+            use windows::Win32::Foundation::HANDLE;
+            use windows::Win32::System::Threading::TerminateProcess;
+            let raw_ptr = raw as *mut std::ffi::c_void;
+            unsafe {
+                let _ = TerminateProcess(HANDLE(raw_ptr), 1);
+            }
+            // Wait for file locks to be released after process termination
+            std::thread::sleep(std::time::Duration::from_millis(300));
+        }
+    }
     trash::delete(&path).map_err(|e| e.to_string())
 }

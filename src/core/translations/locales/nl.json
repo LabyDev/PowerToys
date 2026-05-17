@@ -26,7 +26,8 @@
     "resumeFrom": "Bestand {{index}} van {{total}}",
     "resumeFolder": "{{path}}",
     "discardSession": "Opnieuw beginnen",
-    "resume": "Hervatten"
+    "resume": "Hervatten",
+    "autoOpenTracked": "Auto-open (gevolgd)"
   },
   "fileRandomiser": {
     "title": "Bestanden Randomiseren",
@@ -193,7 +194,15 @@
     "keyStop": "Controle stoppen",
     "keyClearBookmark": "Bladwijzer verwijderen",
     "keyBookmarkSlot": "Bladwijzer {{n}}",
-    "pressKey": "Druk een toets…"
+    "pressKey": "Druk een toets…",
+    "processTracking": {
+      "title": "Procesvolging (Experimenteel)",
+      "description": "Wanneer ingeschakeld, worden bestanden geopend via een zichtbaar opdrachtvenster. De auditor gaat automatisch door wanneer de viewer wordt gesloten.\nBelangrijk: Als een app onverwacht sluit, te snel, of in een bestaande instantie opent, kan dit problemen veroorzaken.",
+      "checkboxLabel": "Procesvolging inschakelen",
+      "checkboxDescription": "Schakelt de functie in; volging moet nog worden ingeschakeld in de hoofdweergave.",
+      "unsupportedOnLinux": "Procesvolging wordt niet ondersteund op Linux.",
+      "checkboxUnavailable": "Niet beschikbaar op Linux"
+    }
   },
   "fileRandomiserSettings": {
     "title": "Bestanden Randomiseren Instellingen",

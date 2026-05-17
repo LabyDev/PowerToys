@@ -26,7 +26,8 @@
     "resumeFrom": "Datei {{index}} von {{total}}",
     "resumeFolder": "{{path}}",
     "discardSession": "Neu starten",
-    "resume": "Fortsetzen"
+    "resume": "Fortsetzen",
+    "autoOpenTracked": "Auto-öffnen (verfolgt)"
   },
   "fileRandomiser": {
     "title": "Dateien zufällig auswählen",
@@ -193,7 +194,15 @@
     "keyStop": "Audit stoppen",
     "keyClearBookmark": "Markierung entfernen",
     "keyBookmarkSlot": "Markierung {{n}}",
-    "pressKey": "Taste drücken…"
+    "pressKey": "Taste drücken…",
+    "processTracking": {
+      "title": "Prozessverfolgung (Experimentell)",
+      "description": "Wenn aktiviert, werden Dateien über ein sichtbares Befehlsfenster geöffnet. Der Auditor geht automatisch weiter, wenn der Viewer geschlossen wird.\nWichtig: Wenn eine App unerwartet schließt, zu früh oder in einer bestehenden Instanz geöffnet wird, kann dies Probleme verursachen.",
+      "checkboxLabel": "Prozessverfolgung aktivieren",
+      "checkboxDescription": "Aktiviert die Funktion; Verfolgung muss noch in der Hauptansicht umgeschaltet werden.",
+      "unsupportedOnLinux": "Prozessverfolgung wird unter Linux nicht unterstützt.",
+      "checkboxUnavailable": "Nicht verfügbar unter Linux"
+    }
   },
   "fileRandomiserSettings": {
     "title": "Einstellungen für Dateien zufällig auswählen",

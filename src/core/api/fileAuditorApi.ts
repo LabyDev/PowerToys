@@ -15,8 +15,14 @@ export const pickAuditFolder = (): Promise<string | null> =>
 export const auditListFiles = (path: string): Promise<AuditFileEntry[]> =>
   invoke<AuditFileEntry[]>("audit_list_files", { path });
 
-export const openAuditFile = (path: string): Promise<void> =>
-  invoke<void>("open_audit_file", { path });
+export const openAuditFile = (path: string, track = false): Promise<void> =>
+  invoke<void>("open_audit_file", { path, track });
+
+export const forgetTrackedFile = (path: string): Promise<void> =>
+  invoke<void>("forget_tracked_file", { path });
+
+export const closeTrackedFile = (path: string): Promise<void> =>
+  invoke<void>("close_tracked_file", { path });
 
 export const deleteToTrash = (path: string): Promise<void> =>
   invoke<void>("delete_to_trash", { path });

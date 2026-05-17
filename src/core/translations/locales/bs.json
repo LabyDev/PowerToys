@@ -26,7 +26,8 @@
     "resumeFrom": "Fajl {{index}} od {{total}}",
     "resumeFolder": "{{path}}",
     "discardSession": "Počni iznova",
-    "resume": "Nastavi"
+    "resume": "Nastavi",
+    "autoOpenTracked": "Auto-otvori (praćeno)"
   },
   "fileRandomiser": {
     "title": "Nasumični Fajlovi",
@@ -193,7 +194,15 @@
     "keyStop": "Zaustavi pregled",
     "keyClearBookmark": "Ukloni oznaku",
     "keyBookmarkSlot": "Oznaka {{n}}",
-    "pressKey": "Pritisni tipku…"
+    "pressKey": "Pritisni tipku…",
+    "processTracking": {
+      "title": "Praćenje procesa (Eksperimentalno)",
+      "description": "Kada je omogućeno, fajlovi se otvaraju putem vidljivog prozora komande. Auditor automatski prelazi naprijed kada se viewer zatvori.\nVažno: Ako aplikacija neočekivano zatvori, prerano, ili se otvori u postojećoj instanci, može izazvati probleme.",
+      "checkboxLabel": "Omogući praćenje procesa",
+      "checkboxDescription": "Omogućava funkciju; praćenje još uvijek mora biti uključeno u glavnom prikazu.",
+      "unsupportedOnLinux": "Praćenje procesa nije podržano na Linuxu.",
+      "checkboxUnavailable": "Nedostupno na Linuxu"
+    }
   },
   "fileRandomiserSettings": {
     "title": "Postavke nasumičnih fajlova",

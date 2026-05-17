@@ -44,6 +44,9 @@ pub fn run() {
         })
         .manage(filesortercommands::UndoStack(Mutex::new(Vec::new())))
         .manage(Mutex::new(FileSorterState::default()))
+        .manage(fileauditorcommands::TrackedProcessMap(Mutex::new(
+            std::collections::HashMap::new(),
+        )))
         // Command handlers
         .invoke_handler(tauri::generate_handler![
             // Settings
@@ -60,6 +63,7 @@ pub fn run() {
             setting_commands::set_global_bookmarks,
             setting_commands::open_settings_folder,
             setting_commands::set_file_auditor_keybinds,
+            setting_commands::toggle_auditor_process_tracking,
             // File randomiser
             filerandomisercommands::get_app_state,
             filerandomisercommands::add_path_via_dialog,
@@ -91,6 +95,8 @@ pub fn run() {
             fileauditorcommands::pick_audit_folder,
             fileauditorcommands::audit_list_files,
             fileauditorcommands::open_audit_file,
+            fileauditorcommands::forget_tracked_file,
+            fileauditorcommands::close_tracked_file,
             fileauditorcommands::delete_to_trash
         ])
         .run(tauri::generate_context!())
