@@ -250,6 +250,10 @@ Shares the global bookmark color palette with File Randomiser. Press the configu
 
 A toggle enables opening each file in its default application as you navigate. Useful for reviewing media or documents without manually launching them.
 
+### Process Tracking _(Windows only, experimental)_
+
+Enable in **File Auditor Settings**, then the auto-open toggle becomes **Auto-open (tracked)**. When active, pressing Next or Previous closes the current viewer process before opening the next file. Delete also terminates the viewer before trashing the file.
+
 ### Sidebar
 
 Files are grouped by subfolder with relative paths displayed. The current file is always scrolled into view automatically.
