@@ -503,7 +503,7 @@ pub fn pick_random_file(
     // --- How large a recency window to penalise ---
     // Scales with library size but caps so it doesn't dominate huge libraries.
     // e.g. 50 files → window ~10, 1000 files → window ~50, 10000 → window ~100
-    let recency_window = ((len as f64).sqrt() * 3.0).clamp(10.0, 150.0) as usize;
+    let recency_window = ((len as f64).sqrt() * 4.0).clamp(15.0, 200.0) as usize;
 
     // --- ORDER BIAS CURVE ---
     // Drops steeply: at r=0.3 it's already ~5%, gone by r=0.5
@@ -540,18 +540,19 @@ pub fn pick_random_file(
                 }
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
-                    // sqrt fade: stays suppressed longer, recovers slowly near the end
-                    let fade = (pos as f64 / recency_window as f64).sqrt();
-                    let full_penalty = 1.0 - fade;
+                    // pos=0 is the most recent pick → near-zero survival.
+                    // Curve stays low near recent picks and recovers toward window edge.
+                    let frac = pos as f64 / recency_window as f64;
+                    let survival = frac.powf(0.6);
                     if file
                         .bookmark
                         .as_ref()
                         .and_then(|b| b.color.as_ref())
                         .is_some()
                     {
-                        full_penalty.max(0.8)
+                        survival.max(0.8)
                     } else {
-                        full_penalty.max(0.05) // never fully zero, just very unlikely
+                        survival.max(0.02)
                     }
                 } else {
                     1.0
@@ -898,7 +899,7 @@ pub fn get_file_scores(
         .iter()
         .position(|(_, f)| Some(f.id) == data.last_picked_id)
         .unwrap_or(0);
-    let recency_window = ((len as f64).sqrt() * 3.0).clamp(5.0, 150.0) as usize;
+    let recency_window = ((len as f64).sqrt() * 4.0).clamp(15.0, 200.0) as usize;
     let order_influence = (1.0 - r).powf(3.0);
     let memory_influence = 4.0 * r * (1.0 - r);
 
@@ -922,7 +923,8 @@ pub fn get_file_scores(
                 }
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
-                    1.0 - (pos as f64 / recency_window as f64)
+                    let frac = pos as f64 / recency_window as f64;
+                    frac.powf(0.6).max(0.02)
                 } else {
                     1.0
                 }
