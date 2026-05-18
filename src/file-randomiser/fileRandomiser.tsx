@@ -701,8 +701,6 @@ const FileRandomiser = () => {
     [filteredFiles],
   );
 
-  const showScores = settings?.fileRandomiser?.showScores ?? false;
-
   return (
     <Box p="md" h="92vh">
       <LoadingOverlay
@@ -831,7 +829,6 @@ const FileRandomiser = () => {
                 nodes={fileTreeNodes}
                 bookmarkColors={bookmarkColorHexes}
                 setFreshCrawl={setFreshCrawl}
-                showScores={showScores}
                 showWeights={
                   settings.fileRandomiser.pathWeightsEnabled ?? false
                 }

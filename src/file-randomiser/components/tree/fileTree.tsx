@@ -12,7 +12,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { dirname, sep } from "@tauri-apps/api/path";
-import { invoke } from "@tauri-apps/api/core";
 
 import {
   FileEntry,
@@ -24,16 +23,6 @@ import ItemActions from "./itemActions";
 import * as randomiserApi from "../../../core/api/fileRandomiserApi";
 import { useFileRandomiser } from "../../../core/hooks/fileRandomiserStateProvider";
 
-interface FileScore {
-  id: number;
-  name: string;
-  isExcluded: boolean;
-  orderScore: number;
-  memoryFactor: number;
-  bookmarkFactor: number;
-  totalWeight: number;
-}
-
 interface FileTreeProps {
   nodes: FileTreeNode[];
   onExclude: (file: FileEntry) => void;
@@ -43,7 +32,6 @@ interface FileTreeProps {
   currentFileId: number | null;
   freshCrawl?: boolean;
   treeCollapsed?: boolean;
-  showScores?: boolean;
   onBookmarkChangeBulk?: (
     files: FileEntry[],
     color: string | null,
@@ -64,25 +52,7 @@ export interface FileTreeHandle {
 }
 
 const BASE_ITEM_HEIGHT = 30;
-const SCORE_EXTRA_HEIGHT = 22;
 const LAUNCH_DISTANCE = 600;
-
-type FactorKey = "order" | "memory" | "bookmark" | "total";
-const ALL_FACTORS: FactorKey[] = ["order", "memory", "bookmark", "total"];
-
-const FACTOR_LABELS: Record<FactorKey, string> = {
-  order: "Order",
-  memory: "Memory",
-  bookmark: "Bookmark",
-  total: "Total",
-};
-
-const FACTOR_COLORS: Record<FactorKey, string> = {
-  order: "var(--mantine-color-violet-5)",
-  memory: "var(--mantine-color-cyan-5)",
-  bookmark: "var(--mantine-color-yellow-5)",
-  total: "var(--mantine-color-green-5)",
-};
 
 // ── Path weight helpers ────────────────────────────────────────────────────
 
@@ -249,7 +219,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       currentFileId,
       freshCrawl = false,
       treeCollapsed = false,
-      showScores = false,
       showWeights = false,
       onBookmarkChangeBulk,
       bookmarkColors,
@@ -291,53 +260,8 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       setPendingFolderBookmark(value);
     };
 
-    // ------------------- Score state -------------------
-    const [scoreMap, setScoreMap] = useState<Map<number, FileScore>>(new Map());
-    const [visibleFactors, setVisibleFactors] = useState<Set<FactorKey>>(
-      new Set(["total"]),
-    );
-
-    const toggleFactor = (factor: FactorKey) => {
-      setVisibleFactors((prev) => {
-        const next = new Set(prev);
-        if (next.has(factor)) {
-          next.delete(factor);
-        } else {
-          next.add(factor);
-        }
-        return next;
-      });
-    };
-
-    const fetchScores = useCallback(async () => {
-      if (!showScores) return;
-      try {
-        const scores = await invoke<FileScore[]>("get_file_scores");
-        setScoreMap(new Map(scores.map((s) => [s.id, s])));
-      } catch (e) {
-        console.error("Failed to fetch file scores", e);
-      }
-    }, [showScores]);
-
-    useEffect(() => {
-      if (showScores) {
-        fetchScores();
-      } else {
-        setScoreMap(new Map());
-      }
-    }, [showScores]);
-
-    useEffect(() => {
-      if (showScores) fetchScores();
-    }, [currentFileId, showScores]);
-
     // ------------------- Item height -------------------
-    const factorCount = visibleFactors.size;
-
-    const fileItemHeight = useMemo(() => {
-      if (!showScores) return BASE_ITEM_HEIGHT;
-      return BASE_ITEM_HEIGHT + factorCount * SCORE_EXTRA_HEIGHT;
-    }, [showScores, factorCount]);
+    const fileItemHeight = BASE_ITEM_HEIGHT;
 
     // ------------------- Helpers -------------------
     const getNodeId = (node: FileTreeNode) =>
@@ -638,112 +562,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
       return files;
     };
 
-    // ------------------- Score bar -------------------
-    const getFactorValue = (score: FileScore, factor: FactorKey): number => {
-      switch (factor) {
-        case "order":
-          return score.orderScore;
-        case "memory":
-          return score.memoryFactor;
-        case "bookmark":
-          return score.bookmarkFactor;
-        case "total":
-          return score.totalWeight;
-      }
-    };
-
-    const maxTotal = useMemo(() => {
-      let max = 1;
-      scoreMap.forEach((s) => {
-        if (s.totalWeight > max) max = s.totalWeight;
-      });
-      return max;
-    }, [scoreMap]);
-
-    const renderScoreRows = (file: FileEntry) => {
-      const score = scoreMap.get(file.id);
-
-      return (
-        <Box style={{ paddingLeft: 4, opacity: file.excluded ? 0.4 : 1 }}>
-          <Group gap={6} mb={2}>
-            {ALL_FACTORS.map((factor) => (
-              <Text
-                key={factor}
-                size="10px"
-                style={{
-                  cursor: "pointer",
-                  color: visibleFactors.has(factor)
-                    ? FACTOR_COLORS[factor]
-                    : "var(--mantine-color-dimmed)",
-                  userSelect: "none",
-                  fontWeight: visibleFactors.has(factor) ? 600 : 400,
-                  transition: "color 0.15s",
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFactor(factor);
-                }}
-              >
-                {FACTOR_LABELS[factor]}
-              </Text>
-            ))}
-          </Group>
-
-          {score
-            ? Array.from(visibleFactors).map((factor) => {
-                const value = getFactorValue(score, factor);
-                const barPct =
-                  factor === "total"
-                    ? (value / maxTotal) * 100
-                    : Math.min(value * 50, 100);
-                return (
-                  <Group key={factor} gap={6} mb={1} align="center">
-                    <Box
-                      style={{
-                        width: 80,
-                        height: 6,
-                        borderRadius: 3,
-                        background: "var(--mantine-color-dark-4)",
-                        overflow: "hidden",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Box
-                        style={{
-                          width: `${barPct}%`,
-                          height: "100%",
-                          background: FACTOR_COLORS[factor],
-                          borderRadius: 3,
-                          transition: "width 0.2s ease",
-                        }}
-                      />
-                    </Box>
-                    <Text size="10px" c="dimmed" ff="monospace">
-                      {value.toFixed(3)}
-                    </Text>
-                  </Group>
-                );
-              })
-            : Array.from(visibleFactors).map((factor) => (
-                <Group key={factor} gap={6} mb={1} align="center">
-                  <Box
-                    style={{
-                      width: 80,
-                      height: 6,
-                      borderRadius: 3,
-                      background: "var(--mantine-color-dark-4)",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Text size="10px" c="dimmed" ff="monospace">
-                    —
-                  </Text>
-                </Group>
-              ))}
-        </Box>
-      );
-    };
-
     // ------------------- Render -------------------
     const renderNode = ({ node, depth }: FlattenedNode) => {
       const id = getNodeId(node);
@@ -820,8 +638,6 @@ const FileTree = forwardRef<FileTreeHandle, FileTreeProps>(
                   : "📁 " + node.name
                 : "📄 " + node.name}
             </ClampedTooltipText>
-
-            {showScores && node.file && renderScoreRows(node.file)}
           </Box>
 
           {/* File weight */}

@@ -273,7 +273,9 @@ const FileAuditor = () => {
         autoOpenRef.current &&
         filesRef.current[indexRef.current]
       ) {
-        await auditorApi.closeTrackedFile(filesRef.current[indexRef.current].path);
+        await auditorApi.closeTrackedFile(
+          filesRef.current[indexRef.current].path,
+        );
       } else if (key === kb.stop.toLowerCase()) {
         if (trackingEnabledRef.current && filesRef.current[indexRef.current])
           await auditorApi.forgetTrackedFile(
@@ -282,7 +284,12 @@ const FileAuditor = () => {
         clearSession();
         setIsAuditing(false);
       } else {
-        const slot = kb.bookmarks.findIndex((k) => k.toLowerCase() === key);
+        const effectiveBookmarkKeys = bookmarkColors.map(
+          (_, i) => kb.bookmarks[i] ?? String(i + 1),
+        );
+        const slot = effectiveBookmarkKeys.findIndex(
+          (k) => k.toLowerCase() === key,
+        );
         if (slot !== -1) await setBookmark(slot + 1);
       }
     };
@@ -293,7 +300,8 @@ const FileAuditor = () => {
   const allowTracking = settings?.fileAuditor?.allowProcessTracking ?? false;
 
   useEffect(() => {
-    const globalEnabled = settings?.fileAuditor?.globalCloseViewerShortcut ?? false;
+    const globalEnabled =
+      settings?.fileAuditor?.globalCloseViewerShortcut ?? false;
     if (!isAuditing || !autoOpen || !allowTracking || !globalEnabled) return;
     const kb = settings?.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
     const accelerator = toAccelerator(kb.closeViewer ?? "w");
@@ -303,7 +311,9 @@ const FileAuditor = () => {
       const f = filesRef.current[indexRef.current];
       if (f) auditorApi.closeTrackedFile(f.path);
     })
-      .then(() => { registered = true; })
+      .then(() => {
+        registered = true;
+      })
       .catch(console.error);
     return () => {
       if (registered) unregisterShortcut(accelerator).catch(() => {});
@@ -509,7 +519,8 @@ const FileAuditor = () => {
                       if (f) await auditorApi.closeTrackedFile(f.path);
                     }}
                   >
-                    {t("fileAuditor.keyCloseViewer")} [{displayKey(kb.closeViewer ?? "w")}]
+                    {t("fileAuditor.keyCloseViewer")} [
+                    {displayKey(kb.closeViewer ?? "w")}]
                   </Button>
                 )}
               </Group>

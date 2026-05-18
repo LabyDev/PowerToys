@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { AppStateData } from "../../types/filerandomiser";
+import { AppStateData, FileScore } from "../../types/filerandomiser";
 import { Bookmark } from "../../types/common";
 
 export const getAppState = () => invoke<AppStateData>("get_app_state");
@@ -32,8 +32,13 @@ export const updateFileBookmark = (
   isGlobal: boolean,
 ) => invoke<void>("update_file_bookmark", { hash, color, isGlobal });
 
+export const getFileScores = () => invoke<FileScore[]>("get_file_scores");
+
 export const updateFileBookmarksBulk = (
   hashes: string[],
   color: string | null,
   isGlobal: boolean,
 ) => invoke<void>("update_file_bookmarks_bulk", { hashes, color, isGlobal });
+
+export const saveCsv = (filename: string, content: string) =>
+  invoke<void>("save_csv", { filename, content });

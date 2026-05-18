@@ -129,3 +129,9 @@ pub struct DebugFlags {
     pub randomiser: bool,
     pub log_file: Option<std::sync::Mutex<std::fs::File>>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct PersistedStats {
+    pub history: Vec<HistoryEntry>,
+    pub path_pick_counts: HashMap<String, u32>,
+}

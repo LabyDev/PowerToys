@@ -87,6 +87,109 @@
       "tracking": "Śledzenie",
       "searchPlaceholder": "Szukaj ścieżek, plików i historii…",
       "pickFileDisabledTracking": "Wyłączone, gdy śledzenie jest aktywne. Plik można wybrać tylko raz."
+    },
+    "stats": {
+      "title": "Statystyki"
+    },
+    "statsWindow": {
+      "title": "Statystyki randomizatora plików",
+      "subtitle": "{{time}} · odświeża przy każdym wyborze",
+      "anonymise": "Anonimizuj nazwy plików",
+      "deanonymise": "Pokaż prawdziwe nazwy",
+      "exportScores": "Eksportuj wyniki",
+      "exportHistory": "Eksportuj historię",
+      "cards": {
+        "totalFiles": "Pliki ogółem",
+        "nExcluded": "{{count}} wykluczone",
+        "included": "Uwzględnione",
+        "totalPicks": "Wyborów ogółem",
+        "coverage": "Pokrycie",
+        "nNeverPicked": "{{count}} nigdy nie wybrane",
+        "weightSpread": "Zakres wag",
+        "weightAvg": "śr. {{value}}",
+        "gini": "Sprawiedliwość (Gini)",
+        "giniSub": "0 = równe · 1 = nierówne",
+        "entropy": "Entropia wyboru",
+        "entropySub": "0 = jeden plik · 1 = równomierne",
+        "daysActive": "Aktywne dni",
+        "firstActivity": "Pierwsze: {{date}}"
+      },
+      "table": {
+        "title": "Wszystkie pliki — wagi na żywo ({{count}})",
+        "sub": "Kolejność: wzmocnienie Gaussa · Pamięć: kara za niedawność · Δ%: rzeczywista vs. oczekiwana częstość wyboru",
+        "name": "Nazwa",
+        "order": "Kolejność",
+        "memory": "Pamięć",
+        "bookmark": "Zakładka",
+        "weight": "Waga",
+        "picks": "Wybory",
+        "delta": "Δ%",
+        "lastSeen": "Ostatnio widziany",
+        "excludedBadge": "wykluczone"
+      },
+      "relTime": {
+        "never": "nigdy",
+        "today": "dziś",
+        "yesterday": "wczoraj",
+        "daysAgo": "{{count}}d temu",
+        "monthsAgo": "{{count}}mies. temu",
+        "yearsAgo": "{{count}}r. temu"
+      },
+      "weightDist": {
+        "title": "Rozkład wag",
+        "sub": "Rozproszenie łącznych wag — wąski klaster oznacza małą różnorodność prawdopodobieństwa wyboru",
+        "avg": "śr.",
+        "files": "{{count}} plików"
+      },
+      "memoryDist": {
+        "title": "Rozkład czynnika pamięci",
+        "sub": "Blisko 0 = niedawno wybrane i ukarane · Blisko 1 = dawno nie wybrane",
+        "files": "{{count}} plików"
+      },
+      "scatter": {
+        "title": "Kara pamięci vs. waga wyboru",
+        "sub": "Każda kropka to plik — kropki powyżej klastra mają wzmocnienie zakładką lub kolejnością",
+        "xLabel": "czynnik pamięci",
+        "yLabel": "łączna waga",
+        "memoryLabel": "pamięć",
+        "weightLabel": "waga"
+      },
+      "opensPerDay": {
+        "title": "Otwarcia na dzień — ostatnie 30 dni",
+        "sub": "Słupki = dzienne otwarcia · linia ciągła = suma bieżąca · linia przerywana = 7-dniowa średnia",
+        "opens": "Otwarcia",
+        "cumulative": "Skumulowane",
+        "rollingAvg": "Śr. 7d"
+      },
+      "heatmap": {
+        "title": "Aktywność — ostatnie 52 tygodnie",
+        "sub": "Każdy kwadrat to jeden dzień; intensywność koloru = liczba wyborów",
+        "pickTooltip": "{{date}}: {{count}} wyborów"
+      },
+      "hourOfDay": {
+        "title": "Użycie według godziny",
+        "peakSub": "Szczytowa godzina: {{label}} ({{count}} otwarć)"
+      },
+      "dayOfWeek": {
+        "title": "Użycie według dnia tygodnia",
+        "peakSub": "Najbardziej aktywny dzień: {{day}} ({{count}} otwarć)"
+      },
+      "topPicked": {
+        "title": "Najczęściej wybierane pliki (top {{count}})",
+        "picks": "Wybory"
+      },
+      "pickDist": {
+        "title": "Rozkład częstości wyborów",
+        "sub": "Ile plików mieści się w każdym zakresie częstości wyborów",
+        "files": "{{count}} plików",
+        "filesInRange": "Pliki w zakresie"
+      },
+      "pathBreakdown": {
+        "title": "Zestawienie według ścieżki",
+        "sub": "Pliki i skumulowane wybory według folderu głównego",
+        "files": "Pliki",
+        "picks": "Wybory"
+      }
     }
   },
   "fileSorter": {

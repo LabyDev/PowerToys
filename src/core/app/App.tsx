@@ -9,6 +9,7 @@ import Settings from "../settings/settings";
 import { FileRandomiserProvider } from "../hooks/fileRandomiserStateProvider";
 import FileSorter from "../../file-sorter/fileSorter";
 import FileAuditor from "../../file-auditor/fileAuditor";
+import StatsWindow from "../../file-randomiser/statsWindow";
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -30,17 +31,19 @@ const routes = [
   { path: "/FileAuditor", element: <FileAuditor /> },
   { path: "/FileAuditorSettings", element: <FileAuditorSettings /> },
   { path: "/Settings", element: <Settings /> },
+  { path: "/Stats", element: <StatsWindow /> },
 ];
 
 export function App() {
   const location = useLocation();
   const isAtRoot = location.pathname === "/";
+  const isStats = location.pathname === "/Stats";
 
   return (
     <FileRandomiserProvider>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={location.pathname} style={{ height: "100%" }}>
-          {!isAtRoot && <NavBar />}
+          {!isAtRoot && !isStats && <NavBar />}
           <Routes location={location} key={location.pathname}>
             {routes.map(({ path, element }) => (
               <Route

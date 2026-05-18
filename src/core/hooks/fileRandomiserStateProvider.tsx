@@ -55,6 +55,7 @@ export const FileRandomiserProvider = ({
     files: [],
     history: [],
     filterRules: [],
+    pickCounts: {},
   });
 
   const lastAppliedPresetRef = useRef<RandomiserPreset | null>(null);

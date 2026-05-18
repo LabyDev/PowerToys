@@ -87,6 +87,109 @@
       "tracking": "Tracking",
       "searchPlaceholder": "Search paths, files, and history…",
       "pickFileDisabledTracking": "Disabled while tracking is active. You can only pick a file once."
+    },
+    "stats": {
+      "title": "Stats"
+    },
+    "statsWindow": {
+      "title": "File Randomiser Stats",
+      "subtitle": "{{time}} · refreshes on every pick",
+      "anonymise": "Anonymise filenames",
+      "deanonymise": "Show real names",
+      "exportScores": "Export scores",
+      "exportHistory": "Export history",
+      "cards": {
+        "totalFiles": "Total files",
+        "nExcluded": "{{count}} excluded",
+        "included": "Included",
+        "totalPicks": "Total picks",
+        "coverage": "Coverage",
+        "nNeverPicked": "{{count}} never picked",
+        "weightSpread": "Weight spread",
+        "weightAvg": "avg {{value}}",
+        "gini": "Fairness (Gini)",
+        "giniSub": "0 = equal · 1 = skewed",
+        "entropy": "Pick entropy",
+        "entropySub": "0 = one file · 1 = uniform",
+        "daysActive": "Days active",
+        "firstActivity": "first: {{date}}"
+      },
+      "table": {
+        "title": "All files — live weights ({{count}})",
+        "sub": "Order: Gaussian next-in-sequence boost · Memory: recency penalty · Δ%: actual pick rate minus weight-implied expected rate",
+        "name": "Name",
+        "order": "Order",
+        "memory": "Memory",
+        "bookmark": "Bookmark",
+        "weight": "Weight",
+        "picks": "Picks",
+        "delta": "Δ%",
+        "lastSeen": "Last seen",
+        "excludedBadge": "excluded"
+      },
+      "relTime": {
+        "never": "never",
+        "today": "today",
+        "yesterday": "yesterday",
+        "daysAgo": "{{count}}d ago",
+        "monthsAgo": "{{count}}mo ago",
+        "yearsAgo": "{{count}}y ago"
+      },
+      "weightDist": {
+        "title": "Weight distribution",
+        "sub": "Spread of total-weight values across included files — a tight cluster means little variety in pick probability",
+        "avg": "avg",
+        "files": "{{count}} files"
+      },
+      "memoryDist": {
+        "title": "Memory factor distribution",
+        "sub": "Near 0 = picked recently and penalised · Near 1 = hasn't been picked in a while",
+        "files": "{{count}} files"
+      },
+      "scatter": {
+        "title": "Memory penalty vs pick weight",
+        "sub": "Each dot is a file — dots above the cluster are getting a bookmark or order boost",
+        "xLabel": "memory factor",
+        "yLabel": "total weight",
+        "memoryLabel": "memory",
+        "weightLabel": "weight"
+      },
+      "opensPerDay": {
+        "title": "Opens per day — last 30 days",
+        "sub": "Bars = daily opens · solid line = running total · dashed line = 7-day rolling average",
+        "opens": "Opens",
+        "cumulative": "Cumulative",
+        "rollingAvg": "7d avg"
+      },
+      "heatmap": {
+        "title": "Activity — last 52 weeks",
+        "sub": "Each square is one day; colour intensity = number of picks",
+        "pickTooltip": "{{date}}: {{count}} picks"
+      },
+      "hourOfDay": {
+        "title": "Usage by hour of day",
+        "peakSub": "Peak hour: {{label}} ({{count}} opens)"
+      },
+      "dayOfWeek": {
+        "title": "Usage by day of week",
+        "peakSub": "Busiest day: {{day}} ({{count}} opens)"
+      },
+      "topPicked": {
+        "title": "Most picked files (top {{count}})",
+        "picks": "Picks"
+      },
+      "pickDist": {
+        "title": "Pick count distribution",
+        "sub": "How many files fall into each pick-count range",
+        "files": "{{count}} files",
+        "filesInRange": "Files in range"
+      },
+      "pathBreakdown": {
+        "title": "Per-path breakdown",
+        "sub": "Files and cumulative picks attributed to each root folder",
+        "files": "Files",
+        "picks": "Picks"
+      }
     }
   },
   "fileSorter": {

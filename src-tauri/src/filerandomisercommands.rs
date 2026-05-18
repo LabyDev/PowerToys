@@ -1,6 +1,6 @@
 use crate::models::{
     AppStateData, Bookmark, FileEntry, FileScore, FilterMatchType, FilterRule, HistoryEntry,
-    SavedPath,
+    PersistedStats, SavedPath,
 };
 use crate::models::{FilterAction, RandomiserPreset};
 use crate::models::common::hash_from_meta;
@@ -16,8 +16,50 @@ use std::sync::{Arc, Mutex};
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
-use tauri_plugin_dialog::FilePath;
+use tauri_plugin_dialog::{DialogExt, FilePath};
 use tauri_plugin_opener::OpenerExt;
+
+pub struct PathPickCounts(pub Mutex<HashMap<String, u32>>);
+
+fn stats_file_path(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    app.path().app_data_dir().ok().map(|d| d.join("randomiser_stats.json"))
+}
+
+fn save_persisted_stats(app: &tauri::AppHandle, data: &AppStateData) {
+    let Some(path) = stats_file_path(app) else { return };
+    let path_pick_counts: HashMap<String, u32> = data
+        .files
+        .iter()
+        .filter_map(|f| {
+            let count = *data.pick_counts.get(&f.id)?;
+            if count == 0 { return None; }
+            let path_str = match &f.path {
+                FilePath::Path(p) => p.to_string_lossy().to_string(),
+                FilePath::Url(u) => u.to_string(),
+            };
+            Some((path_str, count))
+        })
+        .collect();
+    let stats = PersistedStats { history: data.history.clone(), path_pick_counts };
+    if let Ok(json) = serde_json::to_string_pretty(&stats) {
+        let _ = std::fs::write(path, json);
+    }
+}
+
+#[tauri::command]
+pub fn save_csv(app: tauri::AppHandle, filename: String, content: String) -> Result<(), String> {
+    let path = app
+        .dialog()
+        .file()
+        .add_filter("CSV", &["csv"])
+        .set_file_name(&filename)
+        .blocking_save_file();
+    match path {
+        Some(FilePath::Path(p)) => std::fs::write(p, content).map_err(|e| e.to_string()),
+        Some(FilePath::Url(_)) => Err("URL paths not supported for CSV export".to_string()),
+        None => Ok(()), // user cancelled
+    }
+}
 
 #[tauri::command]
 pub fn get_app_state(state: State<'_, Mutex<AppStateData>>) -> AppStateData {
@@ -77,6 +119,7 @@ pub fn remove_path(app_data: State<'_, Mutex<AppStateData>>, id: u64) -> bool {
 #[tauri::command]
 pub fn crawl_paths(
     app_data: State<'_, Mutex<AppStateData>>,
+    path_pick_counts: State<'_, PathPickCounts>,
     global_bookmarks: Vec<Bookmark>,
     local_bookmarks: Vec<Bookmark>,
 ) -> Vec<FileEntry> {
@@ -325,6 +368,21 @@ pub fn crawl_paths(
         .collect();
 
     data.files = file_entries;
+
+    // Remap persisted path-keyed pick counts to current file IDs
+    let persisted = path_pick_counts.0.lock().unwrap();
+    data.pick_counts = data
+        .files
+        .iter()
+        .filter_map(|f| {
+            let path_str = match &f.path {
+                FilePath::Path(p) => p.to_string_lossy().to_string(),
+                FilePath::Url(u) => u.to_string(),
+            };
+            persisted.get(&path_str).map(|&count| (f.id, count))
+        })
+        .collect();
+
     data.files.clone()
 }
 
@@ -392,6 +450,7 @@ pub fn open_file_tracked(
             path: FilePath::Path(path.clone().into()),
             opened_at: Utc::now(),
         });
+        save_persisted_stats(&app, &state);
     }
 
     // Spawn thread to open file
@@ -534,7 +593,7 @@ pub fn pick_random_file(
                     .and_then(|b| b.color.as_ref())
                     .is_some()
                 {
-                    0.3
+                    0.05
                 } else {
                     0.0
                 }
@@ -550,7 +609,7 @@ pub fn pick_random_file(
                         .and_then(|b| b.color.as_ref())
                         .is_some()
                     {
-                        survival.max(0.8)
+                        survival.max(0.1)
                     } else {
                         survival.max(0.02)
                     }
@@ -566,14 +625,7 @@ pub fn pick_random_file(
             let memory_factor = 1.0 - memory_influence * (1.0 - recency_penalty);
 
             // --- Bookmark preference ---
-            let bookmark_factor = compute_bookmark_factor(file, &settings);
-
-            // Fade bookmark influence with randomness
-            let bookmark_influence = 1.0 - (r * 0.7);
-            // r=0 → full effect
-            // r=1 → 30% effect
-
-            let adjusted_bookmark = 1.0 + (bookmark_factor - 1.0) * bookmark_influence;
+            let adjusted_bookmark = compute_bookmark_factor(file, &settings);
 
             // Path weight — global × preset; most specific prefix wins in each map
             let path_weight = if settings.file_randomiser.path_weights_enabled {
@@ -726,6 +778,7 @@ pub fn pick_random_file(
 
     drop(data);
 
+    let _ = app.emit("file-picked", ());
     let _ = open_file_tracked(
         app,
         match &file.path {
@@ -749,6 +802,7 @@ pub fn open_file_by_id(
     let file = data.files.iter().find(|f| f.id == id)?.clone();
     drop(data);
 
+    let _ = app.emit("file-picked", ());
     let _ = open_file_tracked(
         app.clone(),
         match &file.path {

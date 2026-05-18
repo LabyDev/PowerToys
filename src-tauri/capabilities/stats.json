@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "stats",
+  "description": "Capability for the stats window",
+  "windows": ["stats"],
+  "permissions": ["core:default"]
+}

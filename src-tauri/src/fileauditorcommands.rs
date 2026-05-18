@@ -32,6 +32,25 @@ pub async fn pick_audit_folder(app: tauri::AppHandle) -> Result<Option<String>, 
     Ok(folder.and_then(|f| f.as_path().map(|p| p.to_string_lossy().to_string())))
 }
 
+fn is_system_file(path: &std::path::Path) -> bool {
+    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+        if name.starts_with('.') {
+            return true;
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        if let Ok(meta) = path.metadata() {
+            const FILE_ATTRIBUTE_HIDDEN: u32 = 0x2;
+            if meta.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0 {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 #[tauri::command]
 pub async fn audit_list_files(path: String) -> Result<Vec<AuditFileEntry>, String> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -39,6 +58,7 @@ pub async fn audit_list_files(path: String) -> Result<Vec<AuditFileEntry>, Strin
         let walker = WalkBuilder::new(&path)
             .hidden(false)
             .follow_links(false)
+            .filter_entry(|e| !is_system_file(e.path()))
             .build();
 
         for (id, entry) in walker.flatten().enumerate() {

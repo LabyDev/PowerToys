@@ -11,6 +11,11 @@
     "os:default",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
-    "global-shortcut:allow-is-registered"
+    "global-shortcut:allow-is-registered",
+    "core:window:allow-create",
+    "core:window:allow-set-focus",
+    "core:window:allow-get-all-windows",
+    "core:webview:allow-create-webview-window",
+    "core:webview:allow-get-all-webviews"
   ]
 }

@@ -87,6 +87,109 @@
       "tracking": "Tracking",
       "searchPlaceholder": "Zoek paden, bestanden en geschiedenis…",
       "pickFileDisabledTracking": "Uitgeschakeld terwijl volgen actief is. Je kunt slechts één bestand kiezen."
+    },
+    "stats": {
+      "title": "Statistieken"
+    },
+    "statsWindow": {
+      "title": "Bestand Randomiseerder Statistieken",
+      "subtitle": "{{time}} · vernieuwt bij elke keuze",
+      "anonymise": "Bestandsnamen anonimiseren",
+      "deanonymise": "Echte namen tonen",
+      "exportScores": "Scores exporteren",
+      "exportHistory": "Geschiedenis exporteren",
+      "cards": {
+        "totalFiles": "Bestanden totaal",
+        "nExcluded": "{{count}} uitgesloten",
+        "included": "Inbegrepen",
+        "totalPicks": "Keuzes totaal",
+        "coverage": "Dekking",
+        "nNeverPicked": "{{count}} nooit gekozen",
+        "weightSpread": "Gewichtsbereik",
+        "weightAvg": "gem. {{value}}",
+        "gini": "Eerlijkheid (Gini)",
+        "giniSub": "0 = gelijk · 1 = scheef",
+        "entropy": "Keuze-entropie",
+        "entropySub": "0 = één bestand · 1 = gelijkmatig",
+        "daysActive": "Actieve dagen",
+        "firstActivity": "eerste: {{date}}"
+      },
+      "table": {
+        "title": "Alle bestanden — live gewichten ({{count}})",
+        "sub": "Volgorde: Gaussiaanse boost · Geheugen: recentiestraf · Δ%: werkelijke t.o.v. verwachte keuzefrequentie",
+        "name": "Naam",
+        "order": "Volgorde",
+        "memory": "Geheugen",
+        "bookmark": "Bladwijzer",
+        "weight": "Gewicht",
+        "picks": "Keuzes",
+        "delta": "Δ%",
+        "lastSeen": "Laatste keer",
+        "excludedBadge": "uitgesloten"
+      },
+      "relTime": {
+        "never": "nooit",
+        "today": "vandaag",
+        "yesterday": "gisteren",
+        "daysAgo": "{{count}}d geleden",
+        "monthsAgo": "{{count}}mnd geleden",
+        "yearsAgo": "{{count}}j geleden"
+      },
+      "weightDist": {
+        "title": "Gewichtsverdeling",
+        "sub": "Spreiding van totaalgewichten — een nauw cluster betekent weinig variatie in keuzefrequentie",
+        "avg": "gem.",
+        "files": "{{count}} bestanden"
+      },
+      "memoryDist": {
+        "title": "Geheugenfactorverdeling",
+        "sub": "Dicht bij 0 = recentelijk gekozen en bestraft · Dicht bij 1 = al een tijdje niet gekozen",
+        "files": "{{count}} bestanden"
+      },
+      "scatter": {
+        "title": "Geheugenstraf vs. kiesgewicht",
+        "sub": "Elk punt is een bestand — punten boven de cluster krijgen een bladwijzer- of volgordeboost",
+        "xLabel": "geheugenfactor",
+        "yLabel": "totaalgewicht",
+        "memoryLabel": "geheugen",
+        "weightLabel": "gewicht"
+      },
+      "opensPerDay": {
+        "title": "Opens per dag — afgelopen 30 dagen",
+        "sub": "Staven = dagelijkse opens · vaste lijn = lopend totaal · gestippelde lijn = 7-daags gemiddelde",
+        "opens": "Opens",
+        "cumulative": "Cumulatief",
+        "rollingAvg": "7d gem."
+      },
+      "heatmap": {
+        "title": "Activiteit — afgelopen 52 weken",
+        "sub": "Elk vakje is één dag; kleurintensiteit = aantal keuzes",
+        "pickTooltip": "{{date}}: {{count}} keuzes"
+      },
+      "hourOfDay": {
+        "title": "Gebruik per uur",
+        "peakSub": "Piekuur: {{label}} ({{count}} opens)"
+      },
+      "dayOfWeek": {
+        "title": "Gebruik per weekdag",
+        "peakSub": "Drukste dag: {{day}} ({{count}} opens)"
+      },
+      "topPicked": {
+        "title": "Vaakst gekozen bestanden (top {{count}})",
+        "picks": "Keuzes"
+      },
+      "pickDist": {
+        "title": "Verdeling van kiesfrequentie",
+        "sub": "Hoeveel bestanden vallen in elk kiesfrequentiebereik",
+        "files": "{{count}} bestanden",
+        "filesInRange": "Bestanden in bereik"
+      },
+      "pathBreakdown": {
+        "title": "Uitsplitsing per pad",
+        "sub": "Bestanden en cumulatieve keuzes per hoofdmap",
+        "files": "Bestanden",
+        "picks": "Keuzes"
+      }
     }
   },
   "fileSorter": {

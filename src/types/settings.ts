@@ -42,7 +42,6 @@ export type AppSettings = {
     randomnessLevel: number;
     globalBookmarks: Bookmark[];
     bookmarkPreference: BookmarkPreference;
-    showScores: boolean;
     pathWeights?: Record<string, number>;
     pathWeightsEnabled?: boolean;
   };

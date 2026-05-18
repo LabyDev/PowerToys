@@ -87,6 +87,109 @@
       "tracking": "Verfolgung",
       "searchPlaceholder": "Suche nach Pfaden, Dateien und Verlauf…",
       "pickFileDisabledTracking": "Deaktiviert, solange die Nachverfolgung aktiv ist. Du kannst nur einmal eine Datei auswählen."
+    },
+    "stats": {
+      "title": "Statistiken"
+    },
+    "statsWindow": {
+      "title": "Datei-Randomisierer Statistiken",
+      "subtitle": "{{time}} · aktualisiert bei jeder Auswahl",
+      "anonymise": "Dateinamen anonymisieren",
+      "deanonymise": "Echte Namen anzeigen",
+      "exportScores": "Ergebnisse exportieren",
+      "exportHistory": "Verlauf exportieren",
+      "cards": {
+        "totalFiles": "Dateien gesamt",
+        "nExcluded": "{{count}} ausgeschlossen",
+        "included": "Eingeschlossen",
+        "totalPicks": "Auswahlen gesamt",
+        "coverage": "Abdeckung",
+        "nNeverPicked": "{{count}} nie ausgewählt",
+        "weightSpread": "Gewichtsbereich",
+        "weightAvg": "Ø {{value}}",
+        "gini": "Fairness (Gini)",
+        "giniSub": "0 = gleich · 1 = schief",
+        "entropy": "Auswahl-Entropie",
+        "entropySub": "0 = eine Datei · 1 = gleichmäßig",
+        "daysActive": "Aktive Tage",
+        "firstActivity": "Erstes: {{date}}"
+      },
+      "table": {
+        "title": "Alle Dateien — Live-Gewichte ({{count}})",
+        "sub": "Reihenfolge: Gaußsche Boost · Gedächtnis: Aktualitätsstrafe · Δ%: tatsächliche vs. erwartete Auswahlrate",
+        "name": "Name",
+        "order": "Reihenfolge",
+        "memory": "Gedächtnis",
+        "bookmark": "Lesezeichen",
+        "weight": "Gewicht",
+        "picks": "Auswahlen",
+        "delta": "Δ%",
+        "lastSeen": "Zuletzt gesehen",
+        "excludedBadge": "ausgeschlossen"
+      },
+      "relTime": {
+        "never": "nie",
+        "today": "heute",
+        "yesterday": "gestern",
+        "daysAgo": "vor {{count}}T",
+        "monthsAgo": "vor {{count}}M",
+        "yearsAgo": "vor {{count}}J"
+      },
+      "weightDist": {
+        "title": "Gewichtsverteilung",
+        "sub": "Streuung der Gesamtgewichte — ein enger Cluster bedeutet wenig Variation in der Auswahlwahrscheinlichkeit",
+        "avg": "Ø",
+        "files": "{{count}} Dateien"
+      },
+      "memoryDist": {
+        "title": "Gedächtnisfaktorverteilung",
+        "sub": "Nahe 0 = kürzlich ausgewählt und bestraft · Nahe 1 = seit längerer Zeit nicht ausgewählt",
+        "files": "{{count}} Dateien"
+      },
+      "scatter": {
+        "title": "Gedächtnisstrafe vs. Auswahlgewicht",
+        "sub": "Jeder Punkt ist eine Datei — Punkte über dem Cluster haben einen Lesezeichen- oder Reihenfolge-Boost",
+        "xLabel": "Gedächtnisfaktor",
+        "yLabel": "Gesamtgewicht",
+        "memoryLabel": "Gedächtnis",
+        "weightLabel": "Gewicht"
+      },
+      "opensPerDay": {
+        "title": "Öffnungen pro Tag — letzte 30 Tage",
+        "sub": "Balken = tägliche Öffnungen · durchgezogene Linie = laufende Summe · gestrichelte Linie = 7-Tage-Durchschnitt",
+        "opens": "Öffnungen",
+        "cumulative": "Kumulativ",
+        "rollingAvg": "7T-Ø"
+      },
+      "heatmap": {
+        "title": "Aktivität — letzte 52 Wochen",
+        "sub": "Jedes Feld ist ein Tag; Farbintensität = Anzahl der Auswahlen",
+        "pickTooltip": "{{date}}: {{count}} Auswahlen"
+      },
+      "hourOfDay": {
+        "title": "Nutzung nach Stunde",
+        "peakSub": "Spitzenstunde: {{label}} ({{count}} Öffnungen)"
+      },
+      "dayOfWeek": {
+        "title": "Nutzung nach Wochentag",
+        "peakSub": "Stärkster Tag: {{day}} ({{count}} Öffnungen)"
+      },
+      "topPicked": {
+        "title": "Meistausgewählte Dateien (Top {{count}})",
+        "picks": "Auswahlen"
+      },
+      "pickDist": {
+        "title": "Verteilung der Auswahlhäufigkeit",
+        "sub": "Wie viele Dateien fallen in jeden Auswahlhäufigkeitsbereich",
+        "files": "{{count}} Dateien",
+        "filesInRange": "Dateien im Bereich"
+      },
+      "pathBreakdown": {
+        "title": "Aufschlüsselung nach Pfad",
+        "sub": "Dateien und kumulative Auswahlen pro Stammordner",
+        "files": "Dateien",
+        "picks": "Auswahlen"
+      }
     }
   },
   "fileSorter": {

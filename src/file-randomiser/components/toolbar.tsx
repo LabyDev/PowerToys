@@ -1,11 +1,11 @@
 import {
+  ActionIcon,
   Button,
   Checkbox,
   Group,
+  Paper,
   Stack,
   TextInput,
-  ActionIcon,
-  Paper,
   Tooltip,
 } from "@mantine/core";
 import {
@@ -14,7 +14,9 @@ import {
   ShuffleIcon,
   MagnifyingGlassIcon,
   XCircleIcon,
+  ChartBarIcon,
 } from "@phosphor-icons/react";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useTranslation } from "react-i18next";
 
 interface ToolbarProps {
@@ -48,6 +50,21 @@ const Toolbar = ({
 }: ToolbarProps) => {
   const { t } = useTranslation();
 
+  const openStatsWindow = async () => {
+    const existing = await WebviewWindow.getByLabel("stats");
+    if (existing) {
+      await existing.setFocus();
+      return;
+    }
+    new WebviewWindow("stats", {
+      url: "/Stats",
+      title: t("fileRandomiser.stats.title"),
+      width: 960,
+      height: 680,
+      center: true,
+    });
+  };
+
   const renderButtons = () => (
     <Group gap="sm">
       <Button leftSection={<FolderPlusIcon size={16} />} onClick={onAddPath}>
@@ -80,6 +97,15 @@ const Toolbar = ({
             ? t("fileRandomiser.toolbar.randomFile")
             : t("fileRandomiser.toolbar.nextFile")}
         </Button>
+      </Tooltip>
+      <Tooltip
+        label={t("fileRandomiser.stats.title")}
+        withArrow
+        position="bottom"
+      >
+        <ActionIcon variant="subtle" size="lg" onClick={openStatsWindow}>
+          <ChartBarIcon size={18} />
+        </ActionIcon>
       </Tooltip>
     </Group>
   );

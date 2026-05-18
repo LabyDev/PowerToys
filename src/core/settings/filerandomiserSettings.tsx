@@ -120,18 +120,6 @@ const FileRandomiserSettings = () => {
     return () => clearTimeout(handler);
   }, [localRandomnessValue]);
 
-  // ---- Show scores toggle ----
-
-  const handleShowScoresToggle = async (checked: boolean): Promise<void> => {
-    await saveSettings({
-      ...settings,
-      fileRandomiser: {
-        ...settings.fileRandomiser,
-        showScores: checked,
-      },
-    });
-  };
-
   // ---- Bookmark preference enabled toggle ----
 
   const handleBookmarkPrefToggle = async (checked: boolean): Promise<void> => {
@@ -409,25 +397,6 @@ const FileRandomiserSettings = () => {
               }
               size="md"
               color="orange"
-            />
-          </Stack>
-
-          <Divider />
-
-          {/* Debug scores */}
-          <Stack gap="sm">
-            <Title order={4}>
-              {t("fileRandomiserSettings.debugScores.title")}
-            </Title>
-            <Text size="sm" c="dimmed">
-              {t("fileRandomiserSettings.debugScores.description")}
-            </Text>
-            <Checkbox
-              checked={settings.fileRandomiser.showScores ?? false}
-              label={t("fileRandomiserSettings.debugScores.checkboxLabel")}
-              onChange={(e) => handleShowScoresToggle(e.currentTarget.checked)}
-              size="md"
-              color="violet"
             />
           </Stack>
         </Stack>

@@ -22,7 +22,6 @@ export function useAppSettings() {
         enabled: false,
         colors: {},
       },
-      showScores: false,
     },
   });
 

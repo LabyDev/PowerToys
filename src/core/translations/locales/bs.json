@@ -87,6 +87,109 @@
       "tracking": "Praćenje",
       "searchPlaceholder": "Pretraži putanje, fajlove i historiju…",
       "pickFileDisabledTracking": "Onemogućeno dok je praćenje aktivno. Datoteku možete odabrati samo jednom."
+    },
+    "stats": {
+      "title": "Statistike"
+    },
+    "statsWindow": {
+      "title": "Statistike randomizatora datoteka",
+      "subtitle": "{{time}} · osvježava pri svakom odabiru",
+      "anonymise": "Anonimizuj nazive datoteka",
+      "deanonymise": "Prikaži stvarna imena",
+      "exportScores": "Izvezi rezultate",
+      "exportHistory": "Izvezi historiju",
+      "cards": {
+        "totalFiles": "Ukupno datoteka",
+        "nExcluded": "{{count}} isključeno",
+        "included": "Uključeno",
+        "totalPicks": "Ukupno odabira",
+        "coverage": "Pokrivenost",
+        "nNeverPicked": "{{count}} nikad odabrano",
+        "weightSpread": "Raspon težina",
+        "weightAvg": "prosjek {{value}}",
+        "gini": "Pravednost (Gini)",
+        "giniSub": "0 = jednako · 1 = iskrivljeno",
+        "entropy": "Entropija odabira",
+        "entropySub": "0 = jedna datoteka · 1 = ravnomjerno",
+        "daysActive": "Aktivni dani",
+        "firstActivity": "Prvom: {{date}}"
+      },
+      "table": {
+        "title": "Sve datoteke — žive težine ({{count}})",
+        "sub": "Redoslijed: Gaussianski boost · Memorija: kazna za nedavnost · Δ%: stvarna vs. očekivana stopa odabira",
+        "name": "Naziv",
+        "order": "Redoslijed",
+        "memory": "Memorija",
+        "bookmark": "Oznaka",
+        "weight": "Težina",
+        "picks": "Odabiri",
+        "delta": "Δ%",
+        "lastSeen": "Zadnji put viđeno",
+        "excludedBadge": "isključeno"
+      },
+      "relTime": {
+        "never": "nikad",
+        "today": "danas",
+        "yesterday": "jučer",
+        "daysAgo": "prije {{count}}d",
+        "monthsAgo": "prije {{count}}mj",
+        "yearsAgo": "prije {{count}}g"
+      },
+      "weightDist": {
+        "title": "Raspodjela težina",
+        "sub": "Rasprostranjenost ukupnih težina — uzak klaster znači malo varijacije u vjerovatnoći odabira",
+        "avg": "prosjek",
+        "files": "{{count}} datoteka"
+      },
+      "memoryDist": {
+        "title": "Raspodjela faktora memorije",
+        "sub": "Blizu 0 = nedavno odabrano i kažnjeno · Blizu 1 = dugo nije odabrano",
+        "files": "{{count}} datoteka"
+      },
+      "scatter": {
+        "title": "Kazna memorije vs. težina odabira",
+        "sub": "Svaka tačka je datoteka — tačke iznad klastera imaju bookmark ili redoslijed boost",
+        "xLabel": "faktor memorije",
+        "yLabel": "ukupna težina",
+        "memoryLabel": "memorija",
+        "weightLabel": "težina"
+      },
+      "opensPerDay": {
+        "title": "Otvaranja po danu — zadnjih 30 dana",
+        "sub": "Stupci = dnevna otvaranja · puna linija = kumulativni ukupan · isprekidana = 7-dnevni prosjek",
+        "opens": "Otvaranja",
+        "cumulative": "Kumulativno",
+        "rollingAvg": "7d prosjek"
+      },
+      "heatmap": {
+        "title": "Aktivnost — zadnjih 52 sedmice",
+        "sub": "Svaki kvadrat je jedan dan; intenzitet boje = broj odabira",
+        "pickTooltip": "{{date}}: {{count}} odabira"
+      },
+      "hourOfDay": {
+        "title": "Korištenje po satu dana",
+        "peakSub": "Vršni sat: {{label}} ({{count}} otvaranja)"
+      },
+      "dayOfWeek": {
+        "title": "Korištenje po danu u sedmici",
+        "peakSub": "Najaktivniji dan: {{day}} ({{count}} otvaranja)"
+      },
+      "topPicked": {
+        "title": "Najčešće odabrane datoteke (top {{count}})",
+        "picks": "Odabiri"
+      },
+      "pickDist": {
+        "title": "Raspodjela broja odabira",
+        "sub": "Koliko datoteka spada u svaki raspon broja odabira",
+        "files": "{{count}} datoteka",
+        "filesInRange": "Datoteke u rasponu"
+      },
+      "pathBreakdown": {
+        "title": "Raščlamba po putu",
+        "sub": "Datoteke i kumulativni odabiri po korijenskom folderu",
+        "files": "Datoteke",
+        "picks": "Odabiri"
+      }
     }
   },
   "fileSorter": {

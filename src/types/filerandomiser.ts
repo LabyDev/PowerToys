@@ -14,6 +14,18 @@ export type AppStateData = {
   files: FileEntry[];
   history: HistoryEntry[];
   filterRules: FilterRule[];
+  pickCounts: Record<string, number>;
+};
+
+/** Per-file score from the randomiser algorithm */
+export type FileScore = {
+  id: number;
+  name: string;
+  isExcluded: boolean;
+  orderScore: number;
+  memoryFactor: number;
+  bookmarkFactor: number;
+  totalWeight: number;
 };
 
 /** Preset for randomiser configuration */

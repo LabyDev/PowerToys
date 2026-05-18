@@ -1,5 +1,8 @@
-use crate::models::{DebugFlags, FileSorterState};
+use crate::models::{AppStateData, DebugFlags, FileSorterState, PersistedStats};
+use crate::filerandomisercommands::PathPickCounts;
+use std::collections::HashMap;
 use std::sync::Mutex;
+use tauri::Manager;
 mod fileauditorcommands;
 mod filerandomisercommands;
 mod filesortercommands;
@@ -36,9 +39,8 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         // App state
         .manage(models::settings::AppSettings::default())
-        .manage(Mutex::new(
-            models::file_randomiser_models::AppStateData::default(),
-        ))
+        .manage(Mutex::new(AppStateData::default()))
+        .manage(PathPickCounts(Mutex::new(HashMap::new())))
         .manage(DebugFlags {
             randomiser: debug_randomiser,
             log_file,
@@ -48,6 +50,30 @@ pub fn run() {
         .manage(fileauditorcommands::TrackedProcessMap(Mutex::new(
             std::collections::HashMap::new(),
         )))
+        .setup(|app| {
+            let handle = app.handle().clone();
+            let stats_path = handle
+                .path()
+                .app_data_dir()
+                .ok()
+                .map(|d: std::path::PathBuf| d.join("randomiser_stats.json"));
+            if let Some(path) = stats_path {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    if let Ok(stats) = serde_json::from_str::<PersistedStats>(&content) {
+                        {
+                            let app_data = handle.state::<Mutex<AppStateData>>();
+                            let mut data = app_data.lock().unwrap();
+                            data.history = stats.history;
+                        }
+                        {
+                            let counts = handle.state::<PathPickCounts>();
+                            *counts.0.lock().unwrap() = stats.path_pick_counts;
+                        }
+                    }
+                }
+            }
+            Ok(())
+        })
         // Command handlers
         .invoke_handler(tauri::generate_handler![
             // Settings
@@ -81,6 +107,7 @@ pub fn run() {
             filerandomisercommands::set_preset_path_weights,
             filerandomisercommands::update_file_bookmark,
             filerandomisercommands::update_file_bookmarks_bulk,
+            filerandomisercommands::save_csv,
             // File sorter
             filesortercommands::get_sorter_state,
             filesortercommands::select_sort_directory,
