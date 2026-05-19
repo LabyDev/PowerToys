@@ -89,34 +89,6 @@ const FileAuditor = () => {
   const indexRef = useRef(0);
   const filesRef = useRef<AuditFileEntry[]>([]);
 
-  useEffect(() => {
-    indexRef.current = index;
-    if (isAuditing && folderPath) {
-      const pos = sortedIndicesRef.current.indexOf(index);
-      saveSession(
-        folderPath,
-        index,
-        filesRef.current.length,
-        pos >= 0 ? pos : undefined,
-      );
-    }
-  }, [index, isAuditing, folderPath]);
-  useEffect(() => {
-    filesRef.current = files;
-  }, [files]);
-
-  const bookmarkColors =
-    settings?.bookmarkColors ?? DEFAULT_BOOKMARK_COLOR_OPTIONS;
-
-  const currentItemRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    currentItemRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, [index]);
-
   type GroupFile = AuditFileEntry & { globalIdx: number };
   const fileGroups = useMemo(() => {
     if (!folderPath || !files.length)
@@ -142,17 +114,44 @@ const FileAuditor = () => {
       .map(([relFolder, files]) => ({ relFolder, files }));
   }, [files, folderPath]);
 
-  useEffect(() => {
-    sortedIndicesRef.current = fileGroups.flatMap((g) =>
-      g.files.map((f) => f.globalIdx),
-    );
-  }, [fileGroups]);
-
   const sortedPos = useMemo(
     () =>
       fileGroups.flatMap((g) => g.files.map((f) => f.globalIdx)).indexOf(index),
     [fileGroups, index],
   );
+
+  useEffect(() => {
+    indexRef.current = index;
+    if (isAuditing && folderPath) {
+      saveSession(
+        folderPath,
+        index,
+        filesRef.current.length,
+        sortedPos >= 0 ? sortedPos : undefined,
+      );
+    }
+  }, [index, isAuditing, folderPath, sortedPos]);
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+
+  const bookmarkColors =
+    settings?.bookmarkColors ?? DEFAULT_BOOKMARK_COLOR_OPTIONS;
+
+  const currentItemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    currentItemRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [index]);
+
+  useEffect(() => {
+    sortedIndicesRef.current = fileGroups.flatMap((g) =>
+      g.files.map((f) => f.globalIdx),
+    );
+  }, [fileGroups]);
 
   const jumpTo = useCallback(async (idx: number) => {
     const f = filesRef.current;
@@ -305,18 +304,13 @@ const FileAuditor = () => {
     if (!isAuditing || !autoOpen || !allowTracking || !globalEnabled) return;
     const kb = settings?.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
     const accelerator = toAccelerator(kb.closeViewer ?? "w");
-    let registered = false;
     registerShortcut(accelerator, (event) => {
       if (event.state !== "Pressed") return;
       const f = filesRef.current[indexRef.current];
       if (f) auditorApi.closeTrackedFile(f.path);
-    })
-      .then(() => {
-        registered = true;
-      })
-      .catch(console.error);
+    }).catch(console.error);
     return () => {
-      if (registered) unregisterShortcut(accelerator).catch(() => {});
+      unregisterShortcut(accelerator).catch(() => {});
     };
   }, [isAuditing, autoOpen, allowTracking, settings]);
 

@@ -50,18 +50,24 @@ import {
 } from "./stats/utils";
 import {
   addRollingAvg,
+  buildActualVsExpected,
+  buildCoverageOverTime,
   buildDayOfWeek,
+  buildDiagnosticsTrend,
   buildHourOfDay,
-  buildMemoryHistogram,
   buildOpensAndCumulative,
   buildPathBreakdown,
   buildPickDistribution,
-  buildScatterData,
+  buildRepeatIntervals,
+  buildRollingEntropy,
   buildTopPicked,
-  buildWeightHistogram,
+  summariseDiagnostics,
 } from "./stats/dataBuilders";
-import { buildHistoryCsv, buildScoresCsv } from "./stats/csvBuilders";
-import { ActivityHeatmap } from "./stats/ActivityHeatmap";
+import {
+  buildDiagnosticsCsv,
+  buildHistoryCsv,
+  buildScoresCsv,
+} from "./stats/csvBuilders";
 import { StatCard } from "./stats/StatCard";
 import { Section } from "./stats/Section";
 
@@ -86,11 +92,13 @@ const StatsWindow = () => {
 
   useEffect(() => {
     fetchData();
-    let unlisten: (() => void) | null = null;
+    let unlistenPick: (() => void) | null = null;
     listen("file-picked", () => fetchData()).then((fn) => {
-      unlisten = fn;
+      unlistenPick = fn;
     });
-    return () => unlisten?.();
+    return () => {
+      unlistenPick?.();
+    };
   }, []);
 
   const anonMap = useMemo(() => {
@@ -238,16 +246,14 @@ const StatsWindow = () => {
   );
   const hourOfDay = buildHourOfDay(appState.history);
   const dayOfWeek = buildDayOfWeek(appState.history);
-  const weightHistogram = buildWeightHistogram(scores);
-  const memoryHistogram = buildMemoryHistogram(scores);
   const pickDistribution = buildPickDistribution(appState.files, pickCounts);
   const topPicked = buildTopPicked(appState.files, pickCounts, displayName);
   const pathBreakdown = buildPathBreakdown(
     appState.files,
     appState.paths,
     pickCounts,
+    anonymise,
   );
-  const scatterData = buildScatterData(scores);
   const peakHour = hourOfDay.reduce(
     (best, h) => (h.count > best.count ? h : best),
     hourOfDay[0],
@@ -256,6 +262,17 @@ const StatsWindow = () => {
     (best, d) => (d.count > best.count ? d : best),
     dayOfWeek[0],
   );
+  const coverageData = buildCoverageOverTime(appState.history, included.length);
+  const repeatIntervals = buildRepeatIntervals(appState.history);
+  const actualVsExpected = buildActualVsExpected(
+    scores,
+    pickCounts,
+    totalPicks,
+    totalIncludedWeight,
+  );
+  const rollingEntropy = buildRollingEntropy(appState.history);
+  const diagSummary = summariseDiagnostics(appState.history);
+  const diagTrend = buildDiagnosticsTrend(appState.history);
 
   // ── Table helpers ─────────────────────────────────────────────────────────────
 
@@ -300,6 +317,12 @@ const StatsWindow = () => {
       "history.csv",
       buildHistoryCsv(appState.history, displayName),
     );
+  const diagnosticsCount = appState.history.filter((h) => h.diagnostics).length;
+  const exportDiagnostics = () =>
+    randomiserApi.saveCsv(
+      "diagnostics.csv",
+      buildDiagnosticsCsv(appState.history, displayName),
+    );
 
   const sw = "fileRandomiser.statsWindow";
 
@@ -340,6 +363,21 @@ const StatsWindow = () => {
             <Button size="xs" variant="light" onClick={exportHistory}>
               {t(`${sw}.exportHistory`)}
             </Button>
+            <Tooltip
+              label={t(`${sw}.exportDiagnosticsTooltip`, {
+                count: diagnosticsCount,
+              })}
+              withArrow
+            >
+              <Button
+                size="xs"
+                variant="light"
+                onClick={exportDiagnostics}
+                disabled={diagnosticsCount === 0}
+              >
+                {t(`${sw}.exportDiagnostics`)}
+              </Button>
+            </Tooltip>
           </Group>
         </Group>
 
@@ -390,6 +428,37 @@ const StatsWindow = () => {
                 : undefined
             }
           />
+          {diagSummary.count > 0 && (
+            <>
+              <StatCard
+                label={t(`${sw}.cards.recencyHits`)}
+                value={`${diagSummary.recencyHitPct.toFixed(1)}%`}
+                sub={t(`${sw}.cards.recencyHitsSub`, {
+                  count: diagSummary.count,
+                })}
+              />
+              <StatCard
+                label={t(`${sw}.cards.avgMemoryFactor`)}
+                value={fmt(diagSummary.avgChosenMemoryFactor, 3)}
+                sub={t(`${sw}.cards.avgMemoryFactorSub`)}
+              />
+              <StatCard
+                label={t(`${sw}.cards.avgChosenRatio`)}
+                value={fmt(diagSummary.avgChosenRatio, 3)}
+                sub={t(`${sw}.cards.avgChosenRatioSub`)}
+              />
+              <StatCard
+                label={t(`${sw}.cards.avgCandidates`)}
+                value={fmt(diagSummary.avgCandidates, 1)}
+                sub={t(`${sw}.cards.avgCandidatesSub`)}
+              />
+              <StatCard
+                label={t(`${sw}.cards.bookmarkPickRate`)}
+                value={`${diagSummary.bookmarkPickPct.toFixed(1)}%`}
+                sub={t(`${sw}.cards.bookmarkPickRateSub`)}
+              />
+            </>
+          )}
         </SimpleGrid>
 
         {/* Scores table */}
@@ -492,153 +561,7 @@ const StatsWindow = () => {
           </ScrollArea>
         </Section>
 
-        {/* Weight distribution */}
-        {weightHistogram.length > 1 && (
-          <Section
-            title={t(`${sw}.weightDist.title`)}
-            sub={t(`${sw}.weightDist.sub`)}
-          >
-            <ResponsiveContainer width="100%" height={CH}>
-              <BarChart
-                data={weightHistogram}
-                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
-                <XAxis dataKey="label" tick={tick} interval={1} />
-                <YAxis tick={tick} allowDecimals={false} />
-                <RTooltip
-                  contentStyle={ttStyle}
-                  labelStyle={ttLabel}
-                  itemStyle={ttItem}
-                  cursor={ttCursor}
-                  formatter={(v) => [
-                    t(`${sw}.weightDist.files`, { count: v as number }),
-                    "",
-                  ]}
-                />
-                <ReferenceLine
-                  x={fmt(avgWeight, 2)}
-                  stroke="#ffd43b"
-                  strokeDasharray="4 4"
-                  label={{
-                    value: t(`${sw}.weightDist.avg`),
-                    fill: "#ffd43b",
-                    fontSize: 10,
-                    position: "top",
-                  }}
-                />
-                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                  {weightHistogram.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={`hsl(${200 + i * 10}, 65%, ${58 - i * 1.5}%)`}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Section>
-        )}
-
-        {/* Memory factor distribution */}
-        {memoryHistogram.length > 0 && (
-          <Section
-            title={t(`${sw}.memoryDist.title`)}
-            sub={t(`${sw}.memoryDist.sub`)}
-          >
-            <ResponsiveContainer width="100%" height={CH}>
-              <BarChart
-                data={memoryHistogram}
-                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
-                <XAxis dataKey="label" tick={tick} />
-                <YAxis tick={tick} allowDecimals={false} />
-                <RTooltip
-                  contentStyle={ttStyle}
-                  labelStyle={ttLabel}
-                  itemStyle={ttItem}
-                  cursor={ttCursor}
-                  formatter={(v) => [
-                    t(`${sw}.memoryDist.files`, { count: v as number }),
-                    "",
-                  ]}
-                />
-                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                  {memoryHistogram.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={`hsl(${140 + i * 8}, 60%, ${45 + i * 3}%)`}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Section>
-        )}
-
-        {/* Memory vs weight scatter */}
-        {scatterData.length > 1 && (
-          <Section
-            title={t(`${sw}.scatter.title`)}
-            sub={t(`${sw}.scatter.sub`)}
-          >
-            <ResponsiveContainer width="100%" height={CH + 30}>
-              <ScatterChart
-                margin={{ top: 8, right: 24, left: -8, bottom: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
-                <XAxis
-                  dataKey="x"
-                  name="Memory"
-                  type="number"
-                  domain={[0, 1]}
-                  tick={tick}
-                  label={{
-                    value: t(`${sw}.scatter.xLabel`),
-                    position: "insideBottom",
-                    offset: -12,
-                    fill: "#909296",
-                    fontSize: 10,
-                  }}
-                />
-                <YAxis
-                  dataKey="y"
-                  name="Weight"
-                  type="number"
-                  tick={tick}
-                  label={{
-                    value: t(`${sw}.scatter.yLabel`),
-                    angle: -90,
-                    position: "insideLeft",
-                    fill: "#909296",
-                    fontSize: 10,
-                  }}
-                />
-                <ZAxis dataKey="z" range={[20, 60]} />
-                <RTooltip
-                  contentStyle={ttStyle}
-                  labelStyle={ttLabel}
-                  itemStyle={ttItem}
-                  cursor={ttCursor}
-                  formatter={(v, name) => [
-                    fmt(v as number, 3),
-                    name === "x"
-                      ? t(`${sw}.scatter.memoryLabel`)
-                      : t(`${sw}.scatter.weightLabel`),
-                  ]}
-                />
-                <Scatter
-                  data={scatterData}
-                  fill="var(--mantine-color-blue-5)"
-                  fillOpacity={0.6}
-                />
-              </ScatterChart>
-            </ResponsiveContainer>
-          </Section>
-        )}
-
-        {/* ── USAGE / FUN ────────────────────────────────────────────────────── */}
+        {/* ── DIAGNOSTIC CHARTS ──────────────────────────────────────────────── */}
 
         {/* Opens per day */}
         <Section
@@ -700,10 +623,298 @@ const StatsWindow = () => {
           </ResponsiveContainer>
         </Section>
 
-        {/* Activity heatmap */}
-        <Section title={t(`${sw}.heatmap.title`)} sub={t(`${sw}.heatmap.sub`)}>
-          <ActivityHeatmap history={appState.history} />
-        </Section>
+        {/* Coverage efficiency */}
+        {coverageData.length > 1 && (
+          <Section
+            title={t(`${sw}.coverage.title`)}
+            sub={t(`${sw}.coverage.sub`)}
+          >
+            <ResponsiveContainer width="100%" height={CH + 20}>
+              <ComposedChart
+                data={coverageData}
+                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
+                <XAxis
+                  dataKey="pickNumber"
+                  tick={tick}
+                  interval={Math.max(1, Math.floor(coverageData.length / 10))}
+                  label={{
+                    value: t(`${sw}.coverage.xLabel`),
+                    position: "insideBottom",
+                    offset: -4,
+                    fill: "#909296",
+                    fontSize: 10,
+                  }}
+                />
+                <YAxis tick={tick} allowDecimals={false} />
+                <RTooltip
+                  contentStyle={ttStyle}
+                  labelStyle={ttLabel}
+                  itemStyle={ttItem}
+                  cursor={ttCursor}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 11, color: "#909296" }}
+                  iconType="circle"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="uniqueFiles"
+                  name={t(`${sw}.coverage.actual`)}
+                  stroke="var(--mantine-color-teal-5)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="birthdayBaseline"
+                  name={t(`${sw}.coverage.baseline`)}
+                  stroke="#909296"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Section>
+        )}
+
+        {/* Repeat gap distribution */}
+        {totalPicks >= 20 && repeatIntervals.some((b) => b.count > 0) && (
+          <Section
+            title={t(`${sw}.repeatGap.title`)}
+            sub={t(`${sw}.repeatGap.sub`)}
+          >
+            <ResponsiveContainer width="100%" height={CH}>
+              <BarChart
+                data={repeatIntervals}
+                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
+                <XAxis dataKey="label" tick={tick} />
+                <YAxis tick={tick} allowDecimals={false} />
+                <RTooltip
+                  contentStyle={ttStyle}
+                  labelStyle={ttLabel}
+                  itemStyle={ttItem}
+                  cursor={ttCursor}
+                  formatter={(v) => [v, t(`${sw}.repeatGap.repeats`)]}
+                />
+                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                  {repeatIntervals.map((_, i) => (
+                    <Cell key={i} fill={`hsl(${i * 22}, 65%, 50%)`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Section>
+        )}
+
+        {/* Actual vs expected deviation scatter */}
+        {totalPicks > 0 && actualVsExpected.length > 1 && (
+          <Section
+            title={t(`${sw}.actualVsExpected.title`)}
+            sub={t(`${sw}.actualVsExpected.sub`)}
+          >
+            <ResponsiveContainer width="100%" height={CH + 30}>
+              <ScatterChart
+                margin={{ top: 8, right: 24, left: -8, bottom: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
+                <XAxis
+                  dataKey="expected"
+                  name={t(`${sw}.actualVsExpected.expected`)}
+                  type="number"
+                  tick={tick}
+                  label={{
+                    value: t(`${sw}.actualVsExpected.xLabel`),
+                    position: "insideBottom",
+                    offset: -12,
+                    fill: "#909296",
+                    fontSize: 10,
+                  }}
+                />
+                <YAxis
+                  dataKey="actual"
+                  name={t(`${sw}.actualVsExpected.actual`)}
+                  type="number"
+                  tick={tick}
+                  label={{
+                    value: t(`${sw}.actualVsExpected.yLabel`),
+                    angle: -90,
+                    position: "insideLeft",
+                    fill: "#909296",
+                    fontSize: 10,
+                  }}
+                />
+                <ZAxis range={[20, 20]} />
+                <ReferenceLine
+                  segment={[
+                    { x: 0, y: 0 },
+                    {
+                      x:
+                        Math.max(...actualVsExpected.map((d) => d.expected)) *
+                        1.1,
+                      y:
+                        Math.max(...actualVsExpected.map((d) => d.expected)) *
+                        1.1,
+                    },
+                  ]}
+                  stroke="#909296"
+                  strokeDasharray="4 4"
+                />
+                <RTooltip
+                  contentStyle={ttStyle}
+                  labelStyle={ttLabel}
+                  itemStyle={ttItem}
+                  cursor={ttCursor}
+                  formatter={(v, name) => [
+                    `${(v as number).toFixed(3)}%`,
+                    name,
+                  ]}
+                />
+                <Scatter
+                  data={actualVsExpected.filter((d) => !d.bookmarked)}
+                  name={t(`${sw}.actualVsExpected.normal`)}
+                  fill="var(--mantine-color-blue-5)"
+                  fillOpacity={0.5}
+                />
+                <Scatter
+                  data={actualVsExpected.filter((d) => d.bookmarked)}
+                  name={t(`${sw}.actualVsExpected.bookmarked`)}
+                  fill="var(--mantine-color-yellow-5)"
+                  fillOpacity={0.8}
+                />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </Section>
+        )}
+
+        {/* Chosen weight vs distribution (from per-pick diagnostics) */}
+        {diagTrend.length > 5 && (
+          <Section
+            title={t(`${sw}.chosenWeight.title`)}
+            sub={t(`${sw}.chosenWeight.sub`)}
+          >
+            <ResponsiveContainer width="100%" height={CH + 10}>
+              <ComposedChart
+                data={diagTrend}
+                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
+                <XAxis
+                  dataKey="pickNumber"
+                  tick={tick}
+                  interval={Math.max(1, Math.floor(diagTrend.length / 10))}
+                  label={{
+                    value: t(`${sw}.coverage.xLabel`),
+                    position: "insideBottom",
+                    offset: -4,
+                    fill: "#909296",
+                    fontSize: 10,
+                  }}
+                />
+                <YAxis tick={tick} />
+                <RTooltip
+                  contentStyle={ttStyle}
+                  labelStyle={ttLabel}
+                  itemStyle={ttItem}
+                  cursor={ttCursor}
+                  formatter={(v) => [(v as number).toFixed(3), ""]}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 11, color: "#909296" }}
+                  iconType="circle"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="max"
+                  name={t(`${sw}.chosenWeight.max`)}
+                  stroke="#909296"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="mean"
+                  name={t(`${sw}.chosenWeight.mean`)}
+                  stroke="#74c0fc"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="chosen"
+                  name={t(`${sw}.chosenWeight.chosen`)}
+                  stroke="var(--mantine-color-orange-5)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Section>
+        )}
+
+        {/* Rolling diversity (entropy) */}
+        {rollingEntropy.length > 0 && (
+          <Section
+            title={t(`${sw}.entropy.title`)}
+            sub={t(`${sw}.entropy.sub`)}
+          >
+            <ResponsiveContainer width="100%" height={CH}>
+              <ComposedChart
+                data={rollingEntropy}
+                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
+                <XAxis
+                  dataKey="pickNumber"
+                  tick={tick}
+                  interval={Math.max(1, Math.floor(rollingEntropy.length / 10))}
+                  label={{
+                    value: t(`${sw}.coverage.xLabel`),
+                    position: "insideBottom",
+                    offset: -4,
+                    fill: "#909296",
+                    fontSize: 10,
+                  }}
+                />
+                <YAxis tick={tick} domain={[0, 1]} />
+                <ReferenceLine
+                  y={1}
+                  stroke="#51cf66"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: t(`${sw}.entropy.maxLabel`),
+                    fill: "#51cf66",
+                    fontSize: 10,
+                    position: "insideTopLeft",
+                  }}
+                />
+                <RTooltip
+                  contentStyle={ttStyle}
+                  labelStyle={ttLabel}
+                  itemStyle={ttItem}
+                  cursor={ttCursor}
+                  formatter={(v) => [
+                    (v as number).toFixed(3),
+                    t(`${sw}.entropy.diversity`),
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="entropy"
+                  name={t(`${sw}.entropy.diversity`)}
+                  stroke="var(--mantine-color-violet-5)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Section>
+        )}
 
         {/* Hour of day + Day of week */}
         {totalPicks > 0 && (

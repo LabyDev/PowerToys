@@ -1,5 +1,5 @@
-use crate::models::{AppStateData, DebugFlags, FileSorterState, PersistedStats};
-use crate::filerandomisercommands::PathPickCounts;
+use crate::models::{AppStateData, FileSorterState, PersistedStats};
+use crate::filerandomisercommands::{prune_history, PathPickCounts};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::Manager;
@@ -12,24 +12,6 @@ pub mod setting_commands;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let args: Vec<String> = std::env::args().collect();
-    let debug_randomiser = args.contains(&"--debug-randomiser".to_string());
-
-    let log_file = args
-        .iter()
-        .position(|a| a == "--log-file")
-        .and_then(|i| args.get(i + 1))
-        .map(|path| {
-            std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path)
-                .map_err(|e| eprintln!("Failed to open log file: {}", e))
-                .ok()
-        })
-        .flatten()
-        .map(std::sync::Mutex::new);
-
     tauri::Builder::default()
         // Plugins
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -41,10 +23,6 @@ pub fn run() {
         .manage(models::settings::AppSettings::default())
         .manage(Mutex::new(AppStateData::default()))
         .manage(PathPickCounts(Mutex::new(HashMap::new())))
-        .manage(DebugFlags {
-            randomiser: debug_randomiser,
-            log_file,
-        })
         .manage(filesortercommands::UndoStack(Mutex::new(Vec::new())))
         .manage(Mutex::new(FileSorterState::default()))
         .manage(fileauditorcommands::TrackedProcessMap(Mutex::new(
@@ -60,10 +38,16 @@ pub fn run() {
             if let Some(path) = stats_path {
                 if let Ok(content) = std::fs::read_to_string(path) {
                     if let Ok(stats) = serde_json::from_str::<PersistedStats>(&content) {
+                        let retention_days = setting_commands::get_app_settings(handle.clone())
+                            .ok()
+                            .map(|s| s.file_randomiser.history_retention_days)
+                            .unwrap_or(180);
+                        let mut history = stats.history;
+                        prune_history(&mut history, retention_days);
                         {
                             let app_data = handle.state::<Mutex<AppStateData>>();
                             let mut data = app_data.lock().unwrap();
-                            data.history = stats.history;
+                            data.history = history;
                         }
                         {
                             let counts = handle.state::<PathPickCounts>();

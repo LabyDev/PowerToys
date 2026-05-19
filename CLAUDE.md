@@ -28,10 +28,6 @@ cargo clippy
 cargo check
 ```
 
-Debug flags for `tauri dev`:
-- `--debug-randomiser` — enables debug output in the randomiser
-- `--log-file <path>` — write logs to a file
-
 ## Architecture
 
 ### Frontend → Backend communication

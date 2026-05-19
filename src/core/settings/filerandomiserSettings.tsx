@@ -4,6 +4,7 @@ import {
   Divider,
   Group,
   Paper,
+  Select,
   Slider,
   Stack,
   Text,
@@ -371,6 +372,56 @@ const FileRandomiserSettings = () => {
                 })}
               </Stack>
             )}
+          </Stack>
+
+          <Divider />
+
+          {/* History retention */}
+          <Stack gap="sm">
+            <Title order={4}>
+              {t("fileRandomiserSettings.historyRetention.title")}
+            </Title>
+            <Text size="sm" c="dimmed">
+              {t("fileRandomiserSettings.historyRetention.description")}
+            </Text>
+            <Select
+              value={String(
+                settings.fileRandomiser.historyRetentionDays ?? 180,
+              )}
+              onChange={(v) =>
+                saveSettings({
+                  ...settings,
+                  fileRandomiser: {
+                    ...settings.fileRandomiser,
+                    historyRetentionDays: Number(v),
+                  },
+                })
+              }
+              data={[
+                {
+                  value: "30",
+                  label: t("fileRandomiserSettings.historyRetention.days30"),
+                },
+                {
+                  value: "90",
+                  label: t("fileRandomiserSettings.historyRetention.days90"),
+                },
+                {
+                  value: "180",
+                  label: t("fileRandomiserSettings.historyRetention.days180"),
+                },
+                {
+                  value: "365",
+                  label: t("fileRandomiserSettings.historyRetention.days365"),
+                },
+                {
+                  value: "0",
+                  label: t("fileRandomiserSettings.historyRetention.forever"),
+                },
+              ]}
+              allowDeselect={false}
+              style={{ maxWidth: 240 }}
+            />
           </Stack>
 
           <Divider />

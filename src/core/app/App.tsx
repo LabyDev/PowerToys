@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavBar } from "./NavBar";
 import FileRandomiser from "../../file-randomiser/fileRandomiser";
 import MainPage from "../mainpage/MainPage";
@@ -10,6 +11,8 @@ import { FileRandomiserProvider } from "../hooks/fileRandomiserStateProvider";
 import FileSorter from "../../file-sorter/fileSorter";
 import FileAuditor from "../../file-auditor/fileAuditor";
 import StatsWindow from "../../file-randomiser/statsWindow";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -38,6 +41,24 @@ export function App() {
   const location = useLocation();
   const isAtRoot = location.pathname === "/";
   const isStats = location.pathname === "/Stats";
+
+  useEffect(() => {
+    if (isStats) return;
+    let unlisten: (() => void) | undefined;
+    getCurrentWindow()
+      .onCloseRequested(async (event) => {
+        event.preventDefault();
+        const statsWin = await WebviewWindow.getByLabel("stats");
+        if (statsWin) await statsWin.close();
+        await getCurrentWindow().destroy();
+      })
+      .then((fn) => {
+        unlisten = fn;
+      });
+    return () => {
+      unlisten?.();
+    };
+  }, [isStats]);
 
   return (
     <FileRandomiserProvider>

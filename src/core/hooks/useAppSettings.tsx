@@ -7,6 +7,7 @@ import {
 } from "../api/appSettingsApi";
 import { AppSettings, LanguageOption } from "../../types/settings";
 import { Bookmark } from "../../types/common";
+import i18n from "../translations/i18";
 
 export function useAppSettings() {
   const [settings, setSettingsState] = useState<AppSettings>({
@@ -22,15 +23,28 @@ export function useAppSettings() {
         enabled: false,
         colors: {},
       },
+      historyRetentionDays: 180,
     },
   });
 
   const [globalBookmarks, setGlobalBookmarksState] = useState<Bookmark[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    getAppSettings().then(setSettingsState).catch(console.error);
+    getAppSettings()
+      .then((s) => {
+        i18n.changeLanguage(s.language);
+        setSettingsState(s);
+        setLoaded(true);
+      })
+      .catch(console.error);
     getGlobalBookmarks().then(setGlobalBookmarksState).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    i18n.changeLanguage(settings.language);
+  }, [settings.language]);
 
   const setSettings = useCallback(async (partial: Partial<AppSettings>) => {
     setSettingsState((prev) => {
@@ -92,6 +106,7 @@ export function useAppSettings() {
     settings,
     setSettings,
     isDarkMode,
+    loaded,
     globalBookmarks,
     setGlobalBookmarks: setGlobalBookmarksSettings,
     fetchGlobalBookmarks,

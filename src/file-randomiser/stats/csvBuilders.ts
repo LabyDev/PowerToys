@@ -13,7 +13,7 @@ export function buildScoresCsv(
   totalPicks: number,
 ) {
   const header =
-    "name,isExcluded,orderScore,memoryFactor,bookmarkFactor,totalWeight,picks,delta%,lastSeen";
+    "name,isExcluded,orderProximity,memoryFactor,bookmarkFactor,totalWeight,picks,expectedPct,actualPct,delta%,lastSeen";
   const rows = scores.map((s) => {
     const picks = pickCounts[String(s.id)] ?? 0;
     const expectedPct =
@@ -23,11 +23,13 @@ export function buildScoresCsv(
     return [
       displayName(s.id, s.name),
       s.isExcluded,
-      s.orderScore,
+      s.orderScore.toFixed(4),
       s.memoryFactor,
       s.bookmarkFactor,
       s.totalWeight,
       picks,
+      expectedPct.toFixed(3),
+      actualPct.toFixed(3),
       (actualPct - expectedPct).toFixed(2),
       last ? last.toISOString() : "never",
     ]
@@ -37,17 +39,80 @@ export function buildScoresCsv(
   return [header, ...rows].join("\n");
 }
 
+export function buildDiagnosticsCsv(
+  history: AppStateData["history"],
+  displayName: (id: number, name: string) => string,
+) {
+  const header = [
+    "pickNumber",
+    "openedAt",
+    "name",
+    "randomnessLevel",
+    "candidates",
+    "bookmarkPrefEnabled",
+    "recencyWindow",
+    "recencyPenalised",
+    "weightMin",
+    "weightMax",
+    "weightMean",
+    "weightMedian",
+    "bookmarkedCount",
+    "bookmarkedMean",
+    "unbookmarkedCount",
+    "unbookmarkedMean",
+    "chosenWeight",
+    "chosenOrderScore",
+    "chosenMemoryFactor",
+    "chosenBookmarkColor",
+    "chosenBookmarkGlobal",
+  ].join(",");
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime(),
+  );
+  const rows = sorted
+    .map((h, i) => {
+      const d = h.diagnostics;
+      if (!d) return null;
+      return [
+        i + 1,
+        new Date(h.openedAt).toISOString(),
+        displayName(h.id, h.name),
+        d.randomnessLevel,
+        d.candidates,
+        d.bookmarkPrefEnabled,
+        d.recencyWindow,
+        d.recencyPenalised,
+        d.weightMin,
+        d.weightMax,
+        d.weightMean,
+        d.weightMedian,
+        d.bookmarkedCount,
+        d.bookmarkedMean,
+        d.unbookmarkedCount,
+        d.unbookmarkedMean,
+        d.chosenWeight,
+        d.chosenOrderScore,
+        d.chosenMemoryFactor,
+        d.chosenBookmarkColor ?? "",
+        d.chosenBookmarkGlobal,
+      ]
+        .map(esc)
+        .join(",");
+    })
+    .filter((r): r is string => r !== null);
+  return [header, ...rows].join("\n");
+}
+
 export function buildHistoryCsv(
   history: AppStateData["history"],
   displayName: (id: number, name: string) => string,
 ) {
-  const header = "name,path,openedAt";
-  const rows = history.map((h) =>
-    [
-      displayName(h.id, h.name),
-      h.path as unknown as string,
-      new Date(h.openedAt).toISOString(),
-    ]
+  const header = "pickNumber,name,openedAt";
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime(),
+  );
+  const rows = sorted.map((h, i) =>
+    [i + 1, displayName(h.id, h.name), new Date(h.openedAt).toISOString()]
       .map(esc)
       .join(","),
   );

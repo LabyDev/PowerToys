@@ -1,4 +1,13 @@
-import { Box, Button, Group, LoadingOverlay, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Group,
+  LoadingOverlay,
+  Stack,
+  Text,
+  Tooltip,
+} from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { Virtuoso } from "react-virtuoso";
@@ -20,6 +29,7 @@ import {
   FileTreeNode,
   FileEntry,
 } from "../types/filerandomiser";
+import { TrashIcon } from "@phosphor-icons/react";
 import Toolbar from "./components/toolbar";
 import ClampedTooltipText from "../common/clampedTooltipText";
 import FileTree, { FileTreeHandle } from "./components/tree/fileTree";
@@ -61,10 +71,16 @@ const FileRandomiser = () => {
   const fileTreeRef = useRef<FileTreeHandle>(null);
   const shuffleRef = useRef(shuffle);
   const trackingRef = useRef(tracking);
+  const lastFileClosedRef = useRef<number>(0);
 
   const [showLoading, setShowLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
   const [hasStartedTracking, setHasStartedTracking] = useState(false);
+  const [historyHiddenBefore, setHistoryHiddenBefore] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
 
   const [bookmarksDirty, setBookmarksDirty] = useState(false);
   const [debouncedDirty] = useDebouncedValue(
@@ -410,6 +426,10 @@ const FileRandomiser = () => {
     let unlisten: (() => void) | null = null;
 
     listen("file-closed", async () => {
+      const now = Date.now();
+      if (now - lastFileClosedRef.current < 2000) return;
+      lastFileClosedRef.current = now;
+
       if (trackingRef.current) {
         await handlePickFile();
       } else {
@@ -611,17 +631,17 @@ const FileRandomiser = () => {
   }, [data.files, q]);
 
   const filteredHistory = useMemo(() => {
-    const base = q
-      ? data.history.filter(
-          (h) =>
-            h.name.toLowerCase().includes(q) ||
-            h.path.toLowerCase().includes(q),
-        )
-      : data.history;
+    const base = data.history.filter((h) => {
+      if (new Date(h.openedAt) <= historyHiddenBefore) return false;
+      if (!q) return true;
+      return (
+        h.name.toLowerCase().includes(q) || h.path.toLowerCase().includes(q)
+      );
+    });
     return [...base].sort(
       (a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime(),
     );
-  }, [data.history, q]);
+  }, [data.history, q, historyHiddenBefore]);
 
   // ------------------------ Tree Builder ------------------------
   const buildFileTree = (files: FileEntry[]): FileTreeNode[] => {
@@ -891,7 +911,23 @@ const FileRandomiser = () => {
 
           {/* History */}
           <Section
-            title={t("fileRandomiser.history") + ` (${filteredHistory.length})`}
+            title={
+              <Group gap="xs" align="center">
+                <Text>
+                  {t("fileRandomiser.history")} ({filteredHistory.length})
+                </Text>
+                <Tooltip label={t("fileRandomiser.clearHistory")} withArrow>
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    color="red"
+                    onClick={() => setHistoryHiddenBefore(new Date())}
+                  >
+                    <TrashIcon size={12} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            }
             className="side-panel"
           >
             <Virtuoso

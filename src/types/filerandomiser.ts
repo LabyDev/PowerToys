@@ -1,11 +1,34 @@
 import { FileEntryBase, Bookmark } from "./common";
 
+/** Per-pick algorithm diagnostics, attached to entries created by the randomiser. */
+export type PickDiagnostics = {
+  randomnessLevel: number;
+  candidates: number;
+  bookmarkPrefEnabled: boolean;
+  recencyWindow: number;
+  recencyPenalised: number;
+  weightMin: number;
+  weightMax: number;
+  weightMean: number;
+  weightMedian: number;
+  bookmarkedCount: number;
+  bookmarkedMean: number;
+  unbookmarkedCount: number;
+  unbookmarkedMean: number;
+  chosenWeight: number;
+  chosenOrderScore: number;
+  chosenMemoryFactor: number;
+  chosenBookmarkColor: string | null;
+  chosenBookmarkGlobal: boolean;
+};
+
 /** History of opened files */
 export type HistoryEntry = {
   id: number;
   name: string;
   path: string;
   openedAt: Date; // ISO string from Rust DateTime<Utc>
+  diagnostics?: PickDiagnostics | null;
 };
 
 /** Application state */

@@ -40,6 +40,33 @@ pub struct HistoryEntry {
     pub name: String,
     pub path: FilePath,
     pub opened_at: DateTime<Utc>,
+    #[serde(default)]
+    pub diagnostics: Option<PickDiagnostics>,
+}
+
+/// Per-pick algorithm diagnostics. Captured on every randomiser pick so the
+/// stats window can export raw data for tuning the weighting curves.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PickDiagnostics {
+    pub randomness_level: u8,
+    pub candidates: u32,
+    pub bookmark_pref_enabled: bool,
+    pub recency_window: u32,
+    pub recency_penalised: u32,
+    pub weight_min: f64,
+    pub weight_max: f64,
+    pub weight_mean: f64,
+    pub weight_median: f64,
+    pub bookmarked_count: u32,
+    pub bookmarked_mean: f64,
+    pub unbookmarked_count: u32,
+    pub unbookmarked_mean: f64,
+    pub chosen_weight: f64,
+    pub chosen_order_score: f64,
+    pub chosen_memory_factor: f64,
+    pub chosen_bookmark_color: Option<String>,
+    pub chosen_bookmark_global: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -123,11 +150,6 @@ pub struct FilterRule {
 pub struct BookmarkInfo {
     pub color: Option<String>,
     pub is_global: bool,
-}
-
-pub struct DebugFlags {
-    pub randomiser: bool,
-    pub log_file: Option<std::sync::Mutex<std::fs::File>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

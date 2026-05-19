@@ -43,6 +43,8 @@ pub struct FileRandomiserSettings {
     pub bookmark_preference: BookmarkPreference,
     pub path_weights: HashMap<String, f64>,
     pub path_weights_enabled: bool,
+    /// History retention window in days. 0 = keep forever.
+    pub history_retention_days: u32,
 }
 
 impl Default for FileRandomiserSettings {
@@ -54,6 +56,7 @@ impl Default for FileRandomiserSettings {
             bookmark_preference: BookmarkPreference::default(),
             path_weights: HashMap::new(),
             path_weights_enabled: false,
+            history_retention_days: 180,
         }
     }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import "@mantine/core/styles.css";
 import { MantineProvider } from "@mantine/core";
@@ -8,14 +8,11 @@ import { App } from "./core/app/App";
 import { ErrorBoundary } from "./core/app/ErrorBoundary";
 import { useAppSettings } from "./core/hooks/useAppSettings";
 import BackgroundManager from "./core/utilities/backgroundManager";
-import i18n from "./core/translations/i18";
 
 function Root() {
-  const { settings, isDarkMode } = useAppSettings();
+  const { isDarkMode, loaded } = useAppSettings();
 
-  useEffect(() => {
-    i18n.changeLanguage(settings.language);
-  }, [settings.language]);
+  if (!loaded) return null;
 
   return (
     <>

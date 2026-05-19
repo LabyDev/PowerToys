@@ -98,6 +98,8 @@
       "deanonymise": "Pokaż prawdziwe nazwy",
       "exportScores": "Eksportuj wyniki",
       "exportHistory": "Eksportuj historię",
+      "exportDiagnostics": "Export diagnostics",
+      "exportDiagnosticsTooltip": "Per-pick algorithm data ({{count}} rows). Share this CSV when tweaking the randomiser.",
       "cards": {
         "totalFiles": "Pliki ogółem",
         "nExcluded": "{{count}} wykluczone",
@@ -112,7 +114,17 @@
         "entropy": "Entropia wyboru",
         "entropySub": "0 = jeden plik · 1 = równomierne",
         "daysActive": "Aktywne dni",
-        "firstActivity": "Pierwsze: {{date}}"
+        "firstActivity": "Pierwsze: {{date}}",
+        "recencyHits": "Anti-repeat hits",
+        "recencyHitsSub": "of {{count}} diagnostic picks",
+        "avgMemoryFactor": "Avg memory factor",
+        "avgMemoryFactorSub": "1.0 = no recency penalty",
+        "avgChosenRatio": "Chosen / max weight",
+        "avgChosenRatioSub": "lower = more egalitarian picks",
+        "avgCandidates": "Avg candidates",
+        "avgCandidatesSub": "effective pool size per pick",
+        "bookmarkPickRate": "Bookmark pick rate",
+        "bookmarkPickRateSub": "% of picks that landed on bookmarked files"
       },
       "table": {
         "title": "Wszystkie pliki — wagi na żywo ({{count}})",
@@ -134,6 +146,41 @@
         "daysAgo": "{{count}}d temu",
         "monthsAgo": "{{count}}mies. temu",
         "yearsAgo": "{{count}}r. temu"
+      },
+      "coverage": {
+        "title": "Library coverage over time",
+        "sub": "How many unique files have been seen vs pure-random baseline — if your line is above the dashed line, the recency system is working",
+        "xLabel": "pick #",
+        "actual": "Unique files seen",
+        "baseline": "Pure-random baseline"
+      },
+      "repeatGap": {
+        "title": "Repeat gap distribution",
+        "sub": "How many picks occur between seeing the same file twice — a healthy recency system keeps spikes away from the low end",
+        "repeats": "Repeats"
+      },
+      "actualVsExpected": {
+        "title": "Actual vs expected pick rate",
+        "sub": "Each dot is a file — on the diagonal = picked at its theoretical probability. Bookmarked files (gold) should sit above it proportionally to their multiplier",
+        "xLabel": "expected %",
+        "yLabel": "actual %",
+        "expected": "Expected %",
+        "actual": "Actual %",
+        "normal": "Normal",
+        "bookmarked": "Bookmarked"
+      },
+      "chosenWeight": {
+        "title": "Chosen weight vs distribution",
+        "sub": "Per pick: weight of the file we picked, plotted against the mean and max weight at that moment. Chosen riding near the max = biased picker; chosen near the mean = fair across the library",
+        "chosen": "Chosen",
+        "mean": "Mean",
+        "max": "Max"
+      },
+      "entropy": {
+        "title": "Rolling pick diversity (50-pick window)",
+        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. Rising = more diverse picks over time. Flat/declining = stuck in patterns",
+        "diversity": "Diversity",
+        "maxLabel": "max"
       },
       "weightDist": {
         "title": "Rozkład wag",
@@ -347,6 +394,15 @@
       "checkboxLabel": "Włącz preferencję zakładek",
       "localLabel": "Lokalne",
       "globalLabel": "Globalne"
+    },
+    "historyRetention": {
+      "title": "History Retention",
+      "description": "How long to keep pick history on disk. Older entries are pruned on app start and on every pick.",
+      "days30": "30 days",
+      "days90": "90 days",
+      "days180": "180 days (default)",
+      "days365": "1 year",
+      "forever": "Keep forever"
     },
     "pathWeights": {
       "title": "Wagi ścieżek",

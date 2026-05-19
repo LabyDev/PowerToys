@@ -315,12 +315,7 @@ sudo apt update && sudo apt install -y \
 bun run tauri dev
 ```
 
-Debug flags:
-
-| Flag                 | Effect                                 |
-| -------------------- | -------------------------------------- |
-| `--debug-randomiser` | Enables debug output in the randomiser |
-| `--log-file <path>`  | Write logs to a file                   |
+Per-pick algorithm diagnostics are captured automatically and exportable as CSV from the file randomiser stats window (button: "Export diagnostics").
 
 Frontend only (Tauri APIs unavailable):
 

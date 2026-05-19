@@ -147,8 +147,8 @@ const Toolbar = ({
     <Paper withBorder radius="md" p="md">
       <Stack gap="sm">
         {/* Top row: preset controls + buttons + checkboxes */}
-        <Group justify="space-between" align="center" wrap="nowrap">
-          <Group gap="md" align="center" wrap="nowrap">
+        <Group justify="space-between" align="center" wrap="wrap">
+          <Group gap="md" align="center" wrap="wrap">
             {presetControls}
             {renderButtons()}
           </Group>

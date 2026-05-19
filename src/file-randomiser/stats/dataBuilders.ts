@@ -128,9 +128,10 @@ export function buildPathBreakdown(
   files: AppStateData["files"],
   paths: AppStateData["paths"],
   pickCounts: Record<string, number>,
+  anonymise = false,
 ) {
   return paths
-    .map((p) => {
+    .map((p, i) => {
       const rootStr =
         typeof p.path === "string" ? p.path : ((p.path as any)?.Path ?? "");
       const matching = files.filter((f) => {
@@ -142,10 +143,13 @@ export function buildPathBreakdown(
         (s, f) => s + (pickCounts[String(f.id)] ?? 0),
         0,
       );
-      const label =
+      const realLabel =
         p.name ||
         String(rootStr).split(/[\\/]/).filter(Boolean).pop() ||
         rootStr;
+      const label = anonymise
+        ? `Folder ${String(i + 1).padStart(3, "0")}`
+        : realLabel;
       return { name: label, files: matching.length, picks };
     })
     .filter((p) => p.files > 0);
@@ -159,4 +163,168 @@ export function buildScatterData(scores: FileScore[]) {
       y: parseFloat(fmt(s.totalWeight, 3)),
       z: s.bookmarkFactor > 1 ? 2 : 1,
     }));
+}
+
+export function buildCoverageOverTime(
+  history: AppStateData["history"],
+  totalFiles: number,
+) {
+  if (!history.length || !totalFiles) return [];
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime(),
+  );
+  const seen = new Set<number>();
+  return sorted.map((h, i) => {
+    seen.add(h.id);
+    const n = i + 1;
+    const baseline =
+      totalFiles * (1 - Math.pow((totalFiles - 1) / totalFiles, n));
+    return {
+      pickNumber: n,
+      uniqueFiles: seen.size,
+      birthdayBaseline: Math.round(baseline),
+    };
+  });
+}
+
+export function buildRepeatIntervals(history: AppStateData["history"]) {
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime(),
+  );
+  const lastSeenAt = new Map<number, number>(); // id → pick index
+  const gaps: number[] = [];
+  sorted.forEach((h, i) => {
+    if (lastSeenAt.has(h.id)) {
+      gaps.push(i - lastSeenAt.get(h.id)!);
+    }
+    lastSeenAt.set(h.id, i);
+  });
+  if (!gaps.length) return [];
+  const buckets = [
+    { label: "<5", min: 0, max: 5, count: 0 },
+    { label: "5–15", min: 5, max: 15, count: 0 },
+    { label: "15–30", min: 15, max: 30, count: 0 },
+    { label: "30–60", min: 30, max: 60, count: 0 },
+    { label: "60–100", min: 60, max: 100, count: 0 },
+    { label: "100+", min: 100, max: Infinity, count: 0 },
+  ];
+  for (const g of gaps) {
+    const b = buckets.find((b) => g >= b.min && g < b.max);
+    if (b) b.count++;
+  }
+  return buckets;
+}
+
+export function buildActualVsExpected(
+  scores: FileScore[],
+  pickCounts: Record<string, number>,
+  totalPicks: number,
+  totalIncludedWeight: number,
+) {
+  if (totalPicks === 0 || totalIncludedWeight === 0) return [];
+  return scores
+    .filter((s) => !s.isExcluded)
+    .map((s) => ({
+      expected: parseFloat(
+        ((s.totalWeight / totalIncludedWeight) * 100).toFixed(3),
+      ),
+      actual: parseFloat(
+        (((pickCounts[String(s.id)] ?? 0) / totalPicks) * 100).toFixed(3),
+      ),
+      bookmarked: s.bookmarkFactor > 1,
+      name: s.name,
+    }));
+}
+
+export function buildDiagnosticsTrend(history: AppStateData["history"]) {
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime(),
+  );
+  const out: {
+    pickNumber: number;
+    chosen: number;
+    mean: number;
+    max: number;
+    ratio: number;
+  }[] = [];
+  sorted.forEach((h, i) => {
+    const d = h.diagnostics;
+    if (!d || d.weightMax <= 0) return;
+    out.push({
+      pickNumber: i + 1,
+      chosen: d.chosenWeight,
+      mean: d.weightMean,
+      max: d.weightMax,
+      ratio: d.chosenWeight / d.weightMax,
+    });
+  });
+  return out;
+}
+
+export function summariseDiagnostics(history: AppStateData["history"]) {
+  const withDiag = history.filter((h) => h.diagnostics);
+  if (!withDiag.length) {
+    return {
+      count: 0,
+      avgChosenMemoryFactor: 0,
+      recencyHitPct: 0,
+      avgChosenRatio: 0,
+      avgCandidates: 0,
+      bookmarkPickPct: 0,
+    };
+  }
+  let memSum = 0;
+  let recencyHits = 0;
+  let ratioSum = 0;
+  let ratioN = 0;
+  let candSum = 0;
+  let bookmarkPicks = 0;
+  for (const h of withDiag) {
+    const d = h.diagnostics!;
+    memSum += d.chosenMemoryFactor;
+    if (d.chosenMemoryFactor < 0.9) recencyHits++;
+    if (d.weightMax > 0) {
+      ratioSum += d.chosenWeight / d.weightMax;
+      ratioN++;
+    }
+    candSum += d.candidates;
+    if (d.chosenBookmarkColor !== null && d.chosenBookmarkColor !== "")
+      bookmarkPicks++;
+  }
+  return {
+    count: withDiag.length,
+    avgChosenMemoryFactor: memSum / withDiag.length,
+    recencyHitPct: (recencyHits / withDiag.length) * 100,
+    avgChosenRatio: ratioN ? ratioSum / ratioN : 0,
+    avgCandidates: candSum / withDiag.length,
+    bookmarkPickPct: (bookmarkPicks / withDiag.length) * 100,
+  };
+}
+
+export function buildRollingEntropy(
+  history: AppStateData["history"],
+  windowSize = 50,
+) {
+  if (history.length < windowSize) return [];
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime(),
+  );
+  const result: { pickNumber: number; entropy: number }[] = [];
+  for (let i = windowSize - 1; i < sorted.length; i++) {
+    const window = sorted.slice(i - windowSize + 1, i + 1);
+    const freq = new Map<number, number>();
+    for (const h of window) freq.set(h.id, (freq.get(h.id) ?? 0) + 1);
+    let H = 0;
+    const unique = freq.size;
+    for (const c of freq.values()) {
+      const p = c / windowSize;
+      H -= p * Math.log2(p);
+    }
+    const normalized = unique > 1 ? H / Math.log2(unique) : 0;
+    result.push({
+      pickNumber: i + 1,
+      entropy: parseFloat(normalized.toFixed(3)),
+    });
+  }
+  return result;
 }
