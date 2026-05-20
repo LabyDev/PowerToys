@@ -30,6 +30,7 @@ pub struct FileScore {
     pub order_score: f64,
     pub memory_factor: f64,
     pub bookmark_factor: f64,
+    pub coverage_factor: f64,
     pub total_weight: f64,
 }
 
@@ -156,4 +157,6 @@ pub struct BookmarkInfo {
 pub struct PersistedStats {
     pub history: Vec<HistoryEntry>,
     pub path_pick_counts: HashMap<String, u32>,
+    #[serde(default)]
+    pub recency_list_paths: Vec<String>,
 }

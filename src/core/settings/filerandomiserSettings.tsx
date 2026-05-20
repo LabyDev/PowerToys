@@ -426,6 +426,33 @@ const FileRandomiserSettings = () => {
 
           <Divider />
 
+          {/* Persist recency */}
+          <Stack gap="sm">
+            <Title order={4}>
+              {t("fileRandomiserSettings.persistRecency.title")}
+            </Title>
+            <Text size="sm" c="dimmed">
+              {t("fileRandomiserSettings.persistRecency.description")}
+            </Text>
+            <Checkbox
+              checked={settings.fileRandomiser.persistRecency ?? false}
+              label={t("fileRandomiserSettings.persistRecency.checkboxLabel")}
+              onChange={(e) =>
+                saveSettings({
+                  ...settings,
+                  fileRandomiser: {
+                    ...settings.fileRandomiser,
+                    persistRecency: e.currentTarget.checked,
+                  },
+                })
+              }
+              size="md"
+              color="blue"
+            />
+          </Stack>
+
+          <Divider />
+
           {/* Path weights */}
           <Stack gap="sm">
             <Title order={4}>

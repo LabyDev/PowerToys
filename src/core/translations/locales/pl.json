@@ -149,14 +149,14 @@
       },
       "coverage": {
         "title": "Library coverage over time",
-        "sub": "How many unique files have been seen vs pure-random baseline — if your line is above the dashed line, the recency system is working",
+        "sub": "Ile unikalnych plików zostało wyświetlonych w porównaniu do czystej losowej wartości bazowej. Linie blisko siebie = twoje wybory pasują do teoretycznego równomiernego rozkładu losowego, co jest idealne",
         "xLabel": "pick #",
         "actual": "Unique files seen",
         "baseline": "Pure-random baseline"
       },
       "repeatGap": {
         "title": "Repeat gap distribution",
-        "sub": "How many picks occur between seeing the same file twice — a healthy recency system keeps spikes away from the low end",
+        "sub": "Ile wyborów ma miejsce między dwukrotnym wyświetleniem tego samego pliku. Pusty przedział <5 jest oczekiwany — kara za niedawność aktywnie zapobiega szybkim powtórzeniom",
         "repeats": "Repeats"
       },
       "actualVsExpected": {
@@ -178,7 +178,7 @@
       },
       "entropy": {
         "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. Rising = more diverse picks over time. Flat/declining = stuck in patterns",
+        "sub": "Entropia Shannona ostatnich 50 wyborów, znormalizowana 0–1. Przy 1,0 = żaden plik nie powtórzył się w oknie 50 wyborów — normalne i oczekiwane dla dużych bibliotek",
         "diversity": "Diversity",
         "maxLabel": "max"
       },
@@ -403,6 +403,11 @@
       "days180": "180 days (default)",
       "days365": "1 year",
       "forever": "Keep forever"
+    },
+    "persistRecency": {
+      "title": "Zachowaj Ostatnie Wybory",
+      "description": "Pamiętaj, które pliki zostały niedawno wybrane między sesjami, aby przy następnym uruchomieniu nadal były karane.",
+      "checkboxLabel": "Pamiętaj ostatnie wybory między sesjami"
     },
     "pathWeights": {
       "title": "Wagi ścieżek",

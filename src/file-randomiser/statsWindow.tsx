@@ -110,7 +110,7 @@ const StatsWindow = () => {
   }, [scores]);
 
   const displayName = (id: number, name: string) =>
-    anonymise ? (anonMap.get(id) ?? name) : name;
+    anonymise ? (anonMap.get(id) ?? "File ???") : name;
 
   const pickCounts = useMemo(
     () => appState?.pickCounts ?? {},
@@ -489,7 +489,14 @@ const StatsWindow = () => {
                   {col("bookmarkFactor", t(`${sw}.table.bookmark`), true)}
                   {col("totalWeight", t(`${sw}.table.weight`), true)}
                   {col("pickCount", t(`${sw}.table.picks`), true)}
-                  {col("deviation", t(`${sw}.table.delta`), true)}
+                  <Tooltip
+                    label="Actual pick% minus weight-implied expected%. Files penalised by recency have a reduced expected%, so even one pick produces a large positive delta"
+                    withArrow
+                    multiline
+                    w={280}
+                  >
+                    {col("deviation", t(`${sw}.table.delta`), true)}
+                  </Tooltip>
                   {col("lastPicked", t(`${sw}.table.lastSeen`), true)}
                 </Table.Tr>
               </Table.Thead>
@@ -632,7 +639,7 @@ const StatsWindow = () => {
             <ResponsiveContainer width="100%" height={CH + 20}>
               <ComposedChart
                 data={coverageData}
-                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+                margin={{ top: 4, right: 8, left: -16, bottom: 16 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={grid} />
                 <XAxis
@@ -655,6 +662,7 @@ const StatsWindow = () => {
                   cursor={ttCursor}
                 />
                 <Legend
+                  verticalAlign="top"
                   wrapperStyle={{ fontSize: 11, color: "#909296" }}
                   iconType="circle"
                 />
@@ -719,7 +727,7 @@ const StatsWindow = () => {
           >
             <ResponsiveContainer width="100%" height={CH + 30}>
               <ScatterChart
-                margin={{ top: 8, right: 24, left: -8, bottom: 20 }}
+                margin={{ top: 8, right: 24, left: 16, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={grid} />
                 <XAxis
@@ -744,11 +752,17 @@ const StatsWindow = () => {
                     value: t(`${sw}.actualVsExpected.yLabel`),
                     angle: -90,
                     position: "insideLeft",
+                    offset: 8,
                     fill: "#909296",
                     fontSize: 10,
                   }}
                 />
                 <ZAxis range={[20, 20]} />
+                <Legend
+                  verticalAlign="top"
+                  wrapperStyle={{ fontSize: 11, color: "#909296" }}
+                  iconType="circle"
+                />
                 <ReferenceLine
                   segment={[
                     { x: 0, y: 0 },
@@ -800,7 +814,7 @@ const StatsWindow = () => {
             <ResponsiveContainer width="100%" height={CH + 10}>
               <ComposedChart
                 data={diagTrend}
-                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+                margin={{ top: 4, right: 8, left: -16, bottom: 16 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={grid} />
                 <XAxis
@@ -824,6 +838,7 @@ const StatsWindow = () => {
                   formatter={(v) => [(v as number).toFixed(3), ""]}
                 />
                 <Legend
+                  verticalAlign="top"
                   wrapperStyle={{ fontSize: 11, color: "#909296" }}
                   iconType="circle"
                 />
@@ -866,7 +881,7 @@ const StatsWindow = () => {
             <ResponsiveContainer width="100%" height={CH}>
               <ComposedChart
                 data={rollingEntropy}
-                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+                margin={{ top: 4, right: 8, left: -16, bottom: 16 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={grid} />
                 <XAxis
@@ -1046,7 +1061,7 @@ const StatsWindow = () => {
             <ResponsiveContainer width="100%" height={CH}>
               <BarChart
                 data={pickDistribution}
-                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+                margin={{ top: 4, right: 8, left: -16, bottom: 16 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={grid} />
                 <XAxis dataKey="label" tick={tick} />
@@ -1098,6 +1113,7 @@ const StatsWindow = () => {
                   cursor={ttCursor}
                 />
                 <Legend
+                  verticalAlign="top"
                   wrapperStyle={{ fontSize: 11, color: "#909296" }}
                   iconType="circle"
                 />

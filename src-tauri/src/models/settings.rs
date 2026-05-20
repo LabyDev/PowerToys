@@ -45,6 +45,7 @@ pub struct FileRandomiserSettings {
     pub path_weights_enabled: bool,
     /// History retention window in days. 0 = keep forever.
     pub history_retention_days: u32,
+    pub persist_recency: bool,
 }
 
 impl Default for FileRandomiserSettings {
@@ -57,6 +58,7 @@ impl Default for FileRandomiserSettings {
             path_weights: HashMap::new(),
             path_weights_enabled: false,
             history_retention_days: 180,
+            persist_recency: false,
         }
     }
 }

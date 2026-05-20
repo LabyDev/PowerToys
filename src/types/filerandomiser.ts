@@ -48,6 +48,7 @@ export type FileScore = {
   orderScore: number;
   memoryFactor: number;
   bookmarkFactor: number;
+  coverageFactor: number;
   totalWeight: number;
 };
 

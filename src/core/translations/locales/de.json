@@ -149,14 +149,14 @@
       },
       "coverage": {
         "title": "Library coverage over time",
-        "sub": "How many unique files have been seen vs pure-random baseline — if your line is above the dashed line, the recency system is working",
+        "sub": "Wie viele einzigartige Dateien im Vergleich zur reinen Zufallsbaseline gesehen wurden. Linien nah beieinander = deine Auswahlen entsprechen der theoretischen gleichmäßigen Zufallsverteilung, was ideal ist",
         "xLabel": "pick #",
         "actual": "Unique files seen",
         "baseline": "Pure-random baseline"
       },
       "repeatGap": {
         "title": "Repeat gap distribution",
-        "sub": "How many picks occur between seeing the same file twice — a healthy recency system keeps spikes away from the low end",
+        "sub": "Wie viele Auswahlen zwischen dem zweimaligen Sehen derselben Datei auftreten. Der <5-Bucket leer zu sein ist erwartet — die Aktualitätsstrafe verhindert aktiv schnelle Wiederholungen",
         "repeats": "Repeats"
       },
       "actualVsExpected": {
@@ -178,7 +178,7 @@
       },
       "entropy": {
         "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. Rising = more diverse picks over time. Flat/declining = stuck in patterns",
+        "sub": "Shannon-Entropie der letzten 50 Auswahlen, normalisiert 0–1. Bei 1,0 = keine Datei im 50-Auswahl-Fenster wiederholt — normal und erwartet für große Bibliotheken",
         "diversity": "Diversity",
         "maxLabel": "max"
       },
@@ -403,6 +403,11 @@
       "days180": "180 days (default)",
       "days365": "1 year",
       "forever": "Keep forever"
+    },
+    "persistRecency": {
+      "title": "Zuletzt Ausgewählte Merken",
+      "description": "Merke dir, welche Dateien zuletzt ausgewählt wurden, damit sie beim nächsten Start weiterhin bestraft bleiben.",
+      "checkboxLabel": "Zuletzt ausgewählte zwischen Sitzungen merken"
     },
     "pathWeights": {
       "title": "Pfadgewichtungen",

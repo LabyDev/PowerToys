@@ -149,14 +149,14 @@
       },
       "coverage": {
         "title": "Library coverage over time",
-        "sub": "How many unique files have been seen vs pure-random baseline — if your line is above the dashed line, the recency system is working",
+        "sub": "Koliko jedinstvenih datoteka je viđeno u usporedbi s čisto nasumičnom baznom linijom. Linije blizu zajedno = tvoji odabiri odgovaraju teorijskoj ravnomjernoj nasumičnoj distribuciji, što je idealno",
         "xLabel": "pick #",
         "actual": "Unique files seen",
         "baseline": "Pure-random baseline"
       },
       "repeatGap": {
         "title": "Repeat gap distribution",
-        "sub": "How many picks occur between seeing the same file twice — a healthy recency system keeps spikes away from the low end",
+        "sub": "Koliko odabira se dogodi između dvaput viđanja iste datoteke. Prazan <5 pretinac je očekivan — kazna za nedavnost aktivno sprječava brza ponavljanja",
         "repeats": "Repeats"
       },
       "actualVsExpected": {
@@ -178,7 +178,7 @@
       },
       "entropy": {
         "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. Rising = more diverse picks over time. Flat/declining = stuck in patterns",
+        "sub": "Shannon entropija zadnjih 50 odabira, normalizirana 0–1. Na 1,0 = nijedna datoteka nije ponovljena u prozoru od 50 odabira — normalno i očekivano za velike biblioteke",
         "diversity": "Diversity",
         "maxLabel": "max"
       },
@@ -403,6 +403,11 @@
       "days180": "180 days (default)",
       "days365": "1 year",
       "forever": "Keep forever"
+    },
+    "persistRecency": {
+      "title": "Zadrži nedavne odabire",
+      "description": "Pamti koje su datoteke nedavno odabrane između sesija, tako da ostanu kažnjene pri sljedećem pokretanju.",
+      "checkboxLabel": "Pamti nedavne odabire između sesija"
     },
     "pathWeights": {
       "title": "Težine putanja",

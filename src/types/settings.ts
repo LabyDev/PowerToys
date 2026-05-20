@@ -45,6 +45,7 @@ export type AppSettings = {
     pathWeights?: Record<string, number>;
     pathWeightsEnabled?: boolean;
     historyRetentionDays: number;
+    persistRecency?: boolean;
   };
   fileAuditor?: FileAuditorSettings;
   bookmarkColors: BookmarkColorOption[];

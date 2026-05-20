@@ -157,14 +157,14 @@
       },
       "coverage": {
         "title": "Library coverage over time",
-        "sub": "How many unique files have been seen vs pure-random baseline — if your line is above the dashed line, the recency system is working",
+        "sub": "How many unique files have been seen vs pure-random baseline. Lines close together = your picks match theoretical uniform-random distribution, which is ideal",
         "xLabel": "pick #",
         "actual": "Unique files seen",
         "baseline": "Pure-random baseline"
       },
       "repeatGap": {
         "title": "Repeat gap distribution",
-        "sub": "How many picks occur between seeing the same file twice — a healthy recency system keeps spikes away from the low end",
+        "sub": "How many picks occur between seeing the same file twice. The <5 bucket being empty is expected — the recency penalty actively prevents quick repeats",
         "repeats": "Repeats"
       },
       "actualVsExpected": {
@@ -186,7 +186,7 @@
       },
       "entropy": {
         "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. Rising = more diverse picks over time. Flat/declining = stuck in patterns",
+        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. At 1.0 = no file repeated in the 50-pick window — normal and expected for large libraries",
         "diversity": "Diversity",
         "maxLabel": "max"
       },
@@ -380,6 +380,11 @@
       "days180": "180 days (default)",
       "days365": "1 year",
       "forever": "Keep forever"
+    },
+    "persistRecency": {
+      "title": "Persist Recent Picks",
+      "description": "Remember which files were recently picked between sessions, so they stay penalised on next launch.",
+      "checkboxLabel": "Remember recent picks between sessions"
     },
     "pathWeights": {
       "title": "Path Weights",

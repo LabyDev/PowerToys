@@ -149,14 +149,14 @@
       },
       "coverage": {
         "title": "Library coverage over time",
-        "sub": "How many unique files have been seen vs pure-random baseline — if your line is above the dashed line, the recency system is working",
+        "sub": "Hoeveel unieke bestanden zijn gezien ten opzichte van pure-willekeurige baseline. Lijnen dicht bij elkaar = je keuzes komen overeen met theoretische uniforme willekeurige verdeling, wat ideaal is",
         "xLabel": "pick #",
         "actual": "Unique files seen",
         "baseline": "Pure-random baseline"
       },
       "repeatGap": {
         "title": "Repeat gap distribution",
-        "sub": "How many picks occur between seeing the same file twice — a healthy recency system keeps spikes away from the low end",
+        "sub": "Hoeveel keuzes er plaatsvinden tussen het tweemaal zien van hetzelfde bestand. De <5-emmer leeg zijn is verwacht — de recentheidsstraf voorkomt actief snelle herhalingen",
         "repeats": "Repeats"
       },
       "actualVsExpected": {
@@ -178,7 +178,7 @@
       },
       "entropy": {
         "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. Rising = more diverse picks over time. Flat/declining = stuck in patterns",
+        "sub": "Shannon-entropie van de laatste 50 keuzes, genormaliseerd 0–1. Bij 1,0 = geen bestand herhaald in het 50-keuzevenster — normaal en verwacht voor grote bibliotheken",
         "diversity": "Diversity",
         "maxLabel": "max"
       },
@@ -403,6 +403,11 @@
       "days180": "180 days (default)",
       "days365": "1 year",
       "forever": "Keep forever"
+    },
+    "persistRecency": {
+      "title": "Recente Keuzes Bewaren",
+      "description": "Onthoud welke bestanden recent gekozen zijn tussen sessies, zodat ze bij de volgende start bestraft blijven.",
+      "checkboxLabel": "Onthoud recente keuzes tussen sessies"
     },
     "pathWeights": {
       "title": "Padgewichten",

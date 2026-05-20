@@ -1,16 +1,16 @@
+use crate::models::common::hash_from_meta;
 use crate::models::{
     AppStateData, Bookmark, FileEntry, FileScore, FilterMatchType, FilterRule, HistoryEntry,
     PersistedStats, SavedPath,
 };
 use crate::models::{FilterAction, RandomiserPreset};
-use crate::models::common::hash_from_meta;
 use crate::setting_commands::get_app_settings;
-use std::collections::HashMap;
 use chrono::Utc;
 use ignore::WalkBuilder;
 use rand::distr::weighted::WeightedIndex;
 use rand::prelude::*;
 use rayon::prelude::*;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::Emitter;
@@ -22,7 +22,10 @@ use tauri_plugin_opener::OpenerExt;
 pub struct PathPickCounts(pub Mutex<HashMap<String, u32>>);
 
 fn stats_file_path(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
-    app.path().app_data_dir().ok().map(|d| d.join("randomiser_stats.json"))
+    app.path()
+        .app_data_dir()
+        .ok()
+        .map(|d| d.join("randomiser_stats.json"))
 }
 
 pub fn prune_history(history: &mut Vec<crate::models::HistoryEntry>, retention_days: u32) {
@@ -34,11 +37,19 @@ pub fn prune_history(history: &mut Vec<crate::models::HistoryEntry>, retention_d
 }
 
 fn save_persisted_stats(app: &tauri::AppHandle, data: &AppStateData) {
-    let Some(path) = stats_file_path(app) else { return };
-    let retention_days = get_app_settings(app.clone())
-        .ok()
+    let Some(path) = stats_file_path(app) else {
+        return;
+    };
+    let settings = get_app_settings(app.clone()).ok();
+    let retention_days = settings
+        .as_ref()
         .map(|s| s.file_randomiser.history_retention_days)
         .unwrap_or(180);
+    let persist_recency = settings
+        .as_ref()
+        .map(|s| s.file_randomiser.persist_recency)
+        .unwrap_or(false);
+
     let mut history = data.history.clone();
     prune_history(&mut history, retention_days);
     let path_pick_counts: HashMap<String, u32> = data
@@ -46,7 +57,9 @@ fn save_persisted_stats(app: &tauri::AppHandle, data: &AppStateData) {
         .iter()
         .filter_map(|f| {
             let count = *data.pick_counts.get(&f.id)?;
-            if count == 0 { return None; }
+            if count == 0 {
+                return None;
+            }
             let path_str = match &f.path {
                 FilePath::Path(p) => p.to_string_lossy().to_string(),
                 FilePath::Url(u) => u.to_string(),
@@ -54,7 +67,25 @@ fn save_persisted_stats(app: &tauri::AppHandle, data: &AppStateData) {
             Some((path_str, count))
         })
         .collect();
-    let stats = PersistedStats { history, path_pick_counts };
+
+    let recency_list_paths: Vec<String> = if persist_recency {
+        data.recency_list
+            .iter()
+            .filter_map(|id| data.files.iter().find(|f| f.id == *id))
+            .map(|f| match &f.path {
+                FilePath::Path(p) => p.to_string_lossy().to_string(),
+                FilePath::Url(u) => u.to_string(),
+            })
+            .collect()
+    } else {
+        vec![]
+    };
+
+    let stats = PersistedStats {
+        history,
+        path_pick_counts,
+        recency_list_paths,
+    };
     if let Ok(json) = serde_json::to_string_pretty(&stats) {
         let _ = std::fs::write(path, json);
     }
@@ -132,6 +163,7 @@ pub fn remove_path(app_data: State<'_, Mutex<AppStateData>>, id: u64) -> bool {
 
 #[tauri::command]
 pub fn crawl_paths(
+    app: tauri::AppHandle,
     app_data: State<'_, Mutex<AppStateData>>,
     path_pick_counts: State<'_, PathPickCounts>,
     global_bookmarks: Vec<Bookmark>,
@@ -299,7 +331,6 @@ pub fn crawl_paths(
         false
     }
 
-
     // Collect all files
     // Collect (path, hash) together so metadata is only read once
     let all_files: Arc<Mutex<Vec<(std::path::PathBuf, u64)>>> = Arc::new(Mutex::new(Vec::new()));
@@ -397,6 +428,42 @@ pub fn crawl_paths(
         })
         .collect();
 
+    // Remap persisted recency list (paths → IDs) when persist_recency is enabled
+    let persist_recency = get_app_settings(app.clone())
+        .ok()
+        .map(|s| s.file_randomiser.persist_recency)
+        .unwrap_or(false);
+    if persist_recency {
+        if let Some(stats_path) = stats_file_path(&app) {
+            if let Ok(content) = std::fs::read_to_string(stats_path) {
+                if let Ok(stats) = serde_json::from_str::<crate::models::PersistedStats>(&content) {
+                    if !stats.recency_list_paths.is_empty() {
+                        let recency_window =
+                            ((data.files.len() as f64).sqrt() * 4.0).clamp(15.0, 200.0) as usize;
+                        let path_to_id: HashMap<String, u64> = data
+                            .files
+                            .iter()
+                            .map(|f| {
+                                let p = match &f.path {
+                                    FilePath::Path(p) => p.to_string_lossy().to_string(),
+                                    FilePath::Url(u) => u.to_string(),
+                                };
+                                (p, f.id)
+                            })
+                            .collect();
+                        let remapped: Vec<u64> = stats
+                            .recency_list_paths
+                            .iter()
+                            .filter_map(|p| path_to_id.get(p).copied())
+                            .collect();
+                        let start = remapped.len().saturating_sub(recency_window * 2);
+                        data.recency_list = remapped[start..].to_vec();
+                    }
+                }
+            }
+        }
+    }
+
     data.files.clone()
 }
 
@@ -410,7 +477,6 @@ fn open_and_wait(path: &str, show_cmd: bool) -> std::io::Result<()> {
     if show_cmd {
         Command::new("cmd")
             .args(["/C", "start", "/WAIT", "", path])
-            .creation_flags(CREATE_NO_WINDOW)
             .status()?;
     } else {
         Command::new("cmd")
@@ -578,8 +644,14 @@ pub fn pick_random_file(
     // --- MEMORY PENALTY CURVE ---
     // Saturating curve: more randomness → more anti-repeat. Stays meaningful at r=1
     // so "full random" never collapses into pure weighted-uniform (avoids visible streaks).
-    // memory_influence: r=0 → 0.0, r=0.5 → 0.75, r=1 → 1.0
-    let memory_influence = 1.0 - (1.0 - r).powi(2);
+    // memory_influence: r=0 → 0.5 (floored), r=0.5 → 0.75, r=1 → 1.0
+    let memory_influence = (1.0 - (1.0 - r).powi(2)).max(0.5);
+
+    let total_picks: u32 = candidates
+        .iter()
+        .map(|(_, f)| data.pick_counts.get(&f.id).copied().unwrap_or(0))
+        .sum();
+    let avg_picks = total_picks as f64 / candidates.len() as f64;
 
     // Build weights and capture per-candidate factor breakdown so we can attach
     // a diagnostics row to the resulting HistoryEntry (for tuning/export later).
@@ -597,17 +669,7 @@ pub fn pick_random_file(
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
                     let frac = pos as f64 / recency_window as f64;
-                    let survival = frac.powf(0.6);
-                    if file
-                        .bookmark
-                        .as_ref()
-                        .and_then(|b| b.color.as_ref())
-                        .is_some()
-                    {
-                        survival.max(0.04)
-                    } else {
-                        survival.max(0.02)
-                    }
+                    frac.powf(1.5)
                 } else {
                     1.0
                 }
@@ -628,21 +690,32 @@ pub fn pick_random_file(
                 1.0
             };
 
+            let file_picks = data.pick_counts.get(&file.id).copied().unwrap_or(0) as f64;
+            let coverage_factor = (avg_picks + 1.0) / (file_picks + 1.0);
+
             let base = 1.0 + order_w * order_influence * 10.0;
             order_scores.push(order_w);
             memory_factors.push(memory_factor);
-            (base * memory_factor * adjusted_bookmark * path_weight).max(1e-9)
+            (base * memory_factor * adjusted_bookmark * path_weight * coverage_factor).max(1e-9)
         })
         .collect();
 
-    // --- Hard anti-repeat: never pick the just-picked file when alternatives exist ---
+    // --- Hard anti-repeat: never pick any of the last N picks when alternatives exist ---
+    // N scales with recency window so small libraries don't lock themselves out.
     let mut weights = weights;
-    if len >= 2 && data.last_picked_id.is_some() {
-        if let Some(pos) = candidates
-            .iter()
-            .position(|(_, f)| Some(f.id) == data.last_picked_id)
-        {
-            weights[pos] = 0.0;
+    let hard_block_n = ((recency_window / 8).max(3)).min(10);
+    let blocked: std::collections::HashSet<u64> = data
+        .last_picked_id
+        .iter()
+        .copied()
+        .chain(data.recency_list.iter().rev().take(hard_block_n).copied())
+        .collect();
+    let blockable = len.saturating_sub(blocked.len());
+    if blockable >= 1 {
+        for (i, (_, f)) in candidates.iter().enumerate() {
+            if blocked.contains(&f.id) {
+                weights[i] = 0.0;
+            }
         }
     }
 
@@ -653,7 +726,11 @@ pub fn pick_random_file(
     // --- Build diagnostics for this pick ---
     let diagnostics = {
         let mean = |v: &[f64]| {
-            if v.is_empty() { 0.0 } else { v.iter().sum::<f64>() / v.len() as f64 }
+            if v.is_empty() {
+                0.0
+            } else {
+                v.iter().sum::<f64>() / v.len() as f64
+            }
         };
         let mut sorted = weights.clone();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
@@ -711,10 +788,7 @@ pub fn pick_random_file(
             chosen_weight: weights[chosen],
             chosen_order_score: order_scores[chosen],
             chosen_memory_factor: memory_factors[chosen],
-            chosen_bookmark_color: file
-                .bookmark
-                .as_ref()
-                .and_then(|b| b.color.clone()),
+            chosen_bookmark_color: file.bookmark.as_ref().and_then(|b| b.color.clone()),
             chosen_bookmark_global: file.bookmark.as_ref().map(|b| b.is_global).unwrap_or(false),
         }
     };
@@ -907,7 +981,22 @@ pub fn get_file_scores(
         .unwrap_or(0);
     let recency_window = ((len as f64).sqrt() * 4.0).clamp(15.0, 200.0) as usize;
     let order_influence = (1.0 - r).powf(4.0);
-    let memory_influence = 1.0 - (1.0 - r).powi(2);
+    let memory_influence = (1.0 - (1.0 - r).powi(2)).max(0.5);
+
+    let hard_block_n = ((recency_window / 8).max(3)).min(10);
+    let blocked: std::collections::HashSet<u64> = data
+        .last_picked_id
+        .iter()
+        .copied()
+        .chain(data.recency_list.iter().rev().take(hard_block_n).copied())
+        .collect();
+    let any_unblocked = len > blocked.len();
+
+    let total_picks: u32 = candidates
+        .iter()
+        .map(|(_, f)| data.pick_counts.get(&f.id).copied().unwrap_or(0))
+        .sum();
+    let avg_picks = total_picks as f64 / candidates.len() as f64;
 
     let scores: Vec<FileScore> = candidates
         .iter()
@@ -922,17 +1011,7 @@ pub fn get_file_scores(
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
                     let frac = pos as f64 / recency_window as f64;
-                    let survival = frac.powf(0.6);
-                    if file
-                        .bookmark
-                        .as_ref()
-                        .and_then(|b| b.color.as_ref())
-                        .is_some()
-                    {
-                        survival.max(0.04)
-                    } else {
-                        survival.max(0.02)
-                    }
+                    frac.powf(1.5)
                 } else {
                     1.0
                 }
@@ -953,13 +1032,16 @@ pub fn get_file_scores(
                 1.0
             };
 
+            let file_picks = data.pick_counts.get(&file.id).copied().unwrap_or(0) as f64;
+            let coverage_factor = (avg_picks + 1.0) / (file_picks + 1.0);
+
             let base = 1.0 + order_w * order_influence * 10.0;
-            // Mirror pick_random_file: when more than one candidate exists, the just-picked
-            // file is hard-excluded from sampling, so display weight as effectively zero.
-            let total = if is_last_picked && len >= 2 {
+            // Mirror pick_random_file: the last N picks are hard-excluded from sampling
+            // (as long as at least one candidate remains unblocked), so show their weight as zero.
+            let total = if any_unblocked && blocked.contains(&file.id) {
                 0.0
             } else {
-                (base * memory_factor * bookmark_factor * path_weight).max(1e-9)
+                (base * memory_factor * bookmark_factor * path_weight * coverage_factor).max(1e-9)
             };
 
             FileScore {
@@ -969,6 +1051,7 @@ pub fn get_file_scores(
                 order_score: order_w,
                 memory_factor,
                 bookmark_factor,
+                coverage_factor,
                 total_weight: total,
             }
         })

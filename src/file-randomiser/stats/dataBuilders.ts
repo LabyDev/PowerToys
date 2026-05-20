@@ -315,12 +315,11 @@ export function buildRollingEntropy(
     const freq = new Map<number, number>();
     for (const h of window) freq.set(h.id, (freq.get(h.id) ?? 0) + 1);
     let H = 0;
-    const unique = freq.size;
     for (const c of freq.values()) {
       const p = c / windowSize;
       H -= p * Math.log2(p);
     }
-    const normalized = unique > 1 ? H / Math.log2(unique) : 0;
+    const normalized = windowSize > 1 ? H / Math.log2(windowSize) : 0;
     result.push({
       pickNumber: i + 1,
       entropy: parseFloat(normalized.toFixed(3)),
