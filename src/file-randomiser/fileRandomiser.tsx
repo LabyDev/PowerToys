@@ -72,6 +72,7 @@ const FileRandomiser = () => {
   const shuffleRef = useRef(shuffle);
   const trackingRef = useRef(tracking);
   const isHandlingFileCloseRef = useRef(false);
+  const pendingCloseRef = useRef(false);
 
   const [showLoading, setShowLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
@@ -426,7 +427,10 @@ const FileRandomiser = () => {
     let unlisten: (() => void) | null = null;
 
     listen("file-closed", async () => {
-      if (isHandlingFileCloseRef.current) return;
+      if (isHandlingFileCloseRef.current) {
+        pendingCloseRef.current = true;
+        return;
+      }
       isHandlingFileCloseRef.current = true;
       try {
         if (trackingRef.current) {
@@ -436,6 +440,10 @@ const FileRandomiser = () => {
         }
       } finally {
         isHandlingFileCloseRef.current = false;
+        if (pendingCloseRef.current) {
+          pendingCloseRef.current = false;
+          if (trackingRef.current) handlePickFile();
+        }
       }
     }).then((fn) => {
       unlisten = fn;

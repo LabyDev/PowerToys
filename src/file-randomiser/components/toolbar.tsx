@@ -98,6 +98,7 @@ const Toolbar = ({
           leftSection={<ShuffleIcon size={14} />}
           onClick={onPickFile}
           disabled={hasStartedTracking}
+          miw={120}
         >
           {shuffle
             ? t("fileRandomiser.toolbar.randomFile")

@@ -692,37 +692,6 @@ const StatsWindow = () => {
           </Section>
         )}
 
-        {/* Repeat gap distribution */}
-        {totalPicks >= 20 && repeatIntervals.some((b) => b.count > 0) && (
-          <Section
-            title={t(`${sw}.repeatGap.title`)}
-            sub={t(`${sw}.repeatGap.sub`)}
-          >
-            <ResponsiveContainer width="100%" height={CH}>
-              <BarChart
-                data={repeatIntervals}
-                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
-                <XAxis dataKey="label" tick={tick} />
-                <YAxis tick={tick} allowDecimals={false} />
-                <RTooltip
-                  contentStyle={ttStyle}
-                  labelStyle={ttLabel}
-                  itemStyle={ttItem}
-                  cursor={ttCursor}
-                  formatter={(v) => [v, t(`${sw}.repeatGap.repeats`)]}
-                />
-                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                  {repeatIntervals.map((_, i) => (
-                    <Cell key={i} fill={`hsl(${i * 22}, 65%, 50%)`} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Section>
-        )}
-
         {/* Actual vs expected deviation scatter */}
         {totalPicks > 0 && actualVsExpected.length > 1 && (
           <Section
@@ -872,6 +841,37 @@ const StatsWindow = () => {
                   dot={false}
                 />
               </ComposedChart>
+            </ResponsiveContainer>
+          </Section>
+        )}
+
+        {/* Repeat gap distribution */}
+        {totalPicks >= 20 && repeatIntervals.some((b) => b.count > 0) && (
+          <Section
+            title={t(`${sw}.repeatGap.title`)}
+            sub={t(`${sw}.repeatGap.sub`)}
+          >
+            <ResponsiveContainer width="100%" height={CH}>
+              <BarChart
+                data={repeatIntervals}
+                margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
+                <XAxis dataKey="label" tick={tick} />
+                <YAxis tick={tick} allowDecimals={false} />
+                <RTooltip
+                  contentStyle={ttStyle}
+                  labelStyle={ttLabel}
+                  itemStyle={ttItem}
+                  cursor={ttCursor}
+                  formatter={(v) => [v, t(`${sw}.repeatGap.repeats`)]}
+                />
+                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                  {repeatIntervals.map((_, i) => (
+                    <Cell key={i} fill={`hsl(${i * 22}, 65%, 50%)`} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </Section>
         )}

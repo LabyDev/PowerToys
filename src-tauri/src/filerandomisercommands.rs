@@ -726,7 +726,7 @@ pub fn pick_random_file(
             };
 
             let file_picks = data.pick_counts.get(&file.id).copied().unwrap_or(0) as f64;
-            let coverage_factor = (avg_picks + 1.0) / (file_picks + 1.0);
+            let coverage_factor = ((avg_picks + 1.0) / (file_picks + 1.0)).sqrt();
 
             // Streak suppression. Bookmark colour always applies; folder is
             // softened proportional to user-set path weight so a 5x folder
@@ -806,7 +806,7 @@ pub fn pick_random_file(
     // --- Hard anti-repeat: never pick any of the last N picks when alternatives exist ---
     // N scales with recency window. For ~450 files this blocks ~28 recent picks.
     let mut weights = weights;
-    let hard_block_n = ((recency_window / 3).max(5)).min(40);
+    let hard_block_n = ((recency_window / 5).max(3)).min(20);
     let blocked: std::collections::HashSet<u64> = data
         .last_picked_id
         .iter()
@@ -1115,7 +1115,7 @@ pub fn get_file_scores(
         Vec::new()
     };
 
-    let hard_block_n = ((recency_window / 3).max(5)).min(40);
+    let hard_block_n = ((recency_window / 5).max(3)).min(20);
     let blocked: std::collections::HashSet<u64> = data
         .last_picked_id
         .iter()
@@ -1165,7 +1165,7 @@ pub fn get_file_scores(
             };
 
             let file_picks = data.pick_counts.get(&file.id).copied().unwrap_or(0) as f64;
-            let coverage_factor = (avg_picks + 1.0) / (file_picks + 1.0);
+            let coverage_factor = ((avg_picks + 1.0) / (file_picks + 1.0)).sqrt();
 
             let (color_streak, folder_streak) = if streaks_enabled {
                 let file_color = file
