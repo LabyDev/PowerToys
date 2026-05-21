@@ -63,6 +63,8 @@ export function buildDiagnosticsCsv(
     "chosenWeight",
     "chosenOrderScore",
     "chosenMemoryFactor",
+    "chosenColorStreakFactor",
+    "chosenFolderStreakFactor",
     "chosenBookmarkColor",
     "chosenBookmarkGlobal",
   ].join(",");
@@ -93,6 +95,8 @@ export function buildDiagnosticsCsv(
         d.chosenWeight,
         d.chosenOrderScore,
         d.chosenMemoryFactor,
+        d.chosenColorStreakFactor ?? 1,
+        d.chosenFolderStreakFactor ?? 1,
         d.chosenBookmarkColor ?? "",
         d.chosenBookmarkGlobal,
       ]

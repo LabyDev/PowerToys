@@ -66,13 +66,18 @@ const Toolbar = ({
   };
 
   const renderButtons = () => (
-    <Group gap="sm">
-      <Button leftSection={<FolderPlusIcon size={16} />} onClick={onAddPath}>
+    <Group gap="xs">
+      <Button
+        size="sm"
+        leftSection={<FolderPlusIcon size={14} />}
+        onClick={onAddPath}
+      >
         {t("fileRandomiser.toolbar.addPath")}
       </Button>
       <Button
+        size="sm"
         variant="light"
-        leftSection={<ArrowsClockwiseIcon size={16} />}
+        leftSection={<ArrowsClockwiseIcon size={14} />}
         onClick={onCrawl}
       >
         {t("fileRandomiser.toolbar.crawl")}
@@ -88,8 +93,9 @@ const Toolbar = ({
         position="bottom"
       >
         <Button
+          size="sm"
           variant="filled"
-          leftSection={<ShuffleIcon size={16} />}
+          leftSection={<ShuffleIcon size={14} />}
           onClick={onPickFile}
           disabled={hasStartedTracking}
         >
@@ -103,15 +109,15 @@ const Toolbar = ({
         withArrow
         position="bottom"
       >
-        <ActionIcon variant="subtle" size="lg" onClick={openStatsWindow}>
-          <ChartBarIcon size={18} />
+        <ActionIcon variant="subtle" size="md" onClick={openStatsWindow}>
+          <ChartBarIcon size={16} />
         </ActionIcon>
       </Tooltip>
     </Group>
   );
 
   const renderCheckboxes = () => (
-    <Group gap="sm">
+    <Group gap="sm" wrap="nowrap">
       <Checkbox
         label={t("fileRandomiser.toolbar.shuffle")}
         checked={shuffle}
@@ -147,8 +153,8 @@ const Toolbar = ({
     <Paper withBorder radius="md" p="md">
       <Stack gap="sm">
         {/* Top row: preset controls + buttons + checkboxes */}
-        <Group justify="space-between" align="center" wrap="wrap">
-          <Group gap="md" align="center" wrap="wrap">
+        <Group justify="space-between" align="center" wrap="nowrap">
+          <Group gap="xs" align="center" wrap="wrap">
             {presetControls}
             {renderButtons()}
           </Group>

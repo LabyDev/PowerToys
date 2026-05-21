@@ -637,15 +637,48 @@ pub fn pick_random_file(
     let recency_window = ((len as f64).sqrt() * 4.0).clamp(15.0, 200.0) as usize;
 
     // --- ORDER BIAS CURVE ---
-    // Drops steeply: at r=0.3 it's already ~5%, gone by r=0.5
-    // order_influence: r=0 → 1.0, r=0.5 → ~0.02, r=1 → 0.0
-    let order_influence = (1.0 - r).powf(4.0);
+    // Drops very steeply so mid-randomness doesn't visibly favour the next-in-order file.
+    // order_influence: r=0 → 1.0, r=0.5 → ~0.016, r=1 → 0.0
+    let order_influence = (1.0 - r).powf(6.0);
 
     // --- MEMORY PENALTY CURVE ---
     // Saturating curve: more randomness → more anti-repeat. Stays meaningful at r=1
     // so "full random" never collapses into pure weighted-uniform (avoids visible streaks).
     // memory_influence: r=0 → 0.5 (floored), r=0.5 → 0.75, r=1 → 1.0
     let memory_influence = (1.0 - (1.0 - r).powi(2)).max(0.5);
+
+    // --- STREAK SUPPRESSION ---
+    // Track the last few picks' bookmark colour and parent folder. Files matching
+    // those get a soft weight penalty so picks "feel" less clustered to humans.
+    // Disabled at r=1.0 (the user explicitly asked for raw weighted sampling).
+    let streaks_enabled = r < 1.0;
+    let recent_streak_meta: Vec<(Option<String>, Option<String>)> = if streaks_enabled {
+        // Use the actual pick history (last 3 entries by openedAt) so bookmarked
+        // picks are included — recency_list intentionally skips them.
+        let mut hist: Vec<&crate::models::HistoryEntry> = data.history.iter().collect();
+        hist.sort_by_key(|h| h.opened_at);
+        hist.iter()
+            .rev()
+            .take(3)
+            .filter_map(|h| data.files.iter().find(|f| f.id == h.id))
+            .map(|f| {
+                let color = f
+                    .bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.clone())
+                    .map(|c| c.to_uppercase());
+                let folder = match &f.path {
+                    FilePath::Path(p) => p
+                        .parent()
+                        .map(|pp| pp.to_string_lossy().to_string()),
+                    FilePath::Url(_) => None,
+                };
+                (color, folder)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
 
     let total_picks: u32 = candidates
         .iter()
@@ -657,6 +690,8 @@ pub fn pick_random_file(
     // a diagnostics row to the resulting HistoryEntry (for tuning/export later).
     let mut order_scores = Vec::with_capacity(len);
     let mut memory_factors = Vec::with_capacity(len);
+    let mut color_streak_factors = Vec::with_capacity(len);
+    let mut folder_streak_factors = Vec::with_capacity(len);
     let weights: Vec<f64> = candidates
         .iter()
         .map(|(idx, file)| {
@@ -693,17 +728,85 @@ pub fn pick_random_file(
             let file_picks = data.pick_counts.get(&file.id).copied().unwrap_or(0) as f64;
             let coverage_factor = (avg_picks + 1.0) / (file_picks + 1.0);
 
+            // Streak suppression. Bookmark colour always applies; folder is
+            // softened proportional to user-set path weight so a 5x folder
+            // can still get streaks (the user explicitly asked for it).
+            let (color_streak, folder_streak) = if streaks_enabled {
+                let file_color = file
+                    .bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.as_ref())
+                    .map(|c| c.to_uppercase());
+                let file_folder = match &file.path {
+                    FilePath::Path(p) => p
+                        .parent()
+                        .map(|pp| pp.to_string_lossy().to_string()),
+                    FilePath::Url(_) => None,
+                };
+
+                let mut color_f = 1.0_f64;
+                if let Some(fc) = &file_color {
+                    if let Some((prev_c, _)) = recent_streak_meta.first() {
+                        if prev_c.as_deref() == Some(fc.as_str()) {
+                            color_f = 0.4;
+                        }
+                    }
+                    if color_f >= 1.0
+                        && recent_streak_meta
+                            .iter()
+                            .any(|(c, _)| c.as_deref() == Some(fc.as_str()))
+                    {
+                        color_f = 0.7;
+                    }
+                }
+
+                let mut raw_folder_f = 1.0_f64;
+                if let Some(ff) = &file_folder {
+                    if let Some((_, prev_f)) = recent_streak_meta.first() {
+                        if prev_f.as_deref() == Some(ff.as_str()) {
+                            raw_folder_f = 0.5;
+                        }
+                    }
+                    if raw_folder_f >= 1.0
+                        && recent_streak_meta
+                            .iter()
+                            .any(|(_, f)| f.as_deref() == Some(ff.as_str()))
+                    {
+                        raw_folder_f = 0.8;
+                    }
+                }
+                let folder_f = if path_weight > 1.0 {
+                    let t = ((path_weight - 1.0) / 4.0).clamp(0.0, 1.0);
+                    raw_folder_f + (1.0 - raw_folder_f) * t
+                } else {
+                    raw_folder_f
+                };
+
+                (color_f, folder_f)
+            } else {
+                (1.0, 1.0)
+            };
+
             let base = 1.0 + order_w * order_influence * 10.0;
             order_scores.push(order_w);
             memory_factors.push(memory_factor);
-            (base * memory_factor * adjusted_bookmark * path_weight * coverage_factor).max(1e-9)
+            color_streak_factors.push(color_streak);
+            folder_streak_factors.push(folder_streak);
+            (base
+                * memory_factor
+                * adjusted_bookmark
+                * path_weight
+                * coverage_factor
+                * color_streak
+                * folder_streak)
+                .max(1e-9)
         })
         .collect();
 
     // --- Hard anti-repeat: never pick any of the last N picks when alternatives exist ---
-    // N scales with recency window so small libraries don't lock themselves out.
+    // N scales with recency window. For ~450 files this blocks ~28 recent picks.
     let mut weights = weights;
-    let hard_block_n = ((recency_window / 8).max(3)).min(10);
+    let hard_block_n = ((recency_window / 3).max(5)).min(40);
     let blocked: std::collections::HashSet<u64> = data
         .last_picked_id
         .iter()
@@ -788,6 +891,8 @@ pub fn pick_random_file(
             chosen_weight: weights[chosen],
             chosen_order_score: order_scores[chosen],
             chosen_memory_factor: memory_factors[chosen],
+            chosen_color_streak_factor: color_streak_factors[chosen],
+            chosen_folder_streak_factor: folder_streak_factors[chosen],
             chosen_bookmark_color: file.bookmark.as_ref().and_then(|b| b.color.clone()),
             chosen_bookmark_global: file.bookmark.as_ref().map(|b| b.is_global).unwrap_or(false),
         }
@@ -980,10 +1085,37 @@ pub fn get_file_scores(
         .position(|(_, f)| Some(f.id) == data.last_picked_id)
         .unwrap_or(0);
     let recency_window = ((len as f64).sqrt() * 4.0).clamp(15.0, 200.0) as usize;
-    let order_influence = (1.0 - r).powf(4.0);
+    let order_influence = (1.0 - r).powf(6.0);
     let memory_influence = (1.0 - (1.0 - r).powi(2)).max(0.5);
 
-    let hard_block_n = ((recency_window / 8).max(3)).min(10);
+    let streaks_enabled = r < 1.0;
+    let recent_streak_meta: Vec<(Option<String>, Option<String>)> = if streaks_enabled {
+        let mut hist: Vec<&crate::models::HistoryEntry> = data.history.iter().collect();
+        hist.sort_by_key(|h| h.opened_at);
+        hist.iter()
+            .rev()
+            .take(3)
+            .filter_map(|h| data.files.iter().find(|f| f.id == h.id))
+            .map(|f| {
+                let color = f
+                    .bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.clone())
+                    .map(|c| c.to_uppercase());
+                let folder = match &f.path {
+                    FilePath::Path(p) => p
+                        .parent()
+                        .map(|pp| pp.to_string_lossy().to_string()),
+                    FilePath::Url(_) => None,
+                };
+                (color, folder)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    let hard_block_n = ((recency_window / 3).max(5)).min(40);
     let blocked: std::collections::HashSet<u64> = data
         .last_picked_id
         .iter()
@@ -1035,13 +1167,73 @@ pub fn get_file_scores(
             let file_picks = data.pick_counts.get(&file.id).copied().unwrap_or(0) as f64;
             let coverage_factor = (avg_picks + 1.0) / (file_picks + 1.0);
 
+            let (color_streak, folder_streak) = if streaks_enabled {
+                let file_color = file
+                    .bookmark
+                    .as_ref()
+                    .and_then(|b| b.color.as_ref())
+                    .map(|c| c.to_uppercase());
+                let file_folder = match &file.path {
+                    FilePath::Path(p) => p
+                        .parent()
+                        .map(|pp| pp.to_string_lossy().to_string()),
+                    FilePath::Url(_) => None,
+                };
+                let mut color_f = 1.0_f64;
+                if let Some(fc) = &file_color {
+                    if let Some((prev_c, _)) = recent_streak_meta.first() {
+                        if prev_c.as_deref() == Some(fc.as_str()) {
+                            color_f = 0.4;
+                        }
+                    }
+                    if color_f >= 1.0
+                        && recent_streak_meta
+                            .iter()
+                            .any(|(c, _)| c.as_deref() == Some(fc.as_str()))
+                    {
+                        color_f = 0.7;
+                    }
+                }
+                let mut raw_folder_f = 1.0_f64;
+                if let Some(ff) = &file_folder {
+                    if let Some((_, prev_f)) = recent_streak_meta.first() {
+                        if prev_f.as_deref() == Some(ff.as_str()) {
+                            raw_folder_f = 0.5;
+                        }
+                    }
+                    if raw_folder_f >= 1.0
+                        && recent_streak_meta
+                            .iter()
+                            .any(|(_, f)| f.as_deref() == Some(ff.as_str()))
+                    {
+                        raw_folder_f = 0.8;
+                    }
+                }
+                let folder_f = if path_weight > 1.0 {
+                    let t = ((path_weight - 1.0) / 4.0).clamp(0.0, 1.0);
+                    raw_folder_f + (1.0 - raw_folder_f) * t
+                } else {
+                    raw_folder_f
+                };
+                (color_f, folder_f)
+            } else {
+                (1.0, 1.0)
+            };
+
             let base = 1.0 + order_w * order_influence * 10.0;
             // Mirror pick_random_file: the last N picks are hard-excluded from sampling
             // (as long as at least one candidate remains unblocked), so show their weight as zero.
             let total = if any_unblocked && blocked.contains(&file.id) {
                 0.0
             } else {
-                (base * memory_factor * bookmark_factor * path_weight * coverage_factor).max(1e-9)
+                (base
+                    * memory_factor
+                    * bookmark_factor
+                    * path_weight
+                    * coverage_factor
+                    * color_streak
+                    * folder_streak)
+                    .max(1e-9)
             };
 
             FileScore {

@@ -59,7 +59,6 @@ import {
   buildPathBreakdown,
   buildPickDistribution,
   buildRepeatIntervals,
-  buildRollingEntropy,
   buildTopPicked,
   summariseDiagnostics,
 } from "./stats/dataBuilders";
@@ -102,15 +101,21 @@ const StatsWindow = () => {
   }, []);
 
   const anonMap = useMemo(() => {
-    const m = new Map<number, string>();
-    scores.forEach((s, i) =>
-      m.set(s.id, `File ${String(i + 1).padStart(3, "0")}`),
+    // Stable key = file name. Build the universe from BOTH current scores
+    // and historical picks so old history rows resolve to the same number.
+    const keys = new Set<string>();
+    scores.forEach((s) => keys.add(s.name));
+    appState?.history.forEach((h) => keys.add(h.name));
+    const sorted = [...keys].sort((a, b) => a.localeCompare(b));
+    const m = new Map<string, string>();
+    sorted.forEach((name, i) =>
+      m.set(name, `File ${String(i + 1).padStart(3, "0")}`),
     );
     return m;
-  }, [scores]);
+  }, [scores, appState?.history]);
 
-  const displayName = (id: number, name: string) =>
-    anonymise ? (anonMap.get(id) ?? "File ???") : name;
+  const displayName = (_id: number, name: string) =>
+    anonymise ? (anonMap.get(name) ?? `File (${name})`) : name;
 
   const pickCounts = useMemo(
     () => appState?.pickCounts ?? {},
@@ -270,7 +275,6 @@ const StatsWindow = () => {
     totalPicks,
     totalIncludedWeight,
   );
-  const rollingEntropy = buildRollingEntropy(appState.history);
   const diagSummary = summariseDiagnostics(appState.history);
   const diagTrend = buildDiagnosticsTrend(appState.history);
 
@@ -864,65 +868,6 @@ const StatsWindow = () => {
                   dataKey="chosen"
                   name={t(`${sw}.chosenWeight.chosen`)}
                   stroke="var(--mantine-color-orange-5)"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </Section>
-        )}
-
-        {/* Rolling diversity (entropy) */}
-        {rollingEntropy.length > 0 && (
-          <Section
-            title={t(`${sw}.entropy.title`)}
-            sub={t(`${sw}.entropy.sub`)}
-          >
-            <ResponsiveContainer width="100%" height={CH}>
-              <ComposedChart
-                data={rollingEntropy}
-                margin={{ top: 4, right: 8, left: -16, bottom: 16 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke={grid} />
-                <XAxis
-                  dataKey="pickNumber"
-                  tick={tick}
-                  interval={Math.max(1, Math.floor(rollingEntropy.length / 10))}
-                  label={{
-                    value: t(`${sw}.coverage.xLabel`),
-                    position: "insideBottom",
-                    offset: -4,
-                    fill: "#909296",
-                    fontSize: 10,
-                  }}
-                />
-                <YAxis tick={tick} domain={[0, 1]} />
-                <ReferenceLine
-                  y={1}
-                  stroke="#51cf66"
-                  strokeDasharray="4 4"
-                  label={{
-                    value: t(`${sw}.entropy.maxLabel`),
-                    fill: "#51cf66",
-                    fontSize: 10,
-                    position: "insideTopLeft",
-                  }}
-                />
-                <RTooltip
-                  contentStyle={ttStyle}
-                  labelStyle={ttLabel}
-                  itemStyle={ttItem}
-                  cursor={ttCursor}
-                  formatter={(v) => [
-                    (v as number).toFixed(3),
-                    t(`${sw}.entropy.diversity`),
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="entropy"
-                  name={t(`${sw}.entropy.diversity`)}
-                  stroke="var(--mantine-color-violet-5)"
                   strokeWidth={2}
                   dot={false}
                 />

@@ -176,12 +176,6 @@
         "mean": "Mean",
         "max": "Max"
       },
-      "entropy": {
-        "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Shannon entropija zadnjih 50 odabira, normalizirana 0–1. Na 1,0 = nijedna datoteka nije ponovljena u prozoru od 50 odabira — normalno i očekivano za velike biblioteke",
-        "diversity": "Diversity",
-        "maxLabel": "max"
-      },
       "weightDist": {
         "title": "Raspodjela težina",
         "sub": "Rasprostranjenost ukupnih težina — uzak klaster znači malo varijacije u vjerovatnoći odabira",

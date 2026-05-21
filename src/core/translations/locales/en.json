@@ -184,12 +184,6 @@
         "mean": "Mean",
         "max": "Max"
       },
-      "entropy": {
-        "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Shannon entropy of the last 50 picks, normalised 0–1. At 1.0 = no file repeated in the 50-pick window — normal and expected for large libraries",
-        "diversity": "Diversity",
-        "maxLabel": "max"
-      },
       "hourOfDay": {
         "title": "Usage by hour of day",
         "peakSub": "Peak hour: {{label}} ({{count}} opens)"

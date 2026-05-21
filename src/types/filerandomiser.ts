@@ -18,6 +18,8 @@ export type PickDiagnostics = {
   chosenWeight: number;
   chosenOrderScore: number;
   chosenMemoryFactor: number;
+  chosenColorStreakFactor: number;
+  chosenFolderStreakFactor: number;
   chosenBookmarkColor: string | null;
   chosenBookmarkGlobal: boolean;
 };

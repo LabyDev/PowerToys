@@ -66,8 +66,16 @@ pub struct PickDiagnostics {
     pub chosen_weight: f64,
     pub chosen_order_score: f64,
     pub chosen_memory_factor: f64,
+    #[serde(default = "default_streak_factor")]
+    pub chosen_color_streak_factor: f64,
+    #[serde(default = "default_streak_factor")]
+    pub chosen_folder_streak_factor: f64,
     pub chosen_bookmark_color: Option<String>,
     pub chosen_bookmark_global: bool,
+}
+
+fn default_streak_factor() -> f64 {
+    1.0
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

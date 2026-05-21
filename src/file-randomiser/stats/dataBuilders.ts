@@ -300,30 +300,3 @@ export function summariseDiagnostics(history: AppStateData["history"]) {
     bookmarkPickPct: (bookmarkPicks / withDiag.length) * 100,
   };
 }
-
-export function buildRollingEntropy(
-  history: AppStateData["history"],
-  windowSize = 50,
-) {
-  if (history.length < windowSize) return [];
-  const sorted = [...history].sort(
-    (a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime(),
-  );
-  const result: { pickNumber: number; entropy: number }[] = [];
-  for (let i = windowSize - 1; i < sorted.length; i++) {
-    const window = sorted.slice(i - windowSize + 1, i + 1);
-    const freq = new Map<number, number>();
-    for (const h of window) freq.set(h.id, (freq.get(h.id) ?? 0) + 1);
-    let H = 0;
-    for (const c of freq.values()) {
-      const p = c / windowSize;
-      H -= p * Math.log2(p);
-    }
-    const normalized = windowSize > 1 ? H / Math.log2(windowSize) : 0;
-    result.push({
-      pickNumber: i + 1,
-      entropy: parseFloat(normalized.toFixed(3)),
-    });
-  }
-  return result;
-}

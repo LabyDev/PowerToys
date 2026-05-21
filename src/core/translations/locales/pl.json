@@ -176,12 +176,6 @@
         "mean": "Mean",
         "max": "Max"
       },
-      "entropy": {
-        "title": "Rolling pick diversity (50-pick window)",
-        "sub": "Entropia Shannona ostatnich 50 wyborów, znormalizowana 0–1. Przy 1,0 = żaden plik nie powtórzył się w oknie 50 wyborów — normalne i oczekiwane dla dużych bibliotek",
-        "diversity": "Diversity",
-        "maxLabel": "max"
-      },
       "weightDist": {
         "title": "Rozkład wag",
         "sub": "Rozproszenie łącznych wag — wąski klaster oznacza małą różnorodność prawdopodobieństwa wyboru",
