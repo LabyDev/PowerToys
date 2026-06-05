@@ -28,7 +28,8 @@
     "discardSession": "Start Fresh",
     "resume": "Resume",
     "autoOpenTracked": "Auto-open (tracked)",
-    "keyCloseViewer": "Close viewer"
+    "keyCloseViewer": "Close viewer",
+    "revealInFolder": "Reveal in folder"
   },
   "fileRandomiser": {
     "title": "Randomise Files",

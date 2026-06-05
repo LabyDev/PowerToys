@@ -39,7 +39,7 @@ import PresetControls from "./components/presetControls";
 import Section from "../common/section";
 
 const FileRandomiser = () => {
-  const { settings, setSettings, globalBookmarks, setGlobalBookmarks } =
+  const { settings, setSettings, globalBookmarks, setGlobalBookmarks, loaded } =
     useAppSettings();
   const { t } = useTranslation();
 
@@ -73,6 +73,8 @@ const FileRandomiser = () => {
   const trackingRef = useRef(tracking);
   const isHandlingFileCloseRef = useRef(false);
   const pendingCloseRef = useRef(false);
+  const handlePickFileRef = useRef<() => Promise<void>>(async () => {});
+  const lastFileOpenedAtRef = useRef<number>(0);
 
   const [showLoading, setShowLoading] = useState(false);
   const loadingTimeoutRef = useRef<number | null>(null);
@@ -103,6 +105,7 @@ const FileRandomiser = () => {
   }, [shuffle]);
   useEffect(() => {
     trackingRef.current = tracking;
+    console.log("[tracking] tracking state changed to:", tracking);
   }, [tracking]);
 
   useEffect(() => {
@@ -115,10 +118,22 @@ const FileRandomiser = () => {
   }, [currentIndex]);
 
   useEffect(() => {
+    console.log(
+      "[tracking] allowProcessTracking effect: loaded=",
+      loaded,
+      "allowProcessTracking=",
+      settings.fileRandomiser.allowProcessTracking,
+      "tracking=",
+      tracking,
+    );
+    if (!loaded) return;
     if (settings.fileRandomiser.allowProcessTracking === false && tracking) {
+      console.log(
+        "[tracking] force-disabling tracking because allowProcessTracking=false",
+      );
       setTracking(false);
     }
-  }, [settings.fileRandomiser.allowProcessTracking]);
+  }, [settings.fileRandomiser.allowProcessTracking, loaded]);
 
   // Re-apply bookmarks whenever globalBookmarks loads or changes (e.g. after File Auditor updates them)
   useEffect(() => {
@@ -389,6 +404,8 @@ const FileRandomiser = () => {
 
     let file: FileEntry | undefined;
 
+    lastFileOpenedAtRef.current = Date.now();
+
     if (isShuffle) {
       const picked = await randomiserApi.pickRandomFile();
       if (!picked) return;
@@ -423,10 +440,29 @@ const FileRandomiser = () => {
     if (file?.id) fileTreeRef.current?.scrollToFile(file.id);
   }, [data.files, shuffle, tracking, hasStartedTracking]);
 
+  handlePickFileRef.current = handlePickFile;
+
   useEffect(() => {
     let unlisten: (() => void) | null = null;
+    console.log("[tracking] registering file-closed listener (once)");
 
     listen("file-closed", async () => {
+      const elapsed = Date.now() - lastFileOpenedAtRef.current;
+      console.log(
+        "[tracking] file-closed event received, tracking:",
+        trackingRef.current,
+        "elapsed:",
+        elapsed,
+        "ms",
+      );
+      if (elapsed < 2000) {
+        console.log(
+          "[tracking] ignoring - too soon after open (stub exit?), elapsed:",
+          elapsed,
+          "ms",
+        );
+        return;
+      }
       if (isHandlingFileCloseRef.current) {
         pendingCloseRef.current = true;
         return;
@@ -434,15 +470,18 @@ const FileRandomiser = () => {
       isHandlingFileCloseRef.current = true;
       try {
         if (trackingRef.current) {
-          await handlePickFile();
+          console.log("[tracking] calling handlePickFile");
+          await handlePickFileRef.current();
+          console.log("[tracking] handlePickFile done");
         } else {
+          console.log("[tracking] tracking off, resetting hasStartedTracking");
           setHasStartedTracking(false);
         }
       } finally {
         isHandlingFileCloseRef.current = false;
         if (pendingCloseRef.current) {
           pendingCloseRef.current = false;
-          if (trackingRef.current) handlePickFile();
+          if (trackingRef.current) handlePickFileRef.current();
         }
       }
     }).then((fn) => {
@@ -450,7 +489,7 @@ const FileRandomiser = () => {
     });
 
     return () => unlisten?.();
-  }, [handlePickFile]);
+  }, []);
 
   const toggleTreeCollapsed = () => {
     setTreeCollapsed(!treeCollapsed);

@@ -28,7 +28,8 @@
     "discardSession": "Počni iznova",
     "resume": "Nastavi",
     "autoOpenTracked": "Auto-otvori (praćeno)",
-    "keyCloseViewer": "Zatvori preglednik"
+    "keyCloseViewer": "Zatvori preglednik",
+    "revealInFolder": "Prikaži u mapi"
   },
   "fileRandomiser": {
     "title": "Nasumični Fajlovi",

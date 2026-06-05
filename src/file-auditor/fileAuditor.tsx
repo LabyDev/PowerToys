@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Box,
   Button,
   Checkbox,
@@ -8,9 +9,10 @@ import {
   ScrollArea,
   Stack,
   Text,
+  Tooltip,
   Transition,
 } from "@mantine/core";
-import { BookmarkIcon } from "@phosphor-icons/react";
+import { BookmarkIcon, FolderOpenIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../core/hooks/useAppSettings";
@@ -504,6 +506,14 @@ const FileAuditor = () => {
                 <Button color="red" size="md" onClick={deleteFile}>
                   {t("fileAuditor.keyDelete")} [{displayKey(kb.delete)}]
                 </Button>
+                <Button
+                  variant="default"
+                  size="md"
+                  leftSection={<FolderOpenIcon size={16} />}
+                  onClick={() => auditorApi.revealInExplorer(currentFile.path)}
+                >
+                  {t("fileAuditor.revealInFolder")}
+                </Button>
                 {autoOpen && allowTracking && (
                   <Button
                     variant="default"
@@ -542,6 +552,7 @@ const FileAuditor = () => {
                       key={file.path}
                       ref={isCurrent ? currentItemRef : undefined}
                       onClick={() => jumpTo(file.globalIdx)}
+                      className="audit-item"
                       style={{
                         padding: "5px 8px 5px 14px",
                         borderRadius: 4,
@@ -568,6 +579,22 @@ const FileAuditor = () => {
                             }}
                           />
                         )}
+                        <Tooltip
+                          label={t("fileAuditor.revealInFolder")}
+                          withArrow
+                        >
+                          <ActionIcon
+                            size="xs"
+                            variant="subtle"
+                            className="audit-item-action"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              auditorApi.revealInExplorer(file.path);
+                            }}
+                          >
+                            <FolderOpenIcon size={12} />
+                          </ActionIcon>
+                        </Tooltip>
                       </Group>
                     </Box>
                   );

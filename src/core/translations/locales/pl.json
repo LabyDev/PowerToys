@@ -28,7 +28,8 @@
     "discardSession": "Zacznij od nowa",
     "resume": "Wznów",
     "autoOpenTracked": "Auto-otwórz (śledzone)",
-    "keyCloseViewer": "Zamknij podgląd"
+    "keyCloseViewer": "Zamknij podgląd",
+    "revealInFolder": "Pokaż w folderze"
   },
   "fileRandomiser": {
     "title": "Losuj Pliki",

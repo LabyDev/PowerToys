@@ -28,7 +28,8 @@
     "discardSession": "Opnieuw beginnen",
     "resume": "Hervatten",
     "autoOpenTracked": "Auto-open (gevolgd)",
-    "keyCloseViewer": "Viewer sluiten"
+    "keyCloseViewer": "Viewer sluiten",
+    "revealInFolder": "Toon in map"
   },
   "fileRandomiser": {
     "title": "Bestanden Randomiseren",

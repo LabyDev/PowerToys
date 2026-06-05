@@ -28,7 +28,8 @@
     "discardSession": "Neu starten",
     "resume": "Fortsetzen",
     "autoOpenTracked": "Auto-öffnen (verfolgt)",
-    "keyCloseViewer": "Viewer schließen"
+    "keyCloseViewer": "Viewer schließen",
+    "revealInFolder": "Im Ordner anzeigen"
   },
   "fileRandomiser": {
     "title": "Dateien zufällig auswählen",

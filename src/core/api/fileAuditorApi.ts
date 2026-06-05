@@ -26,3 +26,6 @@ export const closeTrackedFile = (path: string): Promise<void> =>
 
 export const deleteToTrash = (path: string): Promise<void> =>
   invoke<void>("delete_to_trash", { path });
+
+export const revealInExplorer = (path: string): Promise<void> =>
+  invoke<void>("reveal_in_explorer", { path });

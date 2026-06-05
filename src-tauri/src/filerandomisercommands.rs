@@ -704,7 +704,7 @@ pub fn pick_random_file(
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
                     let frac = pos as f64 / recency_window as f64;
-                    frac.powf(1.5)
+                    frac.powf(2.0)
                 } else {
                     1.0
                 }
@@ -904,14 +904,7 @@ pub fn pick_random_file(
 
     // Update recency list — push to back, trim front if over 2x window
     // (keep a bit extra so window can shrink without losing history)
-    if file
-        .bookmark
-        .as_ref()
-        .and_then(|b| b.color.as_ref())
-        .is_none()
-    {
-        data.recency_list.push(file.id);
-    }
+    data.recency_list.push(file.id);
 
     let max_recency_len = recency_window + 10;
     if data.recency_list.len() > max_recency_len {
@@ -1143,7 +1136,7 @@ pub fn get_file_scores(
             } else if let Some(pos) = data.recency_list.iter().rev().position(|&id| id == file.id) {
                 if pos < recency_window {
                     let frac = pos as f64 / recency_window as f64;
-                    frac.powf(1.5)
+                    frac.powf(2.)
                 } else {
                     1.0
                 }
