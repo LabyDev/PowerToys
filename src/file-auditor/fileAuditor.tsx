@@ -13,6 +13,7 @@ import {
   Transition,
 } from "@mantine/core";
 import { BookmarkIcon, FolderOpenIcon } from "@phosphor-icons/react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../core/hooks/useAppSettings";
@@ -69,6 +70,7 @@ const FileAuditor = () => {
   const [folderPath, setFolderPath] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [autoOpen, setAutoOpen] = useState(true);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [savedSession, setSavedSession] = useState<SavedSession | null>(null);
 
   useEffect(() => {
@@ -90,6 +92,7 @@ const FileAuditor = () => {
 
   const indexRef = useRef(0);
   const filesRef = useRef<AuditFileEntry[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   type GroupFile = AuditFileEntry & { globalIdx: number };
   const fileGroups = useMemo(() => {
@@ -140,20 +143,42 @@ const FileAuditor = () => {
   const bookmarkColors =
     settings?.bookmarkColors ?? DEFAULT_BOOKMARK_COLOR_OPTIONS;
 
-  const currentItemRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    currentItemRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, [index]);
-
   useEffect(() => {
     sortedIndicesRef.current = fileGroups.flatMap((g) =>
       g.files.map((f) => f.globalIdx),
     );
   }, [fileGroups]);
+
+  type VirtualRow =
+    | { type: "header"; label: string; key: string }
+    | { type: "file"; file: GroupFile; key: string };
+
+  const virtualRows = useMemo<VirtualRow[]>(
+    () =>
+      fileGroups.flatMap(({ relFolder, files: gf }) => [
+        {
+          type: "header" as const,
+          label: relFolder === "." ? t("fileAuditor.rootFolder") : relFolder,
+          key: `h:${relFolder}`,
+        },
+        ...gf.map((file) => ({ type: "file" as const, file, key: file.path })),
+      ]),
+    [fileGroups, t],
+  );
+
+  const rowVirtualizer = useVirtualizer({
+    count: virtualRows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: (i) => (virtualRows[i]?.type === "header" ? 36 : 30),
+    overscan: 15,
+  });
+
+  useEffect(() => {
+    const idx = virtualRows.findIndex(
+      (r) => r.type === "file" && r.file.globalIdx === index,
+    );
+    if (idx !== -1) rowVirtualizer.scrollToIndex(idx, { align: "auto" });
+  }, [index]);
 
   const jumpTo = useCallback(async (idx: number) => {
     const f = filesRef.current;
@@ -166,8 +191,10 @@ const FileAuditor = () => {
       await auditorApi.closeTrackedFile(f[indexRef.current].path);
     indexRef.current = idx;
     setIndex(idx);
-    if (autoOpenRef.current)
+    if (autoOpenRef.current) {
       await auditorApi.openAuditFile(f[idx].path, trackingEnabledRef.current);
+      setViewerOpen(true);
+    }
   }, []);
 
   const currentFile = isAuditing ? (files[index] ?? null) : null;
@@ -187,8 +214,10 @@ const FileAuditor = () => {
       await auditorApi.closeTrackedFile(f[indexRef.current].path);
     indexRef.current = next;
     setIndex(next);
-    if (autoOpenRef.current)
+    if (autoOpenRef.current) {
       await auditorApi.openAuditFile(f[next].path, trackingEnabledRef.current);
+      setViewerOpen(true);
+    }
   }, []);
 
   const deleteFile = useCallback(async () => {
@@ -209,6 +238,7 @@ const FileAuditor = () => {
     setFiles(remaining);
 
     if (!remaining.length) {
+      setViewerOpen(false);
       setIsAuditing(false);
       return;
     }
@@ -227,11 +257,13 @@ const FileAuditor = () => {
 
     indexRef.current = nextIdx;
     setIndex(nextIdx);
-    if (autoOpenRef.current)
+    if (autoOpenRef.current) {
       await auditorApi.openAuditFile(
         remaining[nextIdx].path,
         trackingEnabledRef.current,
       );
+      setViewerOpen(true);
+    }
   }, []);
 
   const setBookmark = useCallback(
@@ -272,8 +304,13 @@ const FileAuditor = () => {
       else if (
         (kb.closeViewer ?? "w").toLowerCase() === key &&
         autoOpenRef.current &&
-        filesRef.current[indexRef.current]
+        filesRef.current[indexRef.current] &&
+        !(
+          (settings?.fileAuditor?.globalCloseViewerShortcut ?? false) &&
+          (settings?.fileAuditor?.allowProcessTracking ?? false)
+        )
       ) {
+        setViewerOpen(false);
         await auditorApi.closeTrackedFile(
           filesRef.current[indexRef.current].path,
         );
@@ -303,18 +340,28 @@ const FileAuditor = () => {
   useEffect(() => {
     const globalEnabled =
       settings?.fileAuditor?.globalCloseViewerShortcut ?? false;
-    if (!isAuditing || !autoOpen || !allowTracking || !globalEnabled) return;
+    if (
+      !isAuditing ||
+      !autoOpen ||
+      !allowTracking ||
+      !globalEnabled ||
+      !viewerOpen
+    )
+      return;
     const kb = settings?.fileAuditor?.keybinds ?? DEFAULT_AUDITOR_KEYBINDS;
     const accelerator = toAccelerator(kb.closeViewer ?? "w");
     registerShortcut(accelerator, (event) => {
       if (event.state !== "Pressed") return;
       const f = filesRef.current[indexRef.current];
-      if (f) auditorApi.closeTrackedFile(f.path);
+      if (f) {
+        setViewerOpen(false);
+        auditorApi.closeTrackedFile(f.path);
+      }
     }).catch(console.error);
     return () => {
       unregisterShortcut(accelerator).catch(() => {});
     };
-  }, [isAuditing, autoOpen, allowTracking, settings]);
+  }, [isAuditing, autoOpen, allowTracking, settings, viewerOpen]);
 
   const handlePickFolder = async () => {
     const path = await auditorApi.pickAuditFolder();
@@ -337,11 +384,13 @@ const FileAuditor = () => {
     setIndex(startIdx);
     indexRef.current = startIdx;
     setIsAuditing(true);
-    if (autoOpen)
+    if (autoOpen) {
       await auditorApi.openAuditFile(
         files[startIdx].path,
         trackingEnabledRef.current,
       );
+      setViewerOpen(true);
+    }
   };
 
   const handleResume = async () => {
@@ -356,11 +405,13 @@ const FileAuditor = () => {
       setIndex(resumeIdx);
       indexRef.current = resumeIdx;
       setIsAuditing(true);
-      if (autoOpenRef.current && result[resumeIdx])
+      if (autoOpenRef.current && result[resumeIdx]) {
         await auditorApi.openAuditFile(
           result[resumeIdx].path,
           trackingEnabledRef.current,
         );
+        setViewerOpen(true);
+      }
       setSavedSession(null);
     } finally {
       setIsLoading(false);
@@ -506,21 +557,16 @@ const FileAuditor = () => {
                 <Button color="red" size="md" onClick={deleteFile}>
                   {t("fileAuditor.keyDelete")} [{displayKey(kb.delete)}]
                 </Button>
-                <Button
-                  variant="default"
-                  size="md"
-                  leftSection={<FolderOpenIcon size={16} />}
-                  onClick={() => auditorApi.revealInExplorer(currentFile.path)}
-                >
-                  {t("fileAuditor.revealInFolder")}
-                </Button>
                 {autoOpen && allowTracking && (
                   <Button
                     variant="default"
                     size="md"
                     onClick={async () => {
                       const f = filesRef.current[indexRef.current];
-                      if (f) await auditorApi.closeTrackedFile(f.path);
+                      if (f) {
+                        setViewerOpen(false);
+                        await auditorApi.closeTrackedFile(f.path);
+                      }
                     }}
                   >
                     {t("fileAuditor.keyCloseViewer")} [
@@ -532,75 +578,99 @@ const FileAuditor = () => {
           </Box>
 
           {/* Right column: file tree */}
-          <ScrollArea className="audit-file-list" p="xs">
-            {fileGroups.map(({ relFolder, files: groupFiles }, groupIdx) => (
-              <Box key={`${groupIdx}-${relFolder}`} mb="sm">
-                <Divider
-                  label={
-                    relFolder === "." ? t("fileAuditor.rootFolder") : relFolder
-                  }
-                  labelPosition="left"
-                  mb="xs"
-                />
-                {groupFiles.map((file) => {
-                  const isCurrent = file.globalIdx === index;
-                  const fileBm = globalBookmarks?.find(
-                    (b) => b.hash === file.hash,
-                  );
-                  return (
-                    <Box
-                      key={file.path}
-                      ref={isCurrent ? currentItemRef : undefined}
-                      onClick={() => jumpTo(file.globalIdx)}
-                      className="audit-item"
-                      style={{
-                        padding: "5px 8px 5px 14px",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                        borderLeft: `3px solid ${isCurrent ? "var(--mantine-color-blue-6)" : "transparent"}`,
-                        background: isCurrent
-                          ? "rgba(34,139,230,0.12)"
-                          : "transparent",
-                        fontWeight: isCurrent ? 600 : 400,
-                        transition: "background 0.15s ease",
-                      }}
-                    >
-                      <Group gap={4} align="center" wrap="nowrap">
-                        <Text size="sm" truncate style={{ flex: 1 }}>
-                          {file.name}
-                        </Text>
-                        {fileBm && (
-                          <BookmarkIcon
-                            size={18}
-                            weight="fill"
+          <ScrollArea
+            className="audit-file-list"
+            p="xs"
+            viewportRef={scrollRef}
+          >
+            <Box
+              style={{
+                height: rowVirtualizer.getTotalSize(),
+                position: "relative",
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                const row = virtualRows[virtualItem.index];
+                return (
+                  <Box
+                    key={row.key}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                  >
+                    {row.type === "header" ? (
+                      <Divider
+                        label={row.label}
+                        labelPosition="left"
+                        mt={virtualItem.index > 0 ? "sm" : 0}
+                        mb="xs"
+                      />
+                    ) : (
+                      (() => {
+                        const { file } = row;
+                        const isCurrent = file.globalIdx === index;
+                        const fileBm = globalBookmarks?.find(
+                          (b) => b.hash === file.hash,
+                        );
+                        return (
+                          <Box
+                            onClick={() => jumpTo(file.globalIdx)}
+                            className="audit-item"
                             style={{
-                              color: fileBm.color ?? undefined,
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
-                        <Tooltip
-                          label={t("fileAuditor.revealInFolder")}
-                          withArrow
-                        >
-                          <ActionIcon
-                            size="xs"
-                            variant="subtle"
-                            className="audit-item-action"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              auditorApi.revealInExplorer(file.path);
+                              padding: "5px 8px 5px 14px",
+                              borderRadius: 4,
+                              cursor: "pointer",
+                              borderLeft: `3px solid ${isCurrent ? "var(--mantine-color-blue-6)" : "transparent"}`,
+                              background: isCurrent
+                                ? "rgba(34,139,230,0.12)"
+                                : "transparent",
+                              fontWeight: isCurrent ? 600 : 400,
+                              transition: "background 0.15s ease",
                             }}
                           >
-                            <FolderOpenIcon size={12} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </Group>
-                    </Box>
-                  );
-                })}
-              </Box>
-            ))}
+                            <Group gap={4} align="center" wrap="nowrap">
+                              <Text size="sm" truncate style={{ flex: 1 }}>
+                                {file.name}
+                              </Text>
+                              {fileBm && (
+                                <BookmarkIcon
+                                  size={18}
+                                  weight="fill"
+                                  style={{
+                                    color: fileBm.color ?? undefined,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                              )}
+                              <Tooltip
+                                label={t("fileAuditor.revealInFolder")}
+                                withArrow
+                              >
+                                <ActionIcon
+                                  size="xs"
+                                  variant="subtle"
+                                  className="audit-item-action"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    auditorApi.revealInExplorer(file.path);
+                                  }}
+                                >
+                                  <FolderOpenIcon size={12} />
+                                </ActionIcon>
+                              </Tooltip>
+                            </Group>
+                          </Box>
+                        );
+                      })()
+                    )}
+                  </Box>
+                );
+              })}
+            </Box>
           </ScrollArea>
         </Box>
       </Box>
