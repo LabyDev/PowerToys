@@ -177,7 +177,7 @@ const FileAuditor = () => {
     const idx = virtualRows.findIndex(
       (r) => r.type === "file" && r.file.globalIdx === index,
     );
-    if (idx !== -1) rowVirtualizer.scrollToIndex(idx, { align: "auto" });
+    if (idx !== -1) rowVirtualizer.scrollToIndex(idx, { align: "center" });
   }, [index]);
 
   const jumpTo = useCallback(async (idx: number) => {

@@ -455,7 +455,7 @@ const FileRandomiser = () => {
         elapsed,
         "ms",
       );
-      if (elapsed < 2000) {
+      if (elapsed < 500) {
         console.log(
           "[tracking] ignoring - too soon after open (stub exit?), elapsed:",
           elapsed,
